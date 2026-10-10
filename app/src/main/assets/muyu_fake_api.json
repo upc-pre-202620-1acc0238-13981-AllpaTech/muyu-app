@@ -1,0 +1,33 @@
+{
+  "plots": [],
+  "merchantNotifications": [],
+  "users": [
+    {
+      "birthdate": "12 Mar 1988",
+      "email": "maria.quispe@muyu.pe",
+      "firstName": "María",
+      "lastName": "Quispe",
+      "password": "Muyu1234",
+      "phone": "987654321",
+      "role": "farmer"
+    },
+    {
+      "birthdate": "04 Jul 1990",
+      "email": "jose.arturo@muyu.pe",
+      "firstName": "José",
+      "lastName": "Arturo",
+      "password": "Muyu1234",
+      "phone": "912345678",
+      "role": "merchant"
+    },
+    {
+      "birthdate": "22 Sep 1985",
+      "email": "carlos.mamani@muyu.pe",
+      "firstName": "Carlos",
+      "lastName": "Mamani",
+      "password": "Muyu1234",
+      "phone": "999111222",
+      "role": "farmer"
+    }
+  ]
+}
