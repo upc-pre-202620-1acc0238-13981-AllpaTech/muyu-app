@@ -287,11 +287,7 @@ fun AppNavHost() {
                 onTabSelected = selectTab,
                 onPlotSelected = {
                     container.farmerPlotReturn = FarmerPlotReturn.Home
-                    step = if (container.selectedPlot?.status == "funded") {
-                        WalkthroughStep.FundedPlot
-                    } else {
-                        WalkthroughStep.MyPlot
-                    }
+                    step = WalkthroughStep.FundedPlot
                 },
             )
         }
@@ -365,6 +361,7 @@ fun AppNavHost() {
                     }
                 },
                 onTabSelected = selectTab,
+                fromHome = container.farmerPlotReturn == FarmerPlotReturn.Home,
             )
         }
         WalkthroughStep.FundedPlot -> TabOrContent(currentTab, selectTab) {

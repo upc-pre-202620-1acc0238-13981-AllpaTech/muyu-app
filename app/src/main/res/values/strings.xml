@@ -570,4 +570,9 @@
     <string name="sync_connected_chip">Connected</string>
     <string name="plot_meta_fmt">%1$s  ·  %2$s  ·  %3$s</string>
     <string name="plot_meta_short">%1$s - %2$s</string>
+    <string name="home_plot_title_fmt">%1$s plot</string>
+    <string name="home_plot_tracking_title">Cycle tracking</string>
+    <string name="home_plot_not_funded">This plot has not been funded yet.</string>
+    <string name="home_plot_milestones_unavailable">Milestone execution and evidence recording will be available after financing.</string>
+    <string name="home_plot_status_fmt">%1$s plot · %2$s</string>
 </resources>

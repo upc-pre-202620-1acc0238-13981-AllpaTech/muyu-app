@@ -1,6 +1,5 @@
 package com.example.muyu_app.features.labor_execution.presentation.evidence
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,31 +18,30 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
+import com.example.muyu_app.core.designsystem.components.PlotPhoto
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
-import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.plot.rememberLiveFundedPlot
 import com.example.muyu_app.features.plot_approval.domain.currentMilestone
-import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.DisbursementStep
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
@@ -61,7 +59,6 @@ import com.example.muyu_app.ui.theme.MuyuMutedChip
 import com.example.muyu_app.ui.theme.MuyuOlive
 import com.example.muyu_app.ui.theme.MuyuPendingBg
 import com.example.muyu_app.ui.theme.MuyuPendingText
-import com.example.muyu_app.ui.theme.MuyuSurface
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistExtraBold
 import com.example.muyu_app.ui.theme.UrbanistLight
@@ -80,11 +77,16 @@ fun FundedPlotScreen(
     selectedBottomTab: MuyuTab = MuyuTab.Home,
     modifier: Modifier = Modifier,
 ) {
-    val container = LocalAppContainer.current
     val plot = rememberLiveFundedPlot()
+    val isFunded = plot?.status.equals(
+        "funded",
+        ignoreCase = true,
+    )
     val name = plot?.name?.ifBlank { null } ?: stringResource(R.string.farmer_plot_rosal)
-    val states = plot?.milestoneStates.orEmpty().ifEmpty {
-        MilestoneCatalog.seed(plot?.stage.orEmpty(), plot?.progress ?: 0)
+    val states = if (isFunded) {
+        plot?.milestoneStates.orEmpty()
+    } else {
+        emptyList()
     }
     val currentKey = plot.currentMilestone()?.key
     val totalAmount = PlotFinance.parseAmount(plot?.amount.orEmpty())
@@ -95,11 +97,20 @@ fun FundedPlotScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuSurface),
+            .background(Color(0xFFEAF9E9)),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            FundedPlotHeader(title = name, onBack = onBack)
-            PlotHero(imageUri = plot?.imageUri)
+            FundedPlotHeader(
+                title = stringResource(R.string.home_plot_title_fmt, name),
+                onBack = onBack,
+            )
+            PlotPhoto(
+                imageUri = plot?.imageUri,
+                description = name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+            )
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -107,8 +118,28 @@ fun FundedPlotScreen(
                     .padding(horizontal = 19.dp)
                     .padding(top = 16.dp, bottom = MuyuScrollBottomInset),
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = "🇵🇪",
+                        fontSize = 18.sp,
+                    )
+                    Text(
+                        text = "PERU",
+                        fontFamily = UrbanistRegular,
+                        fontSize = 12.sp,
+                        color = Color(0xFF555555),
+                    )
+                }
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = stringResource(R.string.plot_title_funded_fmt, name, fundedLabel),
+                    text = stringResource(
+                        R.string.home_plot_status_fmt,
+                        name,
+                        if (isFunded) fundedLabel else plot?.status.orEmpty(),
+                    ),
                     style = TextStyle(
                         fontFamily = UrbanistSemiBold,
                         fontWeight = FontWeight.SemiBold,
@@ -140,36 +171,75 @@ fun FundedPlotScreen(
                     ),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                CycleMilestonesCard(
-                    states = states,
-                    currentKey = currentKey,
-                    disbursements = disbursements,
-                    totalFormatted = PlotFinance.formatAmount(totalAmount),
-                    harvestDate = plot?.harvestDate.orEmpty(),
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-                PlotActionButton(
-                    text = stringResource(R.string.plot_record_evidence),
-                    background = MuyuAction,
-                    contentColor = Color.White,
-                    extraBold = true,
-                    onClick = onRecordEvidence,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = stringResource(R.string.plot_request_extension),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onRequestExtension)
-                        .padding(vertical = 8.dp),
-                    textAlign = TextAlign.Center,
-                    style = TextStyle(
-                        fontFamily = UrbanistSemiBold,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                        color = MuyuOlive,
-                    ),
-                )
+                if (isFunded) {
+                    CycleMilestonesCard(
+                        states = states,
+                        currentKey = currentKey,
+                        disbursements = disbursements,
+                        totalFormatted = PlotFinance.formatAmount(totalAmount),
+                        harvestDate = plot?.harvestDate.orEmpty(),
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    PlotActionButton(
+                        text = stringResource(R.string.plot_record_evidence),
+                        background = MuyuAction,
+                        contentColor = Color.White,
+                        extraBold = true,
+                        onClick = onRecordEvidence,
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = stringResource(R.string.plot_request_extension),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onRequestExtension)
+                            .padding(vertical = 8.dp),
+                        textAlign = TextAlign.Center,
+                        style = TextStyle(
+                            fontFamily = UrbanistSemiBold,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = MuyuOlive,
+                        ),
+                    )
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color.White)
+                            .border(
+                                width = 1.dp,
+                                color = MuyuForest,
+                                shape = RoundedCornerShape(20.dp),
+                            )
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.home_plot_tracking_title),
+                            fontFamily = UrbanistSemiBold,
+                            fontSize = 16.sp,
+                            color = MuyuForest,
+                        )
+                        Text(
+                            text = stringResource(R.string.home_plot_not_funded),
+                            fontFamily = UrbanistRegular,
+                            fontSize = 14.sp,
+                            color = Color(0xFF555555),
+                        )
+                        Text(
+                            text = stringResource(R.string.home_plot_milestones_unavailable),
+                            fontFamily = UrbanistRegular,
+                            fontSize = 14.sp,
+                            color = Color(0xFF555555),
+                        )
+                    }
+                }
             }
         }
         MuyuBottomBar(
@@ -191,18 +261,11 @@ private fun FundedPlotHeader(title: String, onBack: () -> Unit) {
             .padding(horizontal = 32.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .clickable(onClick = onBack)
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            MuyuAsset(
-                fileName = "publish/back.svg",
-                contentDescription = stringResource(R.string.plot_back),
-                width = 17.dp,
-                height = 19.dp,
-                modifier = Modifier.rotate(-90f),
+        IconButton(onClick = onBack) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.White,
             )
         }
         Spacer(modifier = Modifier.width(20.dp))
@@ -214,29 +277,6 @@ private fun FundedPlotHeader(title: String, onBack: () -> Unit) {
                 fontSize = 20.sp,
                 color = Color.White,
             ),
-        )
-    }
-}
-
-@Composable
-private fun PlotHero(imageUri: String?) {
-    if (!imageUri.isNullOrBlank()) {
-        AsyncImage(
-            model = imageUri,
-            contentDescription = stringResource(R.string.plot_hero_content_description),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp),
-            contentScale = ContentScale.Crop,
-        )
-    } else {
-        Image(
-            painter = painterResource(R.drawable.plot_hero),
-            contentDescription = stringResource(R.string.plot_hero_content_description),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp),
-            contentScale = ContentScale.Crop,
         )
     }
 }

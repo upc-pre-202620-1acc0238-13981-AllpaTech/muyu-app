@@ -570,4 +570,9 @@
     <string name="sync_connected_chip">Conectado</string>
     <string name="plot_meta_fmt">%1$s  ·  %2$s  ·  %3$s</string>
     <string name="plot_meta_short">%1$s - %2$s</string>
+    <string name="home_plot_title_fmt">Parcela %1$s</string>
+    <string name="home_plot_tracking_title">Seguimiento del ciclo</string>
+    <string name="home_plot_not_funded">Esta parcela todavía no ha recibido financiamiento.</string>
+    <string name="home_plot_milestones_unavailable">La ejecución de hitos y el registro de evidencias estarán disponibles después del financiamiento.</string>
+    <string name="home_plot_status_fmt">Parcela %1$s · %2$s</string>
 </resources>
