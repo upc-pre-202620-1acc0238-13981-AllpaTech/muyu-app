@@ -43,16 +43,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
-import coil3.compose.AsyncImage
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
+import com.example.muyu_app.core.designsystem.components.PlotPhoto
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.environment.Environment
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.Plot
-import com.example.muyu_app.features.plot_financing.presentation.catalog.catalogPhoto
 import com.example.muyu_app.ui.theme.MuyuAction
 import com.example.muyu_app.ui.theme.MuyuFinancedBg
 import com.example.muyu_app.ui.theme.MuyuFinancedText
@@ -516,29 +515,14 @@ private fun PlotStatusChip(plot: Plot, funded: Boolean) {
 
 @Composable
 private fun PlotThumbnail(plot: Plot) {
-    val fallback = catalogPhoto(plot)
-    Box(
+    PlotPhoto(
+        imageUri = plot.imageUri,
+        description = plot.name,
         modifier = Modifier
             .size(width = 104.dp, height = 140.dp)
             .clip(RoundedCornerShape(20.dp))
             .border(1.dp, MuyuForest, RoundedCornerShape(20.dp)),
-    ) {
-        if (!plot.imageUri.isNullOrBlank()) {
-            AsyncImage(
-                model = plot.imageUri,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        } else {
-            Image(
-                painter = painterResource(fallback),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
-    }
+    )
 }
 
 @Composable

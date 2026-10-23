@@ -39,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -52,11 +51,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
-import coil3.compose.AsyncImage
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
+import com.example.muyu_app.core.designsystem.components.PlotPhoto
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.environment.Environment
@@ -522,29 +521,13 @@ private fun HomePlotPhoto(
     plot: Plot,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    PlotPhoto(
+        imageUri = plot.imageUri,
+        description = plot.name,
         modifier = modifier
             .fillMaxWidth()
-            .height(160.dp)
-            .background(Color(0xFFEAF9E9)),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (!plot.imageUri.isNullOrBlank()) {
-            AsyncImage(
-                model = plot.imageUri,
-                contentDescription = plot.name,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        } else {
-            Icon(
-                imageVector = Icons.Default.Image,
-                contentDescription = null,
-                tint = Color(0xFF4A7C1E),
-                modifier = Modifier.size(48.dp),
-            )
-        }
-    }
+            .height(160.dp),
+    )
 }
 
 @Composable

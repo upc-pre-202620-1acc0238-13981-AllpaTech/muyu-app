@@ -1,6 +1,5 @@
 package com.example.muyu_app.features.plot_approval.presentation.plotdetail
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,8 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -32,11 +29,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
+import com.example.muyu_app.core.designsystem.components.PlotPhoto
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
@@ -119,25 +116,13 @@ fun MyPlotScreen(
                         .background(Color.White)
                         .border(1.dp, MuyuSoftGreen, CardShape),
                 ) {
-                    if (!plot?.imageUri.isNullOrBlank()) {
-                        AsyncImage(
-                            model = plot?.imageUri,
-                            contentDescription = name,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(160.dp),
-                            contentScale = ContentScale.Crop,
-                        )
-                    } else {
-                        Image(
-                            painter = painterResource(R.drawable.plot_hero),
-                            contentDescription = name,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(160.dp),
-                            contentScale = ContentScale.Crop,
-                        )
-                    }
+                    PlotPhoto(
+                        imageUri = plot?.imageUri,
+                        description = name,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(160.dp),
+                    )
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = name,
