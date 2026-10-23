@@ -163,15 +163,46 @@ fun FarmerHomeScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                filteredPlots.forEach { plot ->
-                    HomePlotCard(
-                        plot = plot,
-                        onClick = {
-                            container.selectedPlot = plot
-                            onPlotSelected()
-                        },
+                if (plots.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = "No plots yet",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MuyuForest,
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "Your plots will appear here once you create your first one.",
+                            fontSize = 14.sp,
+                            color = Muted,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                } else if (filteredPlots.isEmpty()) {
+                    Text(
+                        text = "No plots match your search.",
+                        color = Muted,
+                        modifier = Modifier.padding(vertical = 24.dp),
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                } else {
+                    filteredPlots.forEach { plot ->
+                        HomePlotCard(
+                            plot = plot,
+                            onClick = {
+                                container.selectedPlot = plot
+                                onPlotSelected()
+                            },
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }
