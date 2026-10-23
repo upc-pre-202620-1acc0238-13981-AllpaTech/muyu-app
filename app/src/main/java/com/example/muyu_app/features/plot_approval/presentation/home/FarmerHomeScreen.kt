@@ -1,7 +1,6 @@
 package com.example.muyu_app.features.plot_approval.presentation.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
+import coil3.compose.AsyncImage
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
@@ -67,11 +70,7 @@ import com.example.muyu_app.features.plot_approval.presentation.myplots.approved
 import com.example.muyu_app.features.plot_approval.presentation.myplots.formatPlotArea
 import com.example.muyu_app.features.plot_approval.presentation.myplots.isFundedPlot
 import com.example.muyu_app.features.plot_approval.presentation.myplots.matchesSearch
-import com.example.muyu_app.features.plot_approval.presentation.myplots.stageTitleRes
-import com.example.muyu_app.ui.theme.MuyuFinancedBg
-import com.example.muyu_app.ui.theme.MuyuFinancedText
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuHeader
 import com.example.muyu_app.ui.theme.MuyuStatCard
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBlack
@@ -83,10 +82,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private val CardShape = RoundedCornerShape(20.dp)
-private val ChipShape = RoundedCornerShape(20.dp)
-private val ProgressTrack = Color(0xFFCBF5B8)
-private val AvailableChipBg = Color(0xFFFED2BD)
-private val AvailableChipText = Color(0xFF774308)
 private val Muted = Color(0xFF4F5A50)
 
 @Composable
@@ -104,6 +99,8 @@ fun FarmerHomeScreen(
     val farmerName = container.fakeStore.currentUser?.displayName
         ?: stringResource(R.string.farmer_name)
     var plots by remember { mutableStateOf<List<Plot>>(emptyList()) }
+    var isLoadingPlots by remember { mutableStateOf(true) }
+    var plotsError by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember {
         mutableStateOf("All")
@@ -131,16 +128,25 @@ fun FarmerHomeScreen(
 
     LaunchedEffect(lifecycleState.value) {
         if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
+        isLoadingPlots = true
+        plotsError = null
+
         val email = container.fakeStore.currentUser?.email
             ?: Environment.DemoCredentials.FARMER_EMAIL
-        container.getPlotsUseCase().onSuccess { all ->
-            plots = all
-                .filter { it.ownerEmail.equals(email, ignoreCase = true) }
-                .map { plot ->
-                    container.fakeStore.ensureMilestones(plot.id)?.let { container.fakeStore.toDomain(it) }
-                        ?: plot
-                }
-        }
+        container.getPlotsUseCase()
+            .onSuccess { all ->
+                plots = all
+                    .filter { it.ownerEmail.equals(email, ignoreCase = true) }
+                    .map { plot ->
+                        container.fakeStore.ensureMilestones(plot.id)?.let { container.fakeStore.toDomain(it) }
+                            ?: plot
+                    }
+            }
+            .onFailure { error ->
+                plotsError = error.message ?: "Unable to load plots."
+            }
+
+        isLoadingPlots = false
     }
 
     val statusFilteredPlots = remember(plots, selectedFilter) {
@@ -181,6 +187,7 @@ fun FarmerHomeScreen(
                 onWeather = onWeather,
                 query = searchQuery,
                 onQueryChange = { searchQuery = it },
+                temperature = currentTemperature,
             )
             Column(
                 modifier = Modifier
@@ -221,69 +228,90 @@ fun FarmerHomeScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                if (plots.isEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Eco,
-                            contentDescription = null,
-                            tint = Color(0xFF4A7C1E),
-                            modifier = Modifier.size(56.dp),
+                when {
+                    isLoadingPlots -> {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.padding(32.dp),
+                            color = Color(0xFF4A7C1E),
                         )
+                    }
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
+                    plotsError != null -> {
                         Text(
-                            text = "No plots yet",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MuyuForest,
+                            text = "Unable to load plots. Please try again.",
+                            color = Color(0xFF9E2F2F),
+                            modifier = Modifier.padding(vertical = 24.dp),
                         )
+                    }
 
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = "Your plots will appear here once you create your first one.",
-                            fontSize = 14.sp,
-                            color = Muted,
-                            textAlign = TextAlign.Center,
-                        )
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        androidx.compose.material3.Button(
-                            onClick = { onTabSelected(MuyuTab.Plot) },
-                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF4A7C1E),
-                            ),
+                    plots.isEmpty() -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Text(
-                                text = "Go to My Plots",
-                                color = Color.White,
-                                fontFamily = UrbanistSemiBold,
+                            Icon(
+                                imageVector = Icons.Default.Eco,
+                                contentDescription = null,
+                                tint = Color(0xFF4A7C1E),
+                                modifier = Modifier.size(56.dp),
                             )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = "No plots yet",
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MuyuForest,
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = "Your plots will appear here once you create your first one.",
+                                fontSize = 14.sp,
+                                color = Muted,
+                                textAlign = TextAlign.Center,
+                            )
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            androidx.compose.material3.Button(
+                                onClick = { onTabSelected(MuyuTab.Plot) },
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4A7C1E),
+                                ),
+                            ) {
+                                Text(
+                                    text = "Go to My Plots",
+                                    color = Color.White,
+                                    fontFamily = UrbanistSemiBold,
+                                )
+                            }
                         }
                     }
-                } else if (filteredPlots.isEmpty()) {
-                    Text(
-                        text = "No plots match your search.",
-                        color = Muted,
-                        modifier = Modifier.padding(vertical = 24.dp),
-                    )
-                } else {
-                    filteredPlots.forEach { plot ->
-                        HomePlotCard(
-                            plot = plot,
-                            onClick = {
-                                container.selectedPlot = plot
-                                onPlotSelected()
-                            },
+
+                    filteredPlots.isEmpty() -> {
+                        Text(
+                            text = "No plots match your search.",
+                            color = Muted,
+                            modifier = Modifier.padding(vertical = 24.dp),
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    else -> {
+                        filteredPlots.forEach { plot ->
+                            HomePlotCard(
+                                plot = plot,
+                                onClick = {
+                                    container.selectedPlot = plot
+                                    onPlotSelected()
+                                },
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
                     }
                 }
             }
@@ -307,6 +335,7 @@ private fun FarmerHeader(
     onWeather: () -> Unit,
     query: String,
     onQueryChange: (String) -> Unit,
+    temperature: Double?,
 ) {
     Column(
         modifier = Modifier
@@ -341,7 +370,7 @@ private fun FarmerHeader(
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 com.example.muyu_app.core.designsystem.components.LanguageToggleButton(
                     language = language,
@@ -349,15 +378,21 @@ private fun FarmerHeader(
                 )
                 IconButton(
                     onClick = onWeather,
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Default.WbCloudy,
                         contentDescription = stringResource(R.string.farmer_weather),
                         tint = Color(0xFF8FDA51),
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(28.dp),
                     )
                 }
+                Text(
+                    text = temperature?.let { "${it.toInt()}°C" } ?: "—°C",
+                    fontFamily = UrbanistSemiBold,
+                    fontSize = 15.sp,
+                    color = Color.White,
+                )
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -483,143 +518,145 @@ private fun SearchBar(
 }
 
 @Composable
+private fun HomePlotPhoto(
+    plot: Plot,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .background(Color(0xFFEAF9E9)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (!plot.imageUri.isNullOrBlank()) {
+            AsyncImage(
+                model = plot.imageUri,
+                contentDescription = plot.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.Image,
+                contentDescription = null,
+                tint = Color(0xFF4A7C1E),
+                modifier = Modifier.size(48.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun HomePlotCard(
     plot: Plot,
     onClick: () -> Unit,
 ) {
     val funded = plot.isFundedPlot()
-    val approved = plot.approvedMilestoneCount()
+    val completed = plot.approvedMilestoneCount()
     val total = 4
-    val progress = if (funded) plot.progress.coerceIn(0, 100) else 0
-    val (statusLabel, statusBg, statusColor) = when {
-        funded -> Triple(
-            stringResource(R.string.farmer_status_funded),
-            MuyuFinancedBg,
-            MuyuFinancedText,
-        )
-        plot.status == "available" -> Triple(
-            stringResource(R.string.merchant_available),
-            AvailableChipBg,
-            AvailableChipText,
-        )
-        else -> Triple(
-            stringResource(R.string.farmer_status_listed),
-            AvailableChipBg,
-            AvailableChipText,
-        )
-    }
-    val progressLabel = if (funded) {
-        stringResource(R.string.farmer_milestones_progress, progress, approved, total)
+    val progress = if (funded) {
+        plot.progress.coerceIn(0, 100)
     } else {
-        stringResource(R.string.farmer_unfunded_milestones, total)
+        0
     }
-    val stageRes = plot.stageTitleRes()
-    val stageLabel = when {
-        !funded -> stringResource(R.string.farmer_status_listed)
-        stageRes != null -> stringResource(stageRes)
-        else -> plot.stage.ifBlank { "—" }
+
+    val statusLabel = when {
+        funded -> "Funded"
+        plot.status.equals("available", ignoreCase = true) -> "Available"
+        plot.status.equals("pending", ignoreCase = true) -> "Pending"
+        else -> plot.status.ifBlank { "Listed" }
+    }
+
+    val cardColor = when {
+        funded -> Color(0xFF352116)
+        plot.status.equals("available", ignoreCase = true) ->
+            Color(0xFF606C27)
+        else -> Color(0xFF765B32)
     }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(CardShape)
-            .background(Color.White)
-            .border(1.dp, MuyuForest, CardShape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .clip(RoundedCornerShape(24.dp))
+            .background(cardColor)
+            .clickable(onClick = onClick),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = plot.name,
-                style = TextStyle(
-                    fontFamily = UrbanistSemiBold,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    color = Color.Black,
-                ),
-            )
+        Box {
+            HomePlotPhoto(plot = plot)
+
             Box(
                 modifier = Modifier
-                    .clip(ChipShape)
-                    .background(statusBg)
-                    .padding(horizontal = 10.dp, vertical = 3.dp),
-                contentAlignment = Alignment.Center,
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFFCBF5B8))
+                    .padding(horizontal = 14.dp, vertical = 5.dp),
             ) {
                 Text(
                     text = statusLabel,
-                    style = TextStyle(
-                        fontFamily = UrbanistBold,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = statusColor,
-                    ),
+                    fontFamily = UrbanistSemiBold,
+                    fontSize = 13.sp,
+                    color = Color(0xFF213D09),
                 )
             }
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "${plot.crop} · ${formatPlotArea(plot.area)}",
-            style = TextStyle(
-                fontFamily = UrbanistRegular,
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp,
-                color = Muted,
-            ),
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Row {
-            Text(
-                text = stringResource(R.string.farmer_stage_label),
-                style = TextStyle(
-                    fontFamily = UrbanistRegular,
-                    fontSize = 16.sp,
-                    color = Muted,
-                ),
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = stageLabel,
-                style = TextStyle(
-                    fontFamily = UrbanistBold,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = Color.Black,
-                ),
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(16.dp)
-                .clip(ChipShape)
-                .background(if (funded) ProgressTrack else Color(0xFFF1F1F1)),
+
+        Column(
+            modifier = Modifier.padding(16.dp),
         ) {
-            if (funded && progress > 0) {
+            Text(
+                text = plot.name,
+                fontFamily = UrbanistSemiBold,
+                fontSize = 18.sp,
+                color = Color.White,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "${plot.crop} · ${formatPlotArea(plot.area)}",
+                fontSize = 14.sp,
+                color = Color.White,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Current stage: ${plot.stage}",
+                fontSize = 14.sp,
+                color = Color.White,
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFFCBF5B8)),
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(progress / 100f)
-                        .height(16.dp)
-                        .clip(ChipShape)
-                        .background(MuyuHeader),
+                        .fillMaxHeight()
+                        .background(Color.White),
                 )
             }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = if (funded) {
+                    "$progress% complete · $completed/$total milestones"
+                } else {
+                    "Unfunded · $completed/$total milestones"
+                },
+                fontSize = 13.sp,
+                color = Color.White,
+            )
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = progressLabel,
-            style = TextStyle(
-                fontFamily = UrbanistBold,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = MuyuForest,
-            ),
-        )
     }
 }
 
