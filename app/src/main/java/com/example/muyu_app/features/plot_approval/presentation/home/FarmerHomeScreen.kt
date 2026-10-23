@@ -3,6 +3,7 @@ package com.example.muyu_app.features.plot_approval.presentation.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.WbCloudy
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,8 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -42,7 +47,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.Image
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
@@ -55,6 +59,9 @@ import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.environment.Environment
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
+import com.example.muyu_app.features.climate_monitoring.data.OpenMeteoWeatherClient
+import com.example.muyu_app.features.climate_monitoring.presentation.alert.farmerPlotForWeather
+import com.example.muyu_app.features.climate_monitoring.presentation.alert.resolveWeatherLocation
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.presentation.myplots.approvedMilestoneCount
 import com.example.muyu_app.features.plot_approval.presentation.myplots.formatPlotArea
@@ -65,15 +72,15 @@ import com.example.muyu_app.ui.theme.MuyuFinancedBg
 import com.example.muyu_app.ui.theme.MuyuFinancedText
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuHeader
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuStatCard
-import com.example.muyu_app.ui.theme.MuyuWeatherChip
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBlack
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistLight
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private val CardShape = RoundedCornerShape(20.dp)
 private val ChipShape = RoundedCornerShape(20.dp)
@@ -90,12 +97,37 @@ fun FarmerHomeScreen(
     modifier: Modifier = Modifier,
 ) {
     val container = LocalAppContainer.current
+    val context = LocalContext.current
+    var currentTemperature by remember {
+        mutableStateOf<Double?>(null)
+    }
     val farmerName = container.fakeStore.currentUser?.displayName
         ?: stringResource(R.string.farmer_name)
     var plots by remember { mutableStateOf<List<Plot>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
+    var selectedFilter by remember {
+        mutableStateOf("All")
+    }
     val languages = container.languages
     val lifecycleState = LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+
+    LaunchedEffect(Unit) {
+        val temperature = withContext(Dispatchers.IO) {
+            val plot = container.farmerPlotForWeather()
+            val location = context.resolveWeatherLocation(plot)
+
+            if (location != null) {
+                OpenMeteoWeatherClient.fetch(
+                    latitude = location.latitude,
+                    longitude = location.longitude,
+                )?.current?.temperature
+            } else {
+                null
+            }
+        }
+
+        currentTemperature = temperature
+    }
 
     LaunchedEffect(lifecycleState.value) {
         if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
@@ -111,8 +143,18 @@ fun FarmerHomeScreen(
         }
     }
 
-    val filteredPlots = remember(searchQuery, plots) {
-        plots.filter { it.matchesSearch(searchQuery) }
+    val statusFilteredPlots = remember(plots, selectedFilter) {
+        plots.filter { plot ->
+            when (selectedFilter) {
+                "Funded" -> plot.isFundedPlot()
+                "Approved" -> plot.status.equals("approved", ignoreCase = true)
+                "Pending" -> plot.status.equals("pending", ignoreCase = true)
+                else -> true
+            }
+        }
+    }
+    val filteredPlots = remember(searchQuery, statusFilteredPlots) {
+        statusFilteredPlots.filter { it.matchesSearch(searchQuery) }
     }
 
     val plotCount = plots.size
@@ -126,7 +168,7 @@ fun FarmerHomeScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(Color(0xFFEAF9E9)),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             FarmerHeader(
@@ -137,6 +179,8 @@ fun FarmerHomeScreen(
                 language = languages.farmer,
                 onLanguageToggle = { languages.toggle(isMerchant = false) },
                 onWeather = onWeather,
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
             )
             Column(
                 modifier = Modifier
@@ -145,23 +189,37 @@ fun FarmerHomeScreen(
                     .padding(horizontal = 30.dp)
                     .padding(top = 16.dp, bottom = MuyuScrollBottomInset),
             ) {
-                Text(
-                    text = stringResource(R.string.farmer_my_plots),
-                    style = TextStyle(
-                        fontFamily = UrbanistSemiBold,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 25.sp,
-                        color = Color.Black,
-                    ),
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    listOf("All", "Funded", "Approved", "Pending").forEach { filter ->
+                        val isSelected = selectedFilter == filter
 
-                SearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    if (isSelected) Color(0xFF213D09)
+                                    else Color(0xFFCBF5B8),
+                                )
+                                .clickable { selectedFilter = filter }
+                                .padding(horizontal = 20.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = filter,
+                                color = if (isSelected) Color.White else Color(0xFF4A7C1E),
+                                fontFamily = UrbanistSemiBold,
+                                fontSize = 14.sp,
+                            )
+                        }
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 if (plots.isEmpty()) {
                     Column(
@@ -170,6 +228,15 @@ fun FarmerHomeScreen(
                             .padding(vertical = 48.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.Eco,
+                            contentDescription = null,
+                            tint = Color(0xFF4A7C1E),
+                            modifier = Modifier.size(56.dp),
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         Text(
                             text = "No plots yet",
                             fontSize = 22.sp,
@@ -185,6 +252,21 @@ fun FarmerHomeScreen(
                             color = Muted,
                             textAlign = TextAlign.Center,
                         )
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        androidx.compose.material3.Button(
+                            onClick = { onTabSelected(MuyuTab.Plot) },
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4A7C1E),
+                            ),
+                        ) {
+                            Text(
+                                text = "Go to My Plots",
+                                color = Color.White,
+                                fontFamily = UrbanistSemiBold,
+                            )
+                        }
                     }
                 } else if (filteredPlots.isEmpty()) {
                     Text(
@@ -223,13 +305,15 @@ private fun FarmerHeader(
     language: com.example.muyu_app.core.i18n.AppLanguage,
     onLanguageToggle: () -> Unit,
     onWeather: () -> Unit,
+    query: String,
+    onQueryChange: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MuyuHeader)
+            .background(Color(0xFF0F3F0D))
             .statusBarsPadding()
-            .padding(horizontal = 30.dp)
+            .padding(horizontal = 24.dp)
             .padding(top = 12.dp, bottom = 20.dp),
     ) {
         Text(
@@ -263,43 +347,43 @@ private fun FarmerHeader(
                     language = language,
                     onToggle = onLanguageToggle,
                 )
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MuyuWeatherChip)
-                        .clickable(onClick = onWeather),
-                    contentAlignment = Alignment.Center,
+                IconButton(
+                    onClick = onWeather,
+                    modifier = Modifier.size(48.dp),
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.weather_nublado),
+                    Icon(
+                        imageVector = Icons.Default.WbCloudy,
                         contentDescription = stringResource(R.string.farmer_weather),
-                        modifier = Modifier
-                            .width(28.dp)
-                            .height(23.dp),
-                        contentScale = ContentScale.Fit,
+                        tint = Color(0xFF8FDA51),
+                        modifier = Modifier.size(32.dp),
                     )
                 }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            StatCard(
-                value = plotCount.toString(),
-                label = stringResource(R.string.farmer_stat_plots),
+            Text(
+                text = "🇵🇪",
+                fontSize = 18.sp,
             )
-            StatCard(
-                value = milestoneCount.toString(),
-                label = stringResource(R.string.farmer_stat_milestones),
-            )
-            StatCard(
-                value = cropCount.toString(),
-                label = stringResource(R.string.farmer_stat_crop),
+
+            Text(
+                text = "PERU",
+                fontFamily = UrbanistRegular,
+                fontSize = 14.sp,
+                color = Color.White,
             )
         }
+        Spacer(modifier = Modifier.height(24.dp))
+
+        SearchBar(
+            query = query,
+            onQueryChange = onQueryChange,
+        )
     }
 }
 
