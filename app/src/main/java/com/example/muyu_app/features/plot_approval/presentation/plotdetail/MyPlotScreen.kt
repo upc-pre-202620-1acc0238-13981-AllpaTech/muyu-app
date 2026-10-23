@@ -84,7 +84,7 @@ fun MyPlotScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(Color(0xFFEAF9E9)),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             FarmerContextHeader(
@@ -121,7 +121,7 @@ fun MyPlotScreen(
                         description = name,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(160.dp),
+                            .height(200.dp),
                     )
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
