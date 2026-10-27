@@ -58,9 +58,9 @@ class FakeApiInterceptor(
         val password = json.get("password")?.asString.orEmpty()
         val user = store.users.find { it.email.equals(email, ignoreCase = true) && it.password == password }
             ?: return 401 to gson.toJson(mapOf("message" to "Invalid email or password"))
-        store.currentUser = user
-        store.token = store.newToken()
-        return 200 to gson.toJson(loginPayload(user, store.token!!))
+        val sessionToken = store.newToken()
+        store.startSession(user, sessionToken)
+        return 200 to gson.toJson(loginPayload(user, sessionToken))
     }
 
     private fun register(body: String): Pair<Int, String> {
@@ -81,14 +81,15 @@ class FakeApiInterceptor(
             birthdate = json.get("birthdate")?.asString.orEmpty(),
         )
         store.addUser(user)
-        store.currentUser = user
-        store.token = store.newToken()
-        return 201 to gson.toJson(loginPayload(user, store.token!!))
+        val sessionToken = store.newToken()
+        store.startSession(user, sessionToken)
+        return 201 to gson.toJson(loginPayload(user, sessionToken))
     }
 
     private fun createPlot(body: String): Pair<Int, String> {
         val json = gson.fromJson(body, JsonObject::class.java)
         val owner = store.currentUser
+            ?: return 401 to gson.toJson(mapOf("message" to "Not authenticated"))
         val record = PlotRecord(
             id = store.nextPlotId(),
             name = json.get("name")?.asString.orEmpty().ifBlank { "New plot" },
@@ -103,8 +104,8 @@ class FakeApiInterceptor(
             cycle = json.get("cycle")?.asString.orEmpty(),
             milestones = json.get("milestones")?.asString.orEmpty(),
             imageUri = json.get("imageUri")?.asString,
-            ownerEmail = owner?.email ?: Environment.DemoCredentials.FARMER_EMAIL,
-            ownerName = owner?.displayName ?: store.ownerName(Environment.DemoCredentials.FARMER_EMAIL),
+            ownerEmail = owner.email,
+            ownerName = owner.displayName,
             latitude = json.get("latitude")?.takeUnless { it.isJsonNull }?.asDouble,
             longitude = json.get("longitude")?.takeUnless { it.isJsonNull }?.asDouble,
             accuracyMeters = json.get("accuracyMeters")?.takeUnless { it.isJsonNull }?.asInt,
@@ -120,7 +121,8 @@ class FakeApiInterceptor(
         val id = path.substringAfter("plots/").toIntOrNull()
             ?: return 400 to gson.toJson(mapOf("message" to "Invalid plot"))
         val json = gson.fromJson(body, JsonObject::class.java)
-        val owner = store.currentUser?.email ?: Environment.DemoCredentials.FARMER_EMAIL
+        val owner = store.currentUser?.email
+            ?: return 401 to gson.toJson(mapOf("message" to "Not authenticated"))
         val payload = PlotUpdatePayload(
             name = json.get("name")?.asString.orEmpty(),
             crop = json.get("crop")?.asString.orEmpty(),
@@ -143,7 +145,8 @@ class FakeApiInterceptor(
     private fun fundPlot(path: String): Pair<Int, String> {
         val id = path.substringAfter("plots/").substringBefore("/fund").toIntOrNull()
             ?: return 400 to gson.toJson(mapOf("message" to "Invalid plot"))
-        val merchant = store.currentUser?.email ?: Environment.DemoCredentials.MERCHANT_EMAIL
+        val merchant = store.currentUser?.email
+            ?: return 401 to gson.toJson(mapOf("message" to "Not authenticated"))
         val updated = store.fundPlot(id, merchant)
             ?: return 404 to gson.toJson(mapOf("message" to "Plot not found"))
         return 200 to gson.toJson(updated)
