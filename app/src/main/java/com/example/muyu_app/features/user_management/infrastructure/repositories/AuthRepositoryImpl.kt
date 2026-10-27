@@ -88,8 +88,7 @@ class AuthRepositoryImpl(
         } else {
             store.users.add(record)
         }
-        store.currentUser = record
-        store.token = dto.token
         store.persist()
+        store.startSession(record, dto.token)
     }
 }

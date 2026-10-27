@@ -100,6 +100,30 @@ class FakeApiStore(
             users.addAll(seedUsers())
             persist()
         }
+        restoreSession()
+    }
+
+    fun startSession(user: UserRecord, sessionToken: String) {
+        currentUser = user
+        token = sessionToken
+        persistence?.saveSession(user.email, sessionToken)
+    }
+
+    fun endSession() {
+        currentUser = null
+        token = null
+        persistence?.clearSession()
+    }
+
+    private fun restoreSession() {
+        val (email, savedToken) = persistence?.loadSession() ?: return
+        val user = users.find { it.email.equals(email, ignoreCase = true) }
+        if (user == null) {
+            persistence?.clearSession()
+            return
+        }
+        currentUser = user
+        token = savedToken
     }
 
     fun persist() {

@@ -63,8 +63,7 @@ class AppContainer(
     suspend fun syncPlot(plot: Plot): Result<Plot> = plotRepository.syncPlot(plot)
 
     fun clearSession() {
-        fakeStore.token = null
-        fakeStore.currentUser = null
+        fakeStore.endSession()
         selectedPlot = null
         selectedMilestoneKey = "fertilization"
         plotDraft.clear()

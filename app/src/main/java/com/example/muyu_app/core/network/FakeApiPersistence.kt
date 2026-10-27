@@ -53,6 +53,29 @@ class FakeApiPersistence(
             .apply()
     }
 
+    fun loadSession(): Pair<String, String>? {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val email = prefs.getString(KEY_SESSION_EMAIL, null)?.takeIf { it.isNotBlank() } ?: return null
+        val token = prefs.getString(KEY_SESSION_TOKEN, null)?.takeIf { it.isNotBlank() } ?: return null
+        return email to token
+    }
+
+    fun saveSession(email: String, token: String) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_SESSION_EMAIL, email)
+            .putString(KEY_SESSION_TOKEN, token)
+            .apply()
+    }
+
+    fun clearSession() {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .remove(KEY_SESSION_EMAIL)
+            .remove(KEY_SESSION_TOKEN)
+            .apply()
+    }
+
     fun save(
         users: List<UserRecord>,
         plots: List<PlotRecord>,
@@ -119,5 +142,7 @@ class FakeApiPersistence(
         const val FILE_NAME = "muyu_fake_api.json"
         private const val PREFS_NAME = "muyu_fake_api_prefs"
         private const val KEY_PLOT_RESET_GENERATION = "plot_reset_generation"
+        private const val KEY_SESSION_EMAIL = "session_email"
+        private const val KEY_SESSION_TOKEN = "session_token"
     }
 }
