@@ -22,6 +22,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,16 +36,25 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import com.example.muyu_app.R
+import com.example.muyu_app.core.di.AppContainer
+import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
+import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
+import com.example.muyu_app.features.plot_approval.domain.Plot
+import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
@@ -53,6 +68,28 @@ private val PurpleChipText = Color(0xFF23255A)
 private val MethodChipBg = Color(0xFFE0E0E0)
 private val IconBgColor = Color(0xFFBBE395)
 
+private data class MerchantRelease(
+    val plot: Plot,
+    val milestoneKey: String,
+    val amount: Double,
+    val dateLabel: String,
+)
+
+private fun Plot.toReleases(): List<MerchantRelease> {
+    val total = amount.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: return emptyList()
+    val steps = PlotFinance.disbursement(total)
+    return milestoneStates.filter { it.isApproved }.mapNotNull { milestone ->
+        val index = MilestoneCatalog.all.indexOfFirst { it.key == milestone.key }
+        val step = steps.getOrNull(index) ?: return@mapNotNull null
+        val date = if (milestone.submittedAtMillis > 0L) {
+            PlotFinance.shortDateFromMillis(milestone.submittedAtMillis)
+        } else {
+            milestone.recordedAt
+        }
+        MerchantRelease(this, milestone.key, step.amount, date)
+    }
+}
+
 @Composable
 fun MerchantPaymentHistoryScreen(
     onBack: () -> Unit,
@@ -60,6 +97,27 @@ fun MerchantPaymentHistoryScreen(
     onPaymentClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val container = LocalAppContainer.current
+    var releases by remember { mutableStateOf<List<MerchantRelease>>(emptyList()) }
+    val lifecycleState = LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+
+    LaunchedEffect(lifecycleState.value) {
+        if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
+        val email = container.fakeStore.currentUser?.email.orEmpty()
+        if (email.isBlank()) {
+            releases = emptyList()
+            return@LaunchedEffect
+        }
+        container.getPlotsUseCase().onSuccess { all ->
+            releases = all
+                .filter { it.fundedByEmail.equals(email, ignoreCase = true) && it.status == "funded" }
+                .map { plot ->
+                    container.fakeStore.ensureMilestones(plot.id)?.let { container.fakeStore.toDomain(it) } ?: plot
+                }
+                .flatMap { it.toReleases() }
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -78,7 +136,6 @@ fun MerchantPaymentHistoryScreen(
                     .padding(horizontal = 20.dp)
                     .padding(top = 16.dp, bottom = MuyuScrollBottomInset),
             ) {
-                // Card Morada de Total Liberado
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -95,14 +152,14 @@ fun MerchantPaymentHistoryScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "S/ 11,500",
+                            text = PlotFinance.formatAmount(releases.sumOf { it.amount }),
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = stringResource(R.string.payments_completed_count),
+                            text = stringResource(R.string.payments_completed_count, releases.size),
                             fontSize = 14.sp,
                             color = Color.White.copy(alpha = 0.9f),
                         )
@@ -111,42 +168,48 @@ fun MerchantPaymentHistoryScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Item 1: Esperanza - Planting
-                MerchantPaymentCard(
-                    title = "Esperanza — ${stringResource(R.string.merchant_planting)}",
-                    subtitle = "M. Quispe · 15 Sep 2026",
-                    paymentMethod = stringResource(R.string.merchant_bank),
-                    amount = "S/ 2,000",
-                    status = stringResource(R.string.merchant_pay_released),
-                    imageRes = R.drawable.moneyimg,
-                    onClick = onPaymentClick,
-                )
+                if (releases.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.payments_empty_title),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.merchant_payments_empty_body),
+                            fontSize = 14.sp,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Item 2: Los Álamos - Planting
-                MerchantPaymentCard(
-                    title = "Los Álamos — ${stringResource(R.string.merchant_planting)}",
-                    subtitle = "C. Mamani · 10 Sep 2026",
-                    paymentMethod = stringResource(R.string.merchant_agent),
-                    amount = "S/ 2,000",
-                    status = stringResource(R.string.merchant_pay_released),
-                    imageRes = R.drawable.moneyimg,
-                    onClick = onPaymentClick,
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Item 3: Chacra Verde - Fertilization
-                MerchantPaymentCard(
-                    title = "Chacra Verde\n— ${stringResource(R.string.merchant_fertilization)}",
-                    subtitle = "R. Huanca · 1 Sep 2026",
-                    paymentMethod = stringResource(R.string.merchant_wallet),
-                    amount = "S/ 3,000",
-                    status = stringResource(R.string.merchant_pay_released),
-                    imageRes = R.drawable.moneyimg,
-                    onClick = onPaymentClick,
-                )
+                releases.forEach { release ->
+                    val definition = MilestoneCatalog.definition(release.milestoneKey)
+                    MerchantPaymentCard(
+                        title = "${release.plot.name} — ${stringResource(definition.titleRes)}",
+                        subtitle = listOf(release.plot.ownerName, release.dateLabel)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" · "),
+                        paymentMethod = "",
+                        amount = PlotFinance.formatAmount(release.amount),
+                        status = stringResource(R.string.merchant_pay_released),
+                        imageRes = R.drawable.moneyimg,
+                        onClick = {
+                            container.selectedPlot = release.plot
+                            container.selectedMilestoneKey = release.milestoneKey
+                            onPaymentClick()
+                        },
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                }
             }
         }
 
@@ -183,7 +246,6 @@ private fun MerchantPaymentCard(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Top,
         ) {
-            // Contenedor de la Imagen o Icono de Billete
             Box(
                 modifier = Modifier
                     .size(44.dp)
@@ -226,7 +288,6 @@ private fun MerchantPaymentCard(
                     color = Color.Gray,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Badge del método de pago
                 Box(
                     modifier = Modifier
                         .clip(ChipShape)
@@ -250,7 +311,6 @@ private fun MerchantPaymentCard(
                     color = Color.Black,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Badge de estado Morado
                 Box(
                     modifier = Modifier
                         .clip(ChipShape)
@@ -273,7 +333,9 @@ private fun MerchantPaymentCard(
 @Composable
 private fun MerchantPaymentHistoryScreenPreview() {
     InstallMuyuImageLoader()
-    MuyuappTheme {
-        MerchantPaymentHistoryScreen(onBack = {}, onTabSelected = {})
+    CompositionLocalProvider(LocalAppContainer provides AppContainer()) {
+        MuyuappTheme {
+            MerchantPaymentHistoryScreen(onBack = {}, onTabSelected = {})
+        }
     }
 }
