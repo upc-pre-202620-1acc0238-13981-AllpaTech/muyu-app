@@ -15,18 +15,14 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,6 +44,7 @@ import com.example.muyu_app.core.designsystem.components.AuthLabel
 import com.example.muyu_app.core.designsystem.components.AuthPrimaryButton
 import com.example.muyu_app.core.designsystem.components.AuthSheet
 import com.example.muyu_app.core.designsystem.components.AuthTextField
+import com.example.muyu_app.core.designsystem.components.MuyuDatePickerField
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
@@ -59,11 +56,10 @@ import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     onRegister: () -> Unit,
@@ -76,14 +72,21 @@ fun RegisterScreen(
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
-    var birthdate by rememberSaveable { mutableStateOf("") }
+    val birthDateSaver = remember {
+        Saver<LocalDate?, String>(
+            save = { it?.toString().orEmpty() },
+            restore = { value -> value.takeIf { it.isNotEmpty() }?.let(LocalDate::parse) },
+        )
+    }
+    var birthDate by rememberSaveable(stateSaver = birthDateSaver) {
+        mutableStateOf<LocalDate?>(null)
+    }
     var password by rememberSaveable { mutableStateOf("") }
     var confirmPassword by rememberSaveable { mutableStateOf("") }
     var acceptedTerms by rememberSaveable { mutableStateOf(false) }
     var passwordHidden by rememberSaveable { mutableStateOf(true) }
     var confirmHidden by rememberSaveable { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    var showDatePicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -114,12 +117,13 @@ fun RegisterScreen(
             AuthFieldBlock(stringResource(R.string.register_name), name) { name = it }
             AuthFieldBlock(stringResource(R.string.login_email), email, KeyboardType.Email) { email = it }
             AuthFieldBlock(stringResource(R.string.register_phone), phone, KeyboardType.Phone) { phone = it }
-            AuthLabel(stringResource(R.string.register_birthdate))
-            Spacer(modifier = Modifier.height(6.dp))
-            AuthTextField(
-                value = birthdate,
-                onValueChange = { birthdate = it },
-                modifier = Modifier.clickable { showDatePicker = true },
+            MuyuDatePickerField(
+                label = stringResource(R.string.register_birthdate),
+                selectedDate = birthDate,
+                onDateSelected = { birthDate = it },
+                maxDate = LocalDate.now(),
+                authStyle = true,
+                modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(12.dp))
             AuthFieldBlock(
@@ -174,7 +178,15 @@ fun RegisterScreen(
                             error = "invalid"
                             return@launch
                         }
-                        container.registerUseCase(name, email, phone, birthdate, password)
+                        val selectedBirthDate = birthDate
+                        if (selectedBirthDate?.isAfter(LocalDate.now()) == true) {
+                            error = "invalid"
+                            return@launch
+                        }
+                        val formattedBirthDate = selectedBirthDate?.let {
+                            it.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH))
+                        }.orEmpty()
+                        container.registerUseCase(name, email, phone, formattedBirthDate, password)
                             .onSuccess { onRegister() }
                             .onFailure { error = "invalid" }
                     }
@@ -207,28 +219,6 @@ fun RegisterScreen(
                     ),
                 )
             }
-        }
-    }
-    if (showDatePicker) {
-        val dateState = rememberDatePickerState()
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        dateState.selectedDateMillis?.let { millis ->
-                            birthdate = SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH)
-                                .format(Date(millis))
-                        }
-                        showDatePicker = false
-                    },
-                ) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
-            },
-        ) {
-            DatePicker(state = dateState)
         }
     }
 }
