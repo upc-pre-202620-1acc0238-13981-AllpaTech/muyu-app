@@ -381,6 +381,7 @@
     <string name="merchant_download">Download receipt</string>
     <string name="action_ok">OK</string>
     <string name="action_cancel">Cancel</string>
+    <string name="date_select">Select date</string>
     <string name="action_yes">Yes</string>
     <string name="action_no">No</string>
     <string name="role_farmer_short">Farmer</string>
@@ -440,7 +441,10 @@
     <string name="sync_now">Sync now</string>
     <string name="payments_title">Payment history</string>
     <string name="payments_total_received">TOTAL RECEIVED</string>
-    <string name="payments_completed_count">2 completed payments</string>
+    <string name="payments_completed_count">%1$d completed payments</string>
+    <string name="payments_empty_title">No payments yet</string>
+    <string name="payments_empty_body">Payments appear here when a merchant approves the evidence of a funded milestone.</string>
+    <string name="merchant_payments_empty_body">Released payments appear here when you approve the evidence of a plot you funded.</string>
     <string name="payments_filter_all">All</string>
     <string name="payments_filter_completed">Completed</string>
     <string name="payments_filter_pending">Pending</string>
@@ -514,6 +518,7 @@
     <string name="profile_role_place">%1$s · %2$s</string>
     <string name="profile_ruc_line">%1$s · RUC %2$s</string>
     <string name="plot_status_submitted">Submitted</string>
+    <string name="plot_status_queued">Waiting to sync</string>
     <string name="plot_needs_correction">Needs correction</string>
     <string name="plot_visit_title_fmt">Visit completed · %1$s</string>
     <string name="visit_outcome_title">Visit outcome</string>
@@ -530,6 +535,16 @@
     <string name="extension_reason_hint">e.g. Rain prevented a safe fertilizer application</string>
     <string name="extension_send">Send request</string>
     <string name="evidence_select_title">Select milestone</string>
+    <string name="evidence_plot_not_selected_title">No funded plot selected</string>
+    <string name="evidence_plot_not_selected_body">Return to a funded plot before selecting a milestone.</string>
+    <string name="evidence_plot_load_error_title">Could not load this plot</string>
+    <string name="evidence_plot_load_error_body">The selected plot is no longer available. Return and try again.</string>
+    <string name="evidence_plot_not_funded_title">Milestones are unavailable</string>
+    <string name="evidence_plot_not_funded_body">A plot must be funded before you can record milestone evidence.</string>
+    <string name="evidence_milestones_missing_title">Cycle milestones are not available</string>
+    <string name="evidence_milestones_missing_body">This funded plot has no saved milestone statuses yet. Evidence cannot be recorded until cycle data is available.</string>
+    <string name="evidence_milestones_incomplete_title">Milestone data could not be loaded</string>
+    <string name="evidence_milestones_incomplete_body">Some milestone statuses are missing. Return later and try again.</string>
     <string name="evidence_record_title">Record evidence</string>
     <string name="evidence_season">%1$s Season</string>
     <string name="evidence_hint_planting">Planting date and density</string>
@@ -575,4 +590,14 @@
     <string name="home_plot_not_funded">This plot has not been funded yet.</string>
     <string name="home_plot_milestones_unavailable">Milestone execution and evidence recording will be available after financing.</string>
     <string name="home_plot_status_fmt">%1$s plot · %2$s</string>
+    <string name="visit_requests_title">Visit requests</string>
+    <string name="visit_requests_unavailable_title">Visit request management is not available yet</string>
+    <string name="visit_requests_unavailable_body">Visit request listings are not connected to the app yet. Visit outcomes are recorded separately after a visit takes place.</string>
+    <string name="farmer_country_peru">PERU</string>
+    <string name="farmer_progress_complete">%1$d%% complete</string>
+    <string name="farmer_plots_loading_error">Unable to load plots. Please try again.</string>
+    <string name="farmer_no_plots_title">No plots yet</string>
+    <string name="farmer_no_plots_body">Your plots will appear here once you create your first one.</string>
+    <string name="farmer_go_to_my_plots">Go to My Plots</string>
+    <string name="farmer_flag_peru">Peru flag</string>
 </resources>

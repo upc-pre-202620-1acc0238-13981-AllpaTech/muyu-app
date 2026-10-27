@@ -381,6 +381,7 @@
     <string name="merchant_download">Descargar recibo</string>
     <string name="action_ok">Aceptar</string>
     <string name="action_cancel">Cancelar</string>
+    <string name="date_select">Seleccionar fecha</string>
     <string name="action_yes">Sí</string>
     <string name="action_no">No</string>
     <string name="role_farmer_short">Agricultor</string>
@@ -440,7 +441,10 @@
     <string name="sync_now">Sincronizar ahora</string>
     <string name="payments_title">Historial de pagos</string>
     <string name="payments_total_received">TOTAL RECIBIDO</string>
-    <string name="payments_completed_count">2 pagos completados</string>
+    <string name="payments_completed_count">%1$d pagos completados</string>
+    <string name="payments_empty_title">Aún no tienes pagos</string>
+    <string name="payments_empty_body">Los pagos aparecen aquí cuando un comerciante aprueba la evidencia de un hito financiado.</string>
+    <string name="merchant_payments_empty_body">Los pagos liberados aparecen aquí cuando apruebas la evidencia de una parcela que financiaste.</string>
     <string name="payments_filter_all">Todos</string>
     <string name="payments_filter_completed">Completado</string>
     <string name="payments_filter_pending">Pendiente</string>
@@ -514,6 +518,7 @@
     <string name="profile_role_place">%1$s · %2$s</string>
     <string name="profile_ruc_line">%1$s · RUC %2$s</string>
     <string name="plot_status_submitted">Enviado</string>
+    <string name="plot_status_queued">Pendiente de sincronización</string>
     <string name="plot_needs_correction">Necesita corrección</string>
     <string name="plot_visit_title_fmt">Visita realizada · %1$s</string>
     <string name="visit_outcome_title">Resultado de la visita</string>
@@ -530,6 +535,16 @@
     <string name="extension_reason_hint">p. ej. La lluvia impidió aplicar el fertilizante</string>
     <string name="extension_send">Enviar solicitud</string>
     <string name="evidence_select_title">Seleccionar hito</string>
+    <string name="evidence_plot_not_selected_title">No hay una parcela financiada seleccionada</string>
+    <string name="evidence_plot_not_selected_body">Regresa a una parcela financiada antes de seleccionar un hito.</string>
+    <string name="evidence_plot_load_error_title">No se pudo cargar esta parcela</string>
+    <string name="evidence_plot_load_error_body">La parcela seleccionada ya no está disponible. Regresa e inténtalo de nuevo.</string>
+    <string name="evidence_plot_not_funded_title">Los hitos no están disponibles</string>
+    <string name="evidence_plot_not_funded_body">La parcela debe estar financiada para registrar evidencias de hitos.</string>
+    <string name="evidence_milestones_missing_title">Los hitos del ciclo no están disponibles</string>
+    <string name="evidence_milestones_missing_body">Esta parcela financiada aún no tiene estados de hitos guardados. No se puede registrar evidencia hasta que los datos del ciclo estén disponibles.</string>
+    <string name="evidence_milestones_incomplete_title">No se pudieron cargar los datos de los hitos</string>
+    <string name="evidence_milestones_incomplete_body">Faltan algunos estados de hitos. Regresa más tarde e inténtalo de nuevo.</string>
     <string name="evidence_record_title">Registrar evidencia</string>
     <string name="evidence_season">Temporada %1$s</string>
     <string name="evidence_hint_planting">Fecha de siembra y densidad</string>
@@ -575,4 +590,14 @@
     <string name="home_plot_not_funded">Esta parcela todavía no ha recibido financiamiento.</string>
     <string name="home_plot_milestones_unavailable">La ejecución de hitos y el registro de evidencias estarán disponibles después del financiamiento.</string>
     <string name="home_plot_status_fmt">Parcela %1$s · %2$s</string>
+    <string name="visit_requests_title">Solicitudes de visita</string>
+    <string name="visit_requests_unavailable_title">La gestión de solicitudes de visita aún no está disponible</string>
+    <string name="visit_requests_unavailable_body">El listado de solicitudes de visita todavía no está conectado a la aplicación. Los resultados de una visita se registran por separado después de realizarla.</string>
+    <string name="farmer_country_peru">PERÚ</string>
+    <string name="farmer_progress_complete">%1$d%% completado</string>
+    <string name="farmer_plots_loading_error">No se pudieron cargar las parcelas. Inténtalo de nuevo.</string>
+    <string name="farmer_no_plots_title">Aún no tienes parcelas</string>
+    <string name="farmer_no_plots_body">Tus parcelas aparecerán aquí cuando crees la primera.</string>
+    <string name="farmer_go_to_my_plots">Ir a Mis parcelas</string>
+    <string name="farmer_flag_peru">Bandera de Perú</string>
 </resources>
