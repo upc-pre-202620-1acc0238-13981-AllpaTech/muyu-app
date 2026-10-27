@@ -39,6 +39,7 @@ import com.example.muyu_app.features.plot_approval.presentation.myplots.FarmerMy
 import com.example.muyu_app.features.plot_approval.presentation.onboarding.ListPlotOnboardingScreen
 import com.example.muyu_app.features.plot_approval.presentation.plotdetail.MyPlotScreen
 import com.example.muyu_app.features.plot_approval.presentation.plotdetail.PlotDetailScreen
+import com.example.muyu_app.features.plot_approval.presentation.visits.VisitRequestsScreen
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishSuccessScreen
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishPlotInfoScreen
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishPlotLocationScreen
@@ -83,6 +84,7 @@ private enum class WalkthroughStep {
     PublishFinancing,
     PublishSuccess,
     MyPlot,
+    VisitRequests,
     FundedPlot,
     VisitOutcome,
     RequestExtension,
@@ -104,6 +106,15 @@ private enum class WalkthroughStep {
     MerchantApproveReject,
     Terms,
 }
+
+private val PublicSteps = setOf(
+    WalkthroughStep.Splash,
+    WalkthroughStep.Login,
+    WalkthroughStep.Register,
+    WalkthroughStep.ResetPassword,
+    WalkthroughStep.SafetyPin,
+    WalkthroughStep.Terms,
+)
 
 @Composable
 fun AppNavHost() {
@@ -227,13 +238,29 @@ fun AppNavHost() {
         language = appLanguage,
         onToggle = { languages.toggle(isMerchant) },
     ) {
+    val needsLogin = step !in PublicSteps && container.fakeStore.currentUser == null
+    LaunchedEffect(needsLogin) {
+        if (needsLogin) {
+            tab = null
+            isMerchant = false
+            step = WalkthroughStep.Login
+        }
+    }
+    if (needsLogin) return@ProvideAppLocale
+
+    val afterSplash = if (container.fakeStore.currentUser != null) {
+        WalkthroughStep.Role
+    } else {
+        WalkthroughStep.Login
+    }
+
     when (step) {
         WalkthroughStep.Splash -> {
             LaunchedEffect(Unit) {
                 delay(1500)
-                step = WalkthroughStep.Login
+                step = afterSplash
             }
-            SplashScreen(onContinue = { step = WalkthroughStep.Login })
+            SplashScreen(onContinue = { step = afterSplash })
         }
         WalkthroughStep.Login -> LoginScreen(
             onLoginSuccess = { step = WalkthroughStep.Loading },
@@ -361,7 +388,14 @@ fun AppNavHost() {
                     }
                 },
                 onTabSelected = selectTab,
+                onViewVisitRequests = { step = WalkthroughStep.VisitRequests },
                 fromHome = container.farmerPlotReturn == FarmerPlotReturn.Home,
+            )
+        }
+        WalkthroughStep.VisitRequests -> TabOrContent(currentTab, selectTab) {
+            VisitRequestsScreen(
+                onBack = { step = WalkthroughStep.MyPlot },
+                onTabSelected = selectTab,
             )
         }
         WalkthroughStep.FundedPlot -> TabOrContent(currentTab, selectTab) {
@@ -399,7 +433,6 @@ fun AppNavHost() {
             SelectMilestoneScreen(
                 onBack = { step = WalkthroughStep.FundedPlot },
                 onMilestoneSelected = { step = WalkthroughStep.RecordEvidence },
-                onTabSelected = selectTab,
             )
         }
         WalkthroughStep.RecordEvidence -> TabOrContent(currentTab, selectTab) {
