@@ -3,10 +3,8 @@ package com.example.muyu_app.features.labor_execution.presentation.evidence
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,12 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
+import com.example.muyu_app.core.designsystem.components.MuyuDatePickerField
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
@@ -45,21 +39,20 @@ import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.plot.liveFundedPlot
 import com.example.muyu_app.core.plot.refreshSelectedPlot
 import com.example.muyu_app.features.plot_approval.domain.currentMilestone
-import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistRegular
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.format.DateTimeParseException
 import java.util.Locale
 
 private val CardShape = RoundedCornerShape(20.dp)
-private val FieldShape = RoundedCornerShape(14.dp)
 private val LightGreenBg = Color(0xFFEDF8EE)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestExtensionScreen(
     onBack: () -> Unit,
@@ -72,10 +65,15 @@ fun RequestExtensionScreen(
     val definition = MilestoneCatalog.definition(current?.key ?: container.selectedMilestoneKey)
     val milestoneTitle = stringResource(definition.titleRes)
     val currentDeadline = current?.dueLabel?.ifBlank { null } ?: "03 Oct 2026"
-    var newDate by remember { mutableStateOf(current?.extensionDate.orEmpty()) }
+    val minimumDate = remember(currentDeadline) {
+        val today = LocalDate.now()
+        maxOf(today, parseExtensionDate(currentDeadline) ?: today)
+    }
+    var newDate by remember(current?.extensionDate, minimumDate) {
+        mutableStateOf(parseExtensionDate(current?.extensionDate.orEmpty()))
+    }
     var reason by remember { mutableStateOf(current?.extensionReason.orEmpty()) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    val canSend = newDate.isNotBlank() && reason.isNotBlank()
+    val canSend = newDate?.let { !it.isBefore(minimumDate) } == true && reason.isNotBlank()
 
     Box(
         modifier = modifier
@@ -128,39 +126,12 @@ fun RequestExtensionScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // Campo: Fecha Propuesta
-                FieldLabel("Proposed new date")
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .clip(FieldShape)
-                        .background(LightGreenBg)
-                        .clickable { showDatePicker = true }
-                        .padding(horizontal = 16.dp),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = newDate.ifBlank { "dd/mm/yy" },
-                            style = TextStyle(
-                                fontFamily = UrbanistBold,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = Color.Black,
-                            ),
-                        )
-                        MuyuAsset(
-                            fileName = "publish/calendar.svg",
-                            contentDescription = null,
-                            width = 20.dp,
-                            height = 20.dp,
-                        )
-                    }
-                }
+                MuyuDatePickerField(
+                    label = stringResource(R.string.extension_new_date),
+                    selectedDate = newDate,
+                    onDateSelected = { newDate = it },
+                    minDate = minimumDate,
+                )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -210,16 +181,23 @@ fun RequestExtensionScreen(
                         .clip(CardShape)
                         .background(if (canSend) MuyuForest else MuyuForest.copy(alpha = 0.5f))
                         .clickable(enabled = canSend) {
+                            val selectedDate = newDate ?: return@clickable
+                            if (selectedDate.isBefore(minimumDate)) return@clickable
                             val id = plot?.id ?: return@clickable
                             val key = current?.key ?: container.selectedMilestoneKey
-                            container.fakeStore.requestExtension(id, key, newDate, reason)
+                            container.fakeStore.requestExtension(
+                                id,
+                                key,
+                                selectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yy", Locale.ENGLISH)),
+                                reason,
+                            )
                             container.refreshSelectedPlot()
                             onBack()
                         },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "Send request",
+                        text = stringResource(R.string.extension_send),
                         style = TextStyle(
                             fontFamily = UrbanistBold,
                             fontWeight = FontWeight.Bold,
@@ -237,30 +215,31 @@ fun RequestExtensionScreen(
         )
     }
 
-    if (showDatePicker) {
-        val pickerState = rememberDatePickerState()
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        pickerState.selectedDateMillis?.let { millis ->
-                            newDate = SimpleDateFormat("dd/MM/yy", Locale.ENGLISH)
-                                .format(Date(millis))
-                        }
-                        showDatePicker = false
-                    },
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
-                }
-            },
-        ) {
-            DatePicker(state = pickerState)
+}
+
+private fun parseExtensionDate(value: String): LocalDate? {
+    if (value.isBlank()) return null
+    val formats = listOf(
+        DateTimeFormatter.ISO_LOCAL_DATE,
+        DateTimeFormatter.ofPattern("dd/MM/yy", Locale.ENGLISH),
+        DateTimeFormatterBuilder().parseCaseInsensitive()
+            .appendPattern("d MMM yyyy")
+            .toFormatter(Locale.ENGLISH),
+        DateTimeFormatterBuilder().parseCaseInsensitive()
+            .appendPattern("d MMM yyyy")
+            .toFormatter(Locale.forLanguageTag("es-PE")),
+        DateTimeFormatterBuilder().parseCaseInsensitive()
+            .appendPattern("dd MMM yyyy")
+            .toFormatter(Locale.ENGLISH),
+        DateTimeFormatterBuilder().parseCaseInsensitive()
+            .appendPattern("dd MMM yyyy")
+            .toFormatter(Locale.forLanguageTag("es-PE")),
+    )
+    return formats.firstNotNullOfOrNull { formatter ->
+        try {
+            LocalDate.parse(value, formatter)
+        } catch (_: DateTimeParseException) {
+            null
         }
     }
 }
