@@ -86,10 +86,10 @@ fun FundPlotScreen(
     val container = LocalAppContainer.current
     val scope = rememberCoroutineScope()
     val plot = container.selectedPlot
-    val amount = plot?.amount ?: stringResource(R.string.merchant_esperanza_price)
-    val plotName = plot?.name ?: stringResource(R.string.merchant_esperanza)
-    val crop = plot?.crop ?: stringResource(R.string.merchant_esperanza_crop)
-    val area = plot?.area ?: stringResource(R.string.merchant_esperanza_area)
+    val amount = plot?.amount.orEmpty()
+    val plotName = plot?.name.orEmpty()
+    val crop = plot?.crop.orEmpty()
+    val area = plot?.area.orEmpty()
     var method by remember { mutableStateOf(PayMethod.Card) }
     var accepted by remember { mutableStateOf(false) }
 

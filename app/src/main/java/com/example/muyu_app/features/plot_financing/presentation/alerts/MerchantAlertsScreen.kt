@@ -49,7 +49,6 @@ import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.di.MerchantEvidenceOrigin
-import com.example.muyu_app.core.environment.Environment
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.core.network.MerchantNotificationRecord
@@ -77,8 +76,7 @@ fun MerchantAlertsScreen(
     var items by remember { mutableStateOf<List<MerchantNotificationRecord>>(emptyList()) }
     val lifecycleState = LocalLifecycleOwner.current.lifecycle.currentStateAsState()
     fun reloadNotifications() {
-        val email = container.fakeStore.currentUser?.email
-            ?: Environment.DemoCredentials.MERCHANT_EMAIL
+        val email = container.fakeStore.currentUser?.email.orEmpty()
         items = container.fakeStore.notificationsForMerchant(email)
     }
 

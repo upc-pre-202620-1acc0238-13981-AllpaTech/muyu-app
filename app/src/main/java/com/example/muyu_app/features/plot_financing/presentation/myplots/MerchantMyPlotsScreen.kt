@@ -48,7 +48,6 @@ import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.di.MerchantEvidenceOrigin
-import com.example.muyu_app.core.environment.Environment
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
@@ -80,8 +79,7 @@ fun MerchantMyPlotsScreen(
 
     LaunchedEffect(lifecycleState.value) {
         if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
-        val email = container.fakeStore.currentUser?.email
-            ?: Environment.DemoCredentials.MERCHANT_EMAIL
+        val email = container.fakeStore.currentUser?.email.orEmpty()
         container.getPlotsUseCase().onSuccess { all ->
             plots = all
                 .filter { it.fundedByEmail.equals(email, ignoreCase = true) && it.status == "funded" }

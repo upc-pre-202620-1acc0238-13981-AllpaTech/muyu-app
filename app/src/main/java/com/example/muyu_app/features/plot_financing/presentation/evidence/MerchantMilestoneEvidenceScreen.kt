@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import com.example.muyu_app.core.environment.Environment
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -78,8 +77,7 @@ fun MerchantMilestoneEvidenceScreen(
     val milestone = plot?.milestoneForEvidence(milestoneKey)
     val farmerName = plot?.ownerName?.ifBlank { null }.orEmpty()
     val farmerFirst = farmerName.substringBefore(" ").ifBlank { farmerName }
-    val merchantEmail = container.fakeStore.currentUser?.email
-        ?: Environment.DemoCredentials.MERCHANT_EMAIL
+    val merchantEmail = container.fakeStore.currentUser?.email.orEmpty()
     val sentAt = resolveMilestoneSubmittedAt(milestone, plot?.id, container.fakeStore, merchantEmail)
     val sentSubtitle = when {
         sentAt <= 0L -> stringResource(R.string.merchant_sent_at_unknown, plot?.name.orEmpty())
@@ -129,7 +127,6 @@ fun MerchantMilestoneEvidenceScreen(
                     .padding(horizontal = 20.dp)
                     .padding(top = 12.dp, bottom = MuyuScrollBottomInset),
             ) {
-                // Título e Indicador de Estado
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -377,7 +374,6 @@ private fun EvidencePhotoTile(
             contentScale = ContentScale.Crop,
         )
 
-        // Overlay oscuro inferior
         Box(
             modifier = Modifier
                 .fillMaxWidth()

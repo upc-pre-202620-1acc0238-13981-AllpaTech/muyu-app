@@ -71,15 +71,14 @@ fun MerchantPlotDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val plot = LocalAppContainer.current.selectedPlot
-    val plotName = plot?.name ?: stringResource(R.string.merchant_esperanza)
-    val farmerName = plot?.ownerName?.ifBlank { null }
-        ?: stringResource(R.string.merchant_esperanza_farmer)
-    val crop = plot?.crop ?: stringResource(R.string.merchant_esperanza_crop)
-    val area = plot?.area ?: stringResource(R.string.merchant_esperanza_area)
-    val place = plot?.place ?: stringResource(R.string.merchant_esperanza_place)
-    val amount = plot?.amount ?: stringResource(R.string.merchant_esperanza_price)
-    val harvest = plot?.harvestDate ?: stringResource(R.string.merchant_harvest_date)
-    val cycle = plot?.cycle ?: stringResource(R.string.merchant_cycle_value)
+    val plotName = plot?.name.orEmpty()
+    val farmerName = plot?.ownerName.orEmpty()
+    val crop = plot?.crop.orEmpty()
+    val area = plot?.area.orEmpty()
+    val place = plot?.place.orEmpty()
+    val amount = plot?.amount.orEmpty()
+    val harvest = plot?.harvestDate.orEmpty()
+    val cycle = plot?.cycle.orEmpty()
     val milestones = plot?.milestones?.ifBlank { null } ?: "4"
     val statusLabel = if (plot?.status == "funded") {
         stringResource(R.string.farmer_status_funded)

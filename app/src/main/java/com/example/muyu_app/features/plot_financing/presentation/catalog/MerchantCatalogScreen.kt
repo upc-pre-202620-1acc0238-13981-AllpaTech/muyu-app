@@ -160,7 +160,7 @@ fun MerchantCatalogScreen(
                         name = plot.name,
                         price = plot.amount,
                         farmerPhoto = farmerPhoto(plot),
-                        farmer = plot.ownerName.ifBlank { stringResource(R.string.merchant_esperanza_farmer) },
+                        farmer = plot.ownerName,
                         crop = plot.crop,
                         area = formatPlotArea(plot.area),
                         place = plot.place,
@@ -263,7 +263,6 @@ private fun CatalogHeader(
                     onToggle = onLanguageToggle,
                 )
 
-                // Campana de Alerta
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -283,7 +282,6 @@ private fun CatalogHeader(
         }
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Barra de Búsqueda
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -338,7 +336,6 @@ private fun CatalogHeader(
         }
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Chips de Filtro
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 text = stringResource(R.string.merchant_filter_all),

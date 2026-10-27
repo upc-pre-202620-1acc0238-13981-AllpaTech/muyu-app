@@ -67,8 +67,7 @@ fun FundSuccessScreen(
     onTabSelected: (MerchantTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val amount = LocalAppContainer.current.selectedPlot?.amount
-        ?: stringResource(R.string.merchant_esperanza_price)
+    val amount = LocalAppContainer.current.selectedPlot?.amount.orEmpty()
     Box(
         modifier = modifier
             .fillMaxSize()
