@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,7 +26,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -42,25 +40,33 @@ import com.example.muyu_app.core.location.PlotLocationMap
 import com.example.muyu_app.core.plot.rememberLiveFundedPlot
 import com.example.muyu_app.features.labor_execution.presentation.evidence.PLOT_MATCH_METERS
 import com.example.muyu_app.features.labor_execution.presentation.evidence.distanceToPlotMeters
-import com.example.muyu_app.features.plot_approval.domain.milestoneForEvidence
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
+import com.example.muyu_app.features.plot_approval.domain.milestoneForEvidence
 import com.example.muyu_app.ui.theme.MuyuAction
 import com.example.muyu_app.ui.theme.MuyuApprovedBg
-import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuLocateBg
+import com.example.muyu_app.ui.theme.MuyuCoverText
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuPendingBg
-import com.example.muyu_app.ui.theme.MuyuPendingText
 import com.example.muyu_app.ui.theme.UrbanistBold
+import com.example.muyu_app.ui.theme.UrbanistExtraBold
+import com.example.muyu_app.ui.theme.UrbanistLight
+import com.example.muyu_app.ui.theme.UrbanistMedium
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
 
 private val CardShape = RoundedCornerShape(20.dp)
-private val PhotoCardShape = RoundedCornerShape(18.dp)
-private val ChipShape = RoundedCornerShape(12.dp)
-private val SectionMuted = Color.Black.copy(alpha = 0.55f)
+private val PhotoShape = RoundedCornerShape(20.dp)
+private val MapShape = RoundedCornerShape(16.dp)
+private val ChipShape = RoundedCornerShape(100.dp)
+private val ButtonBorder = Color(0xFFD1D1D1)
+private val CardOutline = Color(0xFFCAC4D0)
+private val OnSurface = Color(0xFF1D1B20)
+private val OnSurfaceVariant = Color(0xFF49454F)
+private val WarningText = Color(0xFF774308)
+private val PhotoScrim = Color.Black.copy(alpha = 0.25f)
 
 @Composable
 fun MerchantMilestoneEvidenceScreen(
@@ -79,6 +85,7 @@ fun MerchantMilestoneEvidenceScreen(
     val farmerFirst = farmerName.substringBefore(" ").ifBlank { farmerName }
     val merchantEmail = container.fakeStore.currentUser?.email.orEmpty()
     val sentAt = resolveMilestoneSubmittedAt(milestone, plot?.id, container.fakeStore, merchantEmail)
+    val locale = context.resources.configuration.locales[0]
     val sentSubtitle = when {
         sentAt <= 0L -> stringResource(R.string.merchant_sent_at_unknown, plot?.name.orEmpty())
         isSameCalendarDay(sentAt) -> stringResource(
@@ -89,14 +96,13 @@ fun MerchantMilestoneEvidenceScreen(
         else -> stringResource(
             R.string.merchant_sent_date_at,
             plot?.name.orEmpty(),
-            formatEvidenceShortDate(sentAt, context.resources.configuration.locales[0]),
+            formatEvidenceShortDate(sentAt, locale),
             formatEvidenceTime(sentAt),
         )
     }
-    val releaseAmount = plot?.id?.let { container.fakeStore.milestoneReleaseAmountFor(it, milestoneKey) }.orEmpty()
     val lat = milestone?.latitude
     val lng = milestone?.longitude
-    val photoDateLabel = formatEvidenceShortDate(sentAt, context.resources.configuration.locales[0])
+    val photoDateLabel = formatEvidenceShortDate(sentAt, locale)
     val gpsVerifiedShort = stringResource(R.string.merchant_gps_verified_short)
     val gpsNotRecorded = stringResource(R.string.merchant_gps_not_recorded)
     val photoTimeGps = "${formatEvidenceTime(sentAt)} · ${if (lat != null && lng != null) gpsVerifiedShort else gpsNotRecorded}"
@@ -109,6 +115,10 @@ fun MerchantMilestoneEvidenceScreen(
     }
     val locationOk = distance == null || distance <= PLOT_MATCH_METERS
     val canReview = milestone?.status == MilestoneState.STATUS_SUBMITTED
+    val photoUri = milestone?.photoUri?.takeIf { it.isNotBlank() }
+    val hasVerifiedLocation = lat != null && lng != null
+    val inputUsed = milestone?.inputUsed?.ifBlank { null }
+    val amountApplied = milestone?.amountApplied?.ifBlank { null }
 
     Box(
         modifier = modifier
@@ -119,28 +129,45 @@ fun MerchantMilestoneEvidenceScreen(
             GreenTitleHeader(
                 title = stringResource(R.string.merchant_milestone_evidence_title),
                 onBack = onBack,
+                backgroundColor = MuyuNavBar,
             )
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 12.dp, bottom = MuyuScrollBottomInset),
+                    .padding(horizontal = 21.dp)
+                    .padding(top = 24.dp, bottom = MuyuScrollBottomInset),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = stringResource(definition.titleRes),
-                        style = TextStyle(
-                            fontFamily = UrbanistBold,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = Color.Black,
-                        ),
-                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(definition.titleRes),
+                            style = TextStyle(
+                                fontFamily = UrbanistMedium,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 16.sp,
+                                lineHeight = 24.sp,
+                                color = OnSurface,
+                            ),
+                        )
+                        Text(
+                            text = sentSubtitle,
+                            style = TextStyle(
+                                fontFamily = UrbanistRegular,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp,
+                                color = OnSurfaceVariant,
+                            ),
+                        )
+                    }
                     StatusChip(
                         label = when (milestone?.status) {
                             MilestoneState.STATUS_APPROVED -> stringResource(R.string.merchant_status_approved)
@@ -150,199 +177,167 @@ fun MerchantMilestoneEvidenceScreen(
                         approved = milestone?.status == MilestoneState.STATUS_APPROVED,
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = sentSubtitle,
-                    style = TextStyle(
-                        fontFamily = UrbanistRegular,
-                        fontSize = 15.sp,
-                        color = SectionMuted,
-                    ),
-                )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                milestone?.photoUri?.takeIf { it.isNotBlank() }?.let { photoUri ->
+                if (photoUri != null) {
                     EvidencePhotoTile(
                         photoUri = photoUri,
                         title = "${stringResource(definition.titleRes)} · $photoDateLabel",
                         subTitle = photoTimeGps,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Spacer(modifier = Modifier.height(18.dp))
                 }
 
-                SectionHeading(stringResource(R.string.merchant_location_verification))
-                Spacer(modifier = Modifier.height(10.dp))
-                if (mapLat != null && mapLng != null) {
-                    PlotLocationMap(
-                        latitude = mapLat,
-                        longitude = mapLng,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(186.dp),
-                        overlay = {
-                            LocationBadge(
-                                ok = locationOk,
-                                distanceMeters = distance,
-                            )
-                        },
+                EvidenceCard {
+                    Text(
+                        text = stringResource(R.string.merchant_location_verification).uppercase(),
+                        style = sectionTitleStyle(),
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    InfoBanner(
-                        title = if (locationOk) {
-                            stringResource(R.string.evidence_location_ok)
-                        } else {
-                            stringResource(R.string.evidence_location_wrong)
-                        },
-                        body = when {
-                            !locationOk -> stringResource(R.string.evidence_location_wrong_body)
-                            distance != null -> stringResource(
-                                R.string.merchant_location_within_plot,
-                                distance,
+                    if (mapLat != null && mapLng != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp)
+                                .clip(MapShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            PlotLocationMap(
+                                latitude = mapLat,
+                                longitude = mapLng,
+                                modifier = Modifier.fillMaxSize(),
                             )
-                            else -> stringResource(R.string.merchant_location_verified_generic)
-                        },
-                        ok = locationOk,
-                    )
-                } else {
-                    TextCard(text = stringResource(R.string.merchant_gps_not_recorded))
+                            MuyuAsset(
+                                fileName = "publish/pin.svg",
+                                contentDescription = null,
+                                width = 20.dp,
+                                height = 20.dp,
+                            )
+                        }
+                        Text(
+                            text = when {
+                                !locationOk -> stringResource(R.string.evidence_location_wrong_body)
+                                distance != null -> stringResource(
+                                    R.string.merchant_location_within_plot,
+                                    distance,
+                                )
+                                else -> stringResource(R.string.merchant_location_verified_generic)
+                            },
+                            style = bodyVariantStyle(),
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.merchant_gps_not_recorded),
+                            style = bodyVariantStyle(),
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(18.dp))
-
-                SectionHeading(stringResource(R.string.merchant_verified_data))
-                Spacer(modifier = Modifier.height(10.dp))
-                DataCard {
+                EvidenceCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = formatEvidenceDateTimeLine(
-                                sentAt,
-                                context.resources.configuration.locales[0],
-                            ),
-                            style = TextStyle(
-                                fontFamily = UrbanistRegular,
-                                fontSize = 16.sp,
-                                color = Color.Black.copy(alpha = 0.7f),
-                            ),
+                            text = stringResource(R.string.merchant_verified_data).uppercase(),
+                            style = sectionTitleStyle(),
                         )
-                        if (lat != null && lng != null) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(ChipShape)
-                                    .background(Color(0xFFC7E8C8))
-                                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.merchant_location_verified_short),
-                                    style = TextStyle(
-                                        fontFamily = UrbanistBold,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        color = MuyuForest,
-                                    ),
-                                )
-                            }
+                        if (hasVerifiedLocation) {
+                            VerifiedChip()
                         }
                     }
-                    Spacer(modifier = Modifier.height(6.dp))
+                    LabeledValue(
+                        label = stringResource(R.string.merchant_verified_time),
+                        value = formatEvidenceTimeCommaDate(sentAt, locale),
+                    )
+                    LabeledValue(
+                        label = stringResource(R.string.merchant_verified_weather),
+                        value = stringResource(R.string.merchant_weather_not_recorded),
+                    )
+                    if (hasVerifiedLocation) {
+                        LabeledValue(
+                            label = stringResource(R.string.merchant_verified_coords),
+                            value = PlotFinance.formatCoordinates(lat, lng),
+                        )
+                    }
+                }
+
+                EvidenceCard {
                     Text(
-                        text = stringResource(R.string.merchant_weather_not_recorded),
+                        text = stringResource(R.string.merchant_farmers_note).uppercase(),
+                        style = sectionTitleStyle(),
+                    )
+                    Text(
+                        text = milestone?.notes?.takeIf { it.isNotBlank() }?.let { "\"$it\"" } ?: "—",
                         style = TextStyle(
-                            fontFamily = UrbanistRegular,
+                            fontFamily = UrbanistLight,
+                            fontWeight = FontWeight.Light,
                             fontSize = 16.sp,
-                            color = Color.Black.copy(alpha = 0.7f),
+                            color = Color.Black.copy(alpha = 0.5f),
                         ),
                     )
-                    if (lat != null && lng != null) {
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = PlotFinance.formatCoordinates(lat, lng),
-                            style = TextStyle(
-                                fontFamily = UrbanistRegular,
-                                fontSize = 16.sp,
-                                color = Color.Black.copy(alpha = 0.7f),
-                            ),
-                        )
-                    }
                 }
 
-                Spacer(modifier = Modifier.height(18.dp))
-
-                SectionHeading(stringResource(R.string.merchant_farmers_note))
-                Spacer(modifier = Modifier.height(8.dp))
-                TextCard(
-                    text = milestone?.notes?.takeIf { it.isNotBlank() }?.let { "\"$it\"" } ?: "—",
-                )
-
-                Spacer(modifier = Modifier.height(18.dp))
-
-                SectionHeading(stringResource(R.string.merchant_input_used))
-                Spacer(modifier = Modifier.height(8.dp))
-                DataCard {
-                    DataRow(
-                        label = stringResource(R.string.merchant_input_label),
-                        value = milestone?.inputUsed?.ifBlank { "—" } ?: "—",
-                    )
-                    DataRow(
-                        label = stringResource(R.string.evidence_amount_applied),
-                        value = milestone?.amountApplied?.ifBlank { "—" } ?: "—",
-                    )
-                    if (releaseAmount.isNotBlank()) {
-                        DataRow(
-                            label = stringResource(R.string.merchant_milestone_pay),
-                            value = releaseAmount,
-                        )
-                    }
-                }
-
-                if (farmerFirst.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .clip(CardShape)
-                            .background(MuyuAction)
-                            .border(1.dp, MuyuForest, CardShape),
-                        contentAlignment = Alignment.Center,
+                EvidenceCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = stringResource(R.string.merchant_whatsapp_contact, farmerFirst),
-                            style = TextStyle(
-                                fontFamily = UrbanistBold,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp,
-                                color = Color(0xFFF2F2F2),
-                                textDecoration = TextDecoration.Underline,
-                            ),
+                            text = stringResource(R.string.merchant_input_used).uppercase(),
+                            style = sectionTitleStyle(),
+                        )
+                        if (!inputUsed.isNullOrBlank()) {
+                            VerifiedChip()
+                        }
+                    }
+                    Text(
+                        text = inputUsed ?: "—",
+                        style = TextStyle(
+                            fontFamily = UrbanistMedium,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp,
+                            lineHeight = 24.sp,
+                            color = OnSurface,
+                        ),
+                    )
+                    Text(
+                        text = amountApplied?.let {
+                            stringResource(R.string.merchant_input_applied_line, it)
+                        } ?: "—",
+                        style = bodyVariantStyle(),
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (farmerFirst.isNotBlank()) {
+                        PrimaryButton(
+                            text = stringResource(R.string.merchant_contact_farmer, farmerFirst),
+                            enabled = true,
+                            extraBold = false,
+                            onClick = {},
+                        )
+                    }
+                    if (canReview) {
+                        PrimaryButton(
+                            text = stringResource(R.string.merchant_review_evidence),
+                            enabled = true,
+                            extraBold = true,
+                            onClick = onReview,
+                        )
+                    } else {
+                        PrimaryButton(
+                            text = when (milestone?.status) {
+                                MilestoneState.STATUS_APPROVED -> stringResource(R.string.merchant_evidence_already_approved)
+                                else -> stringResource(R.string.merchant_evidence_awaiting_resubmit)
+                            },
+                            enabled = false,
+                            extraBold = true,
+                            onClick = {},
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                if (canReview) {
-                    PrimaryButton(
-                        text = stringResource(R.string.merchant_review_approve_reject),
-                        enabled = true,
-                        onClick = onReview,
-                    )
-                } else {
-                    PrimaryButton(
-                        text = when (milestone?.status) {
-                            MilestoneState.STATUS_APPROVED -> stringResource(R.string.merchant_evidence_already_approved)
-                            else -> stringResource(R.string.merchant_evidence_awaiting_resubmit)
-                        },
-                        enabled = false,
-                        onClick = {},
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
         MerchantBottomBar(
@@ -360,61 +355,64 @@ private fun EvidencePhotoTile(
     subTitle: String,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .height(200.dp)
-            .clip(PhotoCardShape)
-            .border(1.dp, MuyuForest, PhotoCardShape)
-            .background(Color(0xFF1A1A1A)),
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        AsyncImage(
-            model = photoUri,
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
-        )
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .background(Color.Black.copy(alpha = 0.55f))
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .height(128.dp)
+                .clip(PhotoShape),
         ) {
-            Column {
+            AsyncImage(
+                model = photoUri,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(PhotoScrim)
+                    .padding(12.dp),
+                contentAlignment = Alignment.BottomStart,
+            ) {
                 Text(
                     text = title,
                     style = TextStyle(
-                        fontFamily = UrbanistBold,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
+                        fontFamily = UrbanistMedium,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
                         color = Color.White,
-                    ),
-                )
-                Text(
-                    text = subTitle,
-                    style = TextStyle(
-                        fontFamily = UrbanistRegular,
-                        fontSize = 11.sp,
-                        color = Color.White.copy(alpha = 0.85f),
                     ),
                 )
             }
         }
+        Text(
+            text = subTitle,
+            style = TextStyle(
+                fontFamily = UrbanistRegular,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                color = OnSurfaceVariant,
+            ),
+        )
     }
 }
 
 @Composable
-private fun SectionHeading(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = TextStyle(
-            fontFamily = UrbanistBold,
-            fontWeight = FontWeight.Bold,
-            fontSize = 14.sp,
-            color = Color.Black.copy(alpha = 0.7f),
-            letterSpacing = 0.8.sp,
-        ),
+private fun EvidenceCard(content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(Color.White)
+            .border(1.dp, CardOutline, CardShape)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        content = { content() },
     )
 }
 
@@ -423,164 +421,107 @@ private fun StatusChip(label: String, approved: Boolean) {
     Box(
         modifier = Modifier
             .clip(ChipShape)
-            .background(if (approved) MuyuApprovedBg else Color(0xFFFDE8D7))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .background(if (approved) MuyuApprovedBg else MuyuPendingBg)
+            .padding(horizontal = 12.dp, vertical = 4.dp),
     ) {
         Text(
             text = label,
             style = TextStyle(
-                fontFamily = UrbanistBold,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
-                color = if (approved) MuyuForest else Color(0xFFC85A17),
+                fontFamily = UrbanistSemiBold,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 12.sp,
+                color = if (approved) MuyuCoverText else WarningText,
             ),
         )
     }
 }
 
 @Composable
-private fun LocationBadge(ok: Boolean, distanceMeters: Float?) {
-    Row(
+private fun VerifiedChip() {
+    Box(
         modifier = Modifier
             .clip(ChipShape)
-            .background(if (ok) MuyuLocateBg else MuyuPendingBg)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .background(MuyuApprovedBg)
+            .padding(horizontal = 12.dp, vertical = 4.dp),
     ) {
-        if (ok) {
-            MuyuAsset(
-                fileName = "publish/check.svg",
-                contentDescription = null,
-                width = 14.dp,
-                height = 14.dp,
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-        }
         Text(
-            text = when {
-                !ok -> stringResource(R.string.merchant_location_flagged)
-                distanceMeters != null -> stringResource(R.string.merchant_location_within_plot, distanceMeters)
-                else -> stringResource(R.string.merchant_location_verified_short)
-            },
+            text = stringResource(R.string.merchant_location_verified_short),
             style = TextStyle(
                 fontFamily = UrbanistSemiBold,
+                fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
-                color = if (ok) MuyuForest else MuyuPendingText,
+                color = MuyuCoverText,
             ),
         )
     }
 }
 
 @Composable
-private fun InfoBanner(title: String, body: String, ok: Boolean) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(CardShape)
-            .background(if (ok) MuyuLocateBg else MuyuPendingBg)
-            .padding(14.dp),
-    ) {
-        Text(
-            text = title,
-            style = TextStyle(
-                fontFamily = UrbanistBold,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = if (ok) MuyuForest else MuyuPendingText,
-            ),
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = body,
-            style = TextStyle(
-                fontFamily = UrbanistRegular,
-                fontSize = 14.sp,
-                color = if (ok) MuyuForest else MuyuPendingText,
-            ),
-        )
-    }
-}
-
-@Composable
-private fun DataCard(content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(CardShape)
-            .background(Color.White)
-            .border(1.dp, MuyuForest, CardShape)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-    ) {
-        content()
-    }
-}
-
-@Composable
-private fun DataRow(label: String, value: String) {
+private fun LabeledValue(label: String, value: String) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = label,
             style = TextStyle(
                 fontFamily = UrbanistRegular,
-                fontSize = 15.sp,
-                color = SectionMuted,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                color = OnSurfaceVariant,
             ),
         )
         Text(
             text = value,
             style = TextStyle(
-                fontFamily = UrbanistSemiBold,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 15.sp,
-                color = Color.Black,
+                fontFamily = UrbanistRegular,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                color = OnSurface,
             ),
         )
     }
 }
 
 @Composable
-private fun TextCard(text: String) {
-    Text(
-        text = text,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(CardShape)
-            .background(Color.White)
-            .border(1.dp, MuyuForest, CardShape)
-            .padding(16.dp),
-        style = TextStyle(
-            fontFamily = UrbanistRegular,
-            fontSize = 15.sp,
-            color = Color.Black.copy(alpha = 0.75f),
-            lineHeight = 21.sp,
-        ),
-    )
-}
-
-@Composable
-private fun PrimaryButton(text: String, enabled: Boolean, onClick: () -> Unit) {
+private fun PrimaryButton(
+    text: String,
+    enabled: Boolean,
+    extraBold: Boolean,
+    onClick: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(55.dp)
             .clip(CardShape)
             .background(if (enabled) MuyuAction else MuyuAction.copy(alpha = 0.45f))
+            .border(1.dp, ButtonBorder, CardShape)
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             style = TextStyle(
-                fontFamily = UrbanistBold,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = Color.White,
+                fontFamily = if (extraBold) UrbanistExtraBold else UrbanistBold,
+                fontWeight = if (extraBold) FontWeight.ExtraBold else FontWeight.Bold,
+                fontSize = 20.sp,
+                color = Color(0xFFFEFEFE),
             ),
         )
     }
 }
+
+private fun sectionTitleStyle() = TextStyle(
+    fontFamily = UrbanistSemiBold,
+    fontWeight = FontWeight.SemiBold,
+    fontSize = 16.sp,
+    color = Color.Black,
+)
+
+private fun bodyVariantStyle() = TextStyle(
+    fontFamily = UrbanistRegular,
+    fontSize = 14.sp,
+    lineHeight = 20.sp,
+    color = OnSurfaceVariant,
+)

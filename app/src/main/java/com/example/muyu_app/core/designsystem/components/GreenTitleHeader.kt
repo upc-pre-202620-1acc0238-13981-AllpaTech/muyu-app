@@ -31,12 +31,13 @@ fun GreenTitleHeader(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    backgroundColor: Color = MuyuHeader,
     trailing: @Composable (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(MuyuHeader)
+            .background(backgroundColor)
             .statusBarsPadding()
             .height(56.dp)
             .padding(start = 32.dp, end = 20.dp),
