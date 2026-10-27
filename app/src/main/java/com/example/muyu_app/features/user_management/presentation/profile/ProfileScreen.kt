@@ -48,7 +48,6 @@ import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
-import com.example.muyu_app.core.environment.Environment
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.Plot
@@ -67,7 +66,7 @@ private val RedLogout = Color(0xFFC63939)
 fun ProfileScreen(
     onTabSelected: (MuyuTab) -> Unit,
     modifier: Modifier = Modifier,
-    @DrawableRes avatarRes: Int? = R.drawable.merchant_maria, // <-- Parámetro opcional para la imagen de perfil
+    @DrawableRes avatarRes: Int? = R.drawable.merchant_maria,
     onChangePassword: () -> Unit = {},
     onChangePin: () -> Unit = {},
     onCallSupport: () -> Unit = {},
@@ -80,9 +79,8 @@ fun ProfileScreen(
     val container = LocalAppContainer.current
     val currentUser = container.fakeStore.currentUser
 
-    // Obtener datos del agricultor
-    val farmerName = currentUser?.displayName ?: stringResource(R.string.farmer_name)
-    val farmerEmail = currentUser?.email ?: Environment.DemoCredentials.FARMER_EMAIL
+    val farmerName = currentUser?.displayName.orEmpty()
+    val farmerEmail = currentUser?.email.orEmpty()
 
     var plots by remember { mutableStateOf<List<Plot>>(emptyList()) }
     var notificationPref by remember { mutableStateOf(FarmerAlertChannel.Call) }
@@ -108,7 +106,6 @@ fun ProfileScreen(
             .background(MuyuPageGray),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header verde superior de perfil
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -178,7 +175,6 @@ fun ProfileScreen(
                     .padding(horizontal = 20.dp)
                     .padding(top = 20.dp, bottom = MuyuScrollBottomInset),
             ) {
-                // Métricas
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -190,7 +186,6 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Section: Contact Details
                 SectionTitle(stringResource(R.string.profile_contact_details))
                 Box(
                     modifier = Modifier
@@ -230,7 +225,6 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Section: Notification Preferences
                 SectionTitle(stringResource(R.string.profile_notification_prefs))
                 Box(
                     modifier = Modifier
@@ -276,7 +270,6 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Section: Sync
                 SectionTitle(stringResource(R.string.profile_sync))
                 Box(
                     modifier = Modifier
@@ -316,7 +309,6 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Section: Pago
                 SectionTitle(stringResource(R.string.profile_payment))
                 Box(
                     modifier = Modifier
@@ -344,7 +336,6 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Sección de Seguridad y Ajustes
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()

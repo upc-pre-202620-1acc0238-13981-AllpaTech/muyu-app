@@ -47,7 +47,6 @@ import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.network.SyncHistoryRecord
-import com.example.muyu_app.core.environment.Environment
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.labor_execution.presentation.evidence.QueuedEvidenceItem
@@ -79,8 +78,7 @@ fun SyncScreen(
 ) {
     val container = LocalAppContainer.current
     val online by rememberNetworkOnline()
-    val farmerEmail = container.fakeStore.currentUser?.email
-        ?: Environment.DemoCredentials.FARMER_EMAIL
+    val farmerEmail = container.fakeStore.currentUser?.email.orEmpty()
     var queue by remember { mutableStateOf<List<QueuedEvidenceItem>>(emptyList()) }
     var syncedTotal by remember { mutableIntStateOf(0) }
     var uploadingId by remember { mutableStateOf<String?>(null) }

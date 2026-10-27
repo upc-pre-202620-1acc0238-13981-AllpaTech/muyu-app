@@ -69,8 +69,8 @@ fun PublishSuccessScreen(
     val container = LocalAppContainer.current
     val plot = container.selectedPlot
     val farmer = container.fakeStore.currentUser?.displayName
-        ?: plot?.ownerName.orEmpty().ifBlank { stringResource(R.string.farmer_name) }
-    val name = plot?.name?.ifBlank { null } ?: stringResource(R.string.farmer_plot_rosal)
+        ?: plot?.ownerName.orEmpty()
+    val name = plot?.name.orEmpty()
     val crop = plot?.crop.orEmpty()
     val area = plot?.area.orEmpty()
     val place = plot?.place.orEmpty()

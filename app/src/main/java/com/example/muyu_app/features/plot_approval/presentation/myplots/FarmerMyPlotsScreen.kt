@@ -49,7 +49,6 @@ import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
 import com.example.muyu_app.core.designsystem.components.PlotPhoto
 import com.example.muyu_app.core.di.LocalAppContainer
-import com.example.muyu_app.core.environment.Environment
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.ui.theme.MuyuAction
@@ -90,8 +89,7 @@ fun FarmerMyPlotsScreen(
 
     LaunchedEffect(lifecycleState.value) {
         if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
-        val email = container.fakeStore.currentUser?.email
-            ?: Environment.DemoCredentials.FARMER_EMAIL
+        val email = container.fakeStore.currentUser?.email.orEmpty()
         container.getPlotsUseCase().onSuccess { all ->
             plots = all
                 .filter { it.ownerEmail.equals(email, ignoreCase = true) }

@@ -4,7 +4,6 @@ import android.content.Context
 import android.location.Location
 import com.example.muyu_app.R
 import com.example.muyu_app.core.di.AppContainer
-import com.example.muyu_app.core.environment.Environment
 import com.example.muyu_app.features.climate_monitoring.data.OpenMeteoResponse
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
@@ -44,7 +43,7 @@ data class WeatherAlertContent(
 
 fun AppContainer.farmerPlotForWeather(): Plot? {
     selectedPlot?.let { return it }
-    val email = fakeStore.currentUser?.email ?: Environment.DemoCredentials.FARMER_EMAIL
+    val email = fakeStore.currentUser?.email.orEmpty()
     val records = fakeStore.plots.filter { it.ownerEmail.equals(email, ignoreCase = true) }
     val withGps = records.firstOrNull { it.latitude != null && it.longitude != null }
     return (withGps ?: records.firstOrNull())?.let { fakeStore.toDomain(it) }
@@ -101,7 +100,7 @@ fun buildWeatherAlertContent(
         else -> "${PlotFinance.formatCoordinates(location.latitude, location.longitude)} · ${elevation.roundInt()} m"
     }
 
-    val plotName = plot?.name?.ifBlank { null } ?: context.getString(R.string.farmer_plot_rosal)
+    val plotName = plot?.name.orEmpty()
     val crop = plot?.crop?.ifBlank { null } ?: "—"
     val cycleYear = plot?.harvestDate?.let { PlotFinance.seasonYear(it) }
         ?: Calendar.getInstance().get(Calendar.YEAR).toString()

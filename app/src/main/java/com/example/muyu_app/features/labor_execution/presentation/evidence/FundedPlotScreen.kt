@@ -82,7 +82,7 @@ fun FundedPlotScreen(
         "funded",
         ignoreCase = true,
     )
-    val name = plot?.name?.ifBlank { null } ?: stringResource(R.string.farmer_plot_rosal)
+    val name = plot?.name.orEmpty()
     val states = if (isFunded) {
         plot?.milestoneStates.orEmpty()
     } else {
@@ -109,7 +109,7 @@ fun FundedPlotScreen(
                 description = name,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp),
+                    .height(180.dp),
             )
             Column(
                 modifier = Modifier

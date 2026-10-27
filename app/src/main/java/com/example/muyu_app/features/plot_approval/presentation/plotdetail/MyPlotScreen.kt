@@ -12,9 +12,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -59,13 +64,15 @@ fun MyPlotScreen(
     onBack: () -> Unit,
     onEditPlot: () -> Unit,
     onTabSelected: (MuyuTab) -> Unit,
+    onViewVisitRequests: () -> Unit = {},
+    fromHome: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val container = LocalAppContainer.current
     val plot = container.selectedPlot
     val farmer = container.fakeStore.currentUser?.displayName
-        ?: plot?.ownerName.orEmpty().ifBlank { stringResource(R.string.farmer_name) }
-    val name = plot?.name?.ifBlank { null } ?: stringResource(R.string.farmer_plot_rosal)
+        ?: plot?.ownerName.orEmpty()
+    val name = plot?.name.orEmpty()
     val crop = plot?.crop.orEmpty()
     val area = plot?.area.orEmpty()
     val place = plot?.place.orEmpty()
@@ -89,7 +96,7 @@ fun MyPlotScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             FarmerContextHeader(
                 farmerName = farmer,
-                title = stringResource(R.string.publish_my_plot_title),
+                title = if (fromHome) "$name plot" else stringResource(R.string.publish_my_plot_title),
                 onBack = onBack,
             )
             Column(
@@ -135,16 +142,51 @@ fun MyPlotScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         StatusAvailable()
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = listOf(crop, area, place).filter { it.isNotBlank() }.joinToString(" · "),
-                            style = TextStyle(
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Eco,
+                                contentDescription = null,
+                                tint = Color(0xFF4A7C1E),
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                text = listOf(crop, area).filter { it.isNotBlank() }.joinToString(" · "),
                                 fontFamily = UrbanistRegular,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 13.sp,
-                                color = Muted,
-                            ),
-                        )
+                                fontSize = 14.sp,
+                                color = Color(0xFF555555),
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = Color(0xFF4A7C1E),
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                text = place,
+                                fontFamily = UrbanistRegular,
+                                fontSize = 14.sp,
+                                color = Color(0xFF555555),
+                            )
+                        }
+                        if (fromHome && plot?.status != "funded") {
+                            Text(
+                                text = "This plot is not funded yet. " +
+                                    "Milestone execution will be available after financing.",
+                                color = Color(0xFF555555),
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(vertical = 12.dp),
+                            )
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -268,31 +310,35 @@ fun MyPlotScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp)
-                        .clip(ButtonShape)
-                        .background(MuyuOlive)
-                        .clickable(onClick = onEditPlot),
-                    contentAlignment = Alignment.Center,
-                ) {
+                if (!fromHome) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp)
+                            .clip(ButtonShape)
+                            .background(MuyuOlive)
+                            .clickable(onClick = onEditPlot),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.publish_edit_plot),
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = stringResource(R.string.publish_edit_plot),
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        text = stringResource(R.string.publish_view_visits),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onViewVisitRequests),
+                        textAlign = TextAlign.Center,
+                        color = MuyuForest,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = stringResource(R.string.publish_view_visits),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    color = MuyuForest,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
             }
         }
         MuyuBottomBar(
