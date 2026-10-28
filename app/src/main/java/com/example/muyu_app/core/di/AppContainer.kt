@@ -22,6 +22,7 @@ import com.example.muyu_app.core.designsystem.components.MerchantTab
 enum class MerchantEvidenceOrigin {
     Alerts,
     MyPlots,
+    PlotDetail,
 }
 
 enum class FarmerPlotReturn {
@@ -46,6 +47,7 @@ class AppContainer(
     fun merchantEvidenceBottomTab(): MerchantTab = when (merchantEvidenceOrigin) {
         MerchantEvidenceOrigin.MyPlots -> MerchantTab.MyPlots
         MerchantEvidenceOrigin.Alerts -> MerchantTab.Alerts
+        MerchantEvidenceOrigin.PlotDetail -> MerchantTab.Catalog
     }
 
     private val retrofit = NetworkModule.provideRetrofit(fakeStore)

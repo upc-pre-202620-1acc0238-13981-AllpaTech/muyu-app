@@ -527,6 +527,7 @@ fun AppNavHost() {
         WalkthroughStep.MerchantPlotDetail -> MerchantPlotDetailScreen(
             onBack = { step = WalkthroughStep.MerchantCatalog },
             onFundPlot = { step = WalkthroughStep.FundPlot },
+            onViewEvidence = { step = WalkthroughStep.MerchantMilestoneEvidence },
             onTabSelected = selectMerchantTab,
         )
         WalkthroughStep.FundPlot -> FundPlotScreen(
@@ -554,6 +555,7 @@ fun AppNavHost() {
                 step = when (container.merchantEvidenceOrigin) {
                     MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
                     MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                    MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
                 }
             },
             onReview = { step = WalkthroughStep.MerchantApproveReject },
@@ -576,12 +578,14 @@ fun AppNavHost() {
                 step = when (container.merchantEvidenceOrigin) {
                     MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
                     MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                    MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
                 }
             },
             onViewPlot = {
                 step = when (container.merchantEvidenceOrigin) {
                     MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
                     MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                    MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
                 }
             },
             onViewReceipt = { step = WalkthroughStep.PaymentHistory },
@@ -598,6 +602,7 @@ fun AppNavHost() {
                 step = when (container.merchantEvidenceOrigin) {
                     MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
                     MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                    MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
                 }
             },
             onViewMilestone = { step = WalkthroughStep.MerchantMilestoneEvidence },
@@ -605,6 +610,7 @@ fun AppNavHost() {
                 step = when (container.merchantEvidenceOrigin) {
                     MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
                     MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                    MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
                 }
             },
             onTabSelected = selectMerchantTab,
