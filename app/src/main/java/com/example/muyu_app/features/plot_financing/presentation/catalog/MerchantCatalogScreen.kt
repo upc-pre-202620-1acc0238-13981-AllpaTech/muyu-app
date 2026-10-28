@@ -45,11 +45,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.muyu_app.R
+import com.example.muyu_app.core.designsystem.components.LanguageToggleButton
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
+import com.example.muyu_app.core.i18n.AppLanguage
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.Plot
@@ -124,6 +126,7 @@ fun MerchantCatalogScreen(
                 companyName = stringResource(R.string.merchant_company_name),
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
+                language = languages.merchant,
                 onLanguageToggle = { languages.toggle(isMerchant = true) },
             )
             Column(
@@ -214,6 +217,7 @@ private fun CatalogHeader(
     companyName: String,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
+    language: AppLanguage,
     onLanguageToggle: () -> Unit,
 ) {
     Column(
@@ -224,29 +228,39 @@ private fun CatalogHeader(
             .padding(horizontal = 24.dp)
             .padding(top = 16.dp, bottom = 20.dp),
     ) {
-        Text(
-            text = stringResource(R.string.merchant_welcome),
-            style = TextStyle(
-                fontFamily = UrbanistLight,
-                fontWeight = FontWeight.Light,
-                fontSize = 20.sp,
-                color = Color.White,
-            ),
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = companyName,
-            style = TextStyle(
-                fontFamily = UrbanistBlack,
-                fontWeight = FontWeight.Black,
-                fontSize = 24.sp,
-                color = Color.White,
-                lineHeight = 28.sp,
-            ),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.merchant_welcome),
+                    style = TextStyle(
+                        fontFamily = UrbanistLight,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 20.sp,
+                        color = Color.White,
+                    ),
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = companyName,
+                    style = TextStyle(
+                        fontFamily = UrbanistBlack,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 24.sp,
+                        color = Color.White,
+                        lineHeight = 28.sp,
+                    ),
+                )
+            }
+            LanguageToggleButton(
+                language = language,
+                onToggle = onLanguageToggle,
+            )
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Row(
-            modifier = Modifier.clickable(onClick = onLanguageToggle),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
