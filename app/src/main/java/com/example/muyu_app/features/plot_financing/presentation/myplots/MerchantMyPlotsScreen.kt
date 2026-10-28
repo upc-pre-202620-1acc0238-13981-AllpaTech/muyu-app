@@ -56,6 +56,7 @@ import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.ui.theme.MuyuAction
+import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuFinancedBg
 import com.example.muyu_app.ui.theme.MuyuGrayChip
 import com.example.muyu_app.ui.theme.MuyuNavBar
@@ -113,7 +114,7 @@ fun MerchantMyPlotsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
