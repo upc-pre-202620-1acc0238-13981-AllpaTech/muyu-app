@@ -45,7 +45,11 @@ import com.example.muyu_app.features.plot_approval.presentation.publish.PublishP
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishPlotLocationScreen
 import com.example.muyu_app.features.plot_financing.presentation.alerts.MerchantAlertsScreen
 import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantApproveRejectScreen
+import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantConfirmApprovalScreen
+import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantMilestoneApprovedScreen
 import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantMilestoneEvidenceScreen
+import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantRejectionReasonScreen
+import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantReviewOutcomeScreen
 import com.example.muyu_app.features.plot_financing.presentation.catalog.MerchantCatalogScreen
 import com.example.muyu_app.features.plot_financing.presentation.fund.FundPlotScreen
 import com.example.muyu_app.features.plot_financing.presentation.fund.FundSuccessScreen
@@ -104,6 +108,10 @@ private enum class WalkthroughStep {
     MerchantAlerts,
     MerchantMilestoneEvidence,
     MerchantApproveReject,
+    MerchantConfirmApproval,
+    MerchantMilestoneApproved,
+    MerchantRejectionReason,
+    MerchantReviewOutcome,
     Terms,
 }
 
@@ -214,6 +222,10 @@ fun AppNavHost() {
         WalkthroughStep.MerchantAlerts,
         WalkthroughStep.MerchantMilestoneEvidence,
         WalkthroughStep.MerchantApproveReject,
+        WalkthroughStep.MerchantConfirmApproval,
+        WalkthroughStep.MerchantMilestoneApproved,
+        WalkthroughStep.MerchantRejectionReason,
+        WalkthroughStep.MerchantReviewOutcome,
     )
 
     val darkSheet = (
@@ -532,6 +544,7 @@ fun AppNavHost() {
             onTabSelected = selectMerchantTab,
         )
         WalkthroughStep.MerchantAlerts -> MerchantAlertsScreen(
+            onBack = { step = WalkthroughStep.MerchantCatalog },
             onPlotClick = { step = WalkthroughStep.MerchantPlotDetail },
             onEvidenceClick = { step = WalkthroughStep.MerchantMilestoneEvidence },
             onTabSelected = selectMerchantTab,
@@ -548,7 +561,47 @@ fun AppNavHost() {
         )
         WalkthroughStep.MerchantApproveReject -> MerchantApproveRejectScreen(
             onBack = { step = WalkthroughStep.MerchantMilestoneEvidence },
-            onFinished = {
+            onApprove = { step = WalkthroughStep.MerchantConfirmApproval },
+            onReject = { step = WalkthroughStep.MerchantRejectionReason },
+            onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.MerchantConfirmApproval -> MerchantConfirmApprovalScreen(
+            onBack = { step = WalkthroughStep.MerchantApproveReject },
+            onConfirmed = { step = WalkthroughStep.MerchantMilestoneApproved },
+            onBackToEvidence = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.MerchantMilestoneApproved -> MerchantMilestoneApprovedScreen(
+            onBack = {
+                step = when (container.merchantEvidenceOrigin) {
+                    MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
+                    MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                }
+            },
+            onViewPlot = {
+                step = when (container.merchantEvidenceOrigin) {
+                    MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
+                    MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                }
+            },
+            onViewReceipt = { step = WalkthroughStep.PaymentHistory },
+            onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.MerchantRejectionReason -> MerchantRejectionReasonScreen(
+            onBack = { step = WalkthroughStep.MerchantApproveReject },
+            onConfirmed = { step = WalkthroughStep.MerchantReviewOutcome },
+            onCancelAndReview = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.MerchantReviewOutcome -> MerchantReviewOutcomeScreen(
+            onBack = {
+                step = when (container.merchantEvidenceOrigin) {
+                    MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
+                    MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                }
+            },
+            onViewMilestone = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onBackToPlot = {
                 step = when (container.merchantEvidenceOrigin) {
                     MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
                     MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts

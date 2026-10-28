@@ -39,6 +39,9 @@ class AppContainer(
     var selectedMilestoneKey: String = "fertilization"
     var merchantEvidenceOrigin: MerchantEvidenceOrigin = MerchantEvidenceOrigin.Alerts
     var farmerPlotReturn: FarmerPlotReturn = FarmerPlotReturn.Home
+    var rejectionReason: String = ""
+    var rejectionCorrection: String = ""
+    var reviewCompletedAt: Long = 0L
 
     fun merchantEvidenceBottomTab(): MerchantTab = when (merchantEvidenceOrigin) {
         MerchantEvidenceOrigin.MyPlots -> MerchantTab.MyPlots
@@ -66,6 +69,9 @@ class AppContainer(
         fakeStore.endSession()
         selectedPlot = null
         selectedMilestoneKey = "fertilization"
+        rejectionReason = ""
+        rejectionCorrection = ""
+        reviewCompletedAt = 0L
         plotDraft.clear()
     }
 }

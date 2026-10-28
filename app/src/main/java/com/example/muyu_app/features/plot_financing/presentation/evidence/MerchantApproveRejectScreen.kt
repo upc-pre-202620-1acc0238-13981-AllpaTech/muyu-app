@@ -38,12 +38,10 @@ import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.MuyuAsset
-import com.example.muyu_app.core.plot.refreshSelectedPlot
 import com.example.muyu_app.core.plot.rememberLiveFundedPlot
 import com.example.muyu_app.features.plot_approval.domain.milestoneForEvidence
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
-import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.ui.theme.MuyuAction
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuNavBar
@@ -62,7 +60,8 @@ private val BadgeText = Color(0xFF9A5B00)
 @Composable
 fun MerchantApproveRejectScreen(
     onBack: () -> Unit,
-    onFinished: () -> Unit,
+    onApprove: () -> Unit,
+    onReject: () -> Unit,
     onTabSelected: (MerchantTab) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -213,24 +212,12 @@ fun MerchantApproveRejectScreen(
                     PrimaryActionButton(
                         text = stringResource(R.string.merchant_approve_release),
                         background = MuyuAction,
-                        onClick = {
-                            if (plotId != null) {
-                                container.fakeStore.reviewMilestone(plotId, milestoneKey, approved = true)
-                                container.refreshSelectedPlot()
-                            }
-                            onFinished()
-                        },
+                        onClick = onApprove,
                     )
                     PrimaryActionButton(
                         text = stringResource(R.string.merchant_reject_explain),
                         background = RedRejectButton,
-                        onClick = {
-                            if (plotId != null) {
-                                container.fakeStore.reviewMilestone(plotId, milestoneKey, approved = false)
-                                container.refreshSelectedPlot()
-                            }
-                            onFinished()
-                        },
+                        onClick = onReject,
                     )
                 }
             }
@@ -241,33 +228,6 @@ fun MerchantApproveRejectScreen(
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
-}
-
-private data class EscrowSummary(
-    val balanceLabel: String,
-    val afterReleaseLabel: String,
-)
-
-private fun computeEscrowSummary(
-    plot: com.example.muyu_app.features.plot_approval.domain.Plot,
-    milestoneKey: String,
-): EscrowSummary {
-    val total = PlotFinance.parseAmount(plot.amount)
-    val steps = PlotFinance.disbursement(total)
-    val states = plot.milestoneStates
-    val released = MilestoneCatalog.all.indices.sumOf { index ->
-        val key = MilestoneCatalog.all[index].key
-        val approved = states.find { it.key == key }?.status == MilestoneState.STATUS_APPROVED
-        if (approved) steps.getOrNull(index)?.amount ?: 0.0 else 0.0
-    }
-    val releaseIndex = MilestoneCatalog.all.indexOfFirst { it.key == milestoneKey }.coerceAtLeast(0)
-    val releaseAmount = steps.getOrNull(releaseIndex)?.amount ?: 0.0
-    val balance = (total - released).coerceAtLeast(0.0)
-    val after = (balance - releaseAmount).coerceAtLeast(0.0)
-    return EscrowSummary(
-        balanceLabel = PlotFinance.formatAmount(balance),
-        afterReleaseLabel = PlotFinance.formatAmount(after),
-    )
 }
 
 @Composable
