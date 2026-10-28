@@ -74,7 +74,7 @@ fun PublishSuccessScreen(
     val crop = plot?.crop.orEmpty()
     val area = plot?.area.orEmpty()
     val place = plot?.place.orEmpty()
-    val amount = plot?.amount.orEmpty().ifBlank { PlotFinance.formatAmount(8500.0) }
+    val amount = plot?.amount.orEmpty()
     val milestones = plot?.milestones?.ifBlank { "4" } ?: "4"
     val published = plot?.publishedAt?.ifBlank { null } ?: PlotFinance.publishedToday()
     val coords = if (plot?.latitude != null && plot.longitude != null) {

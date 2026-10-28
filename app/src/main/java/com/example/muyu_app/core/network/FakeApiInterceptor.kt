@@ -92,11 +92,11 @@ class FakeApiInterceptor(
             ?: return 401 to gson.toJson(mapOf("message" to "Not authenticated"))
         val record = PlotRecord(
             id = store.nextPlotId(),
-            name = json.get("name")?.asString.orEmpty().ifBlank { "New plot" },
+            name = json.get("name")?.asString.orEmpty(),
             crop = json.get("crop")?.asString.orEmpty(),
             area = json.get("area")?.asString.orEmpty(),
             harvestDate = json.get("harvestDate")?.asString.orEmpty(),
-            place = json.get("place")?.asString.orEmpty().ifBlank { "Peru" },
+            place = json.get("place")?.asString.orEmpty(),
             stage = "Available",
             progress = 0,
             status = "available",
