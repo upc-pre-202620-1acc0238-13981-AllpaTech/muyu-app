@@ -46,7 +46,6 @@ import coil3.compose.AsyncImage
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
-import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.di.MerchantEvidenceOrigin
@@ -142,7 +141,7 @@ fun MerchantPlotDetailScreen(
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp)
-                    .padding(top = 16.dp, bottom = MuyuScrollBottomInset),
+                    .padding(top = 16.dp, bottom = 16.dp),
             ) {
                 plot?.let { current ->
                     FundedPlotBody(
@@ -156,50 +155,53 @@ fun MerchantPlotDetailScreen(
                     )
                 }
             }
-        }
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 88.dp)
-                .height(55.dp)
-                .clip(CtaShape)
-                .background(MuyuAction)
-                .clickable {
-                    if (isFunded) {
-                        plot?.let {
-                            container.selectedMilestoneKey = it.evidenceMilestoneKey()
-                            container.merchantEvidenceOrigin = MerchantEvidenceOrigin.PlotDetail
-                        }
-                        onViewEvidence()
-                    } else {
-                        onFundPlot()
-                    }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MuyuLocateBg)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(55.dp)
+                        .clip(CtaShape)
+                        .background(MuyuAction)
+                        .clickable {
+                            if (isFunded) {
+                                plot?.let {
+                                    container.selectedMilestoneKey = it.evidenceMilestoneKey()
+                                    container.merchantEvidenceOrigin = MerchantEvidenceOrigin.PlotDetail
+                                }
+                                onViewEvidence()
+                            } else {
+                                onFundPlot()
+                            }
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(
+                            if (isFunded) R.string.merchant_view_evidence else R.string.merchant_fund_plot,
+                        ),
+                        style = TextStyle(
+                            fontFamily = UrbanistSemiBold,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                            color = Color.White,
+                        ),
+                    )
+                }
+            }
+            MerchantBottomBar(
+                selectedTab = when (container.merchantPlotReturn) {
+                    MerchantPlotReturn.Catalog -> MerchantTab.Catalog
+                    MerchantPlotReturn.MyPlots -> MerchantTab.MyPlots
+                    MerchantPlotReturn.Alerts -> MerchantTab.Alerts
                 },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(
-                    if (isFunded) R.string.merchant_view_evidence else R.string.merchant_fund_plot,
-                ),
-                style = TextStyle(
-                    fontFamily = UrbanistSemiBold,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
-                    color = Color.White,
-                ),
+                onTabSelected = onTabSelected,
             )
         }
-        MerchantBottomBar(
-            selectedTab = when (container.merchantPlotReturn) {
-                MerchantPlotReturn.Catalog -> MerchantTab.Catalog
-                MerchantPlotReturn.MyPlots -> MerchantTab.MyPlots
-                MerchantPlotReturn.Alerts -> MerchantTab.Alerts
-            },
-            onTabSelected = onTabSelected,
-            modifier = Modifier.align(Alignment.BottomCenter),
-        )
     }
 }
 
