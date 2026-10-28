@@ -3,7 +3,6 @@ package com.example.muyu_app.features.plot_financing.presentation.catalog
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,13 +57,11 @@ import com.example.muyu_app.features.plot_approval.presentation.myplots.formatPl
 import com.example.muyu_app.ui.theme.MuyuApprovedBg
 import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuGrayChip
 import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuNearText
 import com.example.muyu_app.ui.theme.MuyuSkip
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBlack
-import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistExtraBold
 import com.example.muyu_app.ui.theme.UrbanistLight
 import com.example.muyu_app.ui.theme.UrbanistRegular
@@ -73,6 +70,7 @@ import com.example.muyu_app.ui.theme.UrbanistSemiBold
 private val CardShape = RoundedCornerShape(20.dp)
 private val ChipShape = RoundedCornerShape(100.dp)
 private val SearchShape = RoundedCornerShape(100.dp)
+private val MutedFooter = Color.Black.copy(alpha = 0.4f)
 
 private enum class CatalogFilter { All, Near, Recommended }
 
@@ -356,7 +354,6 @@ internal fun PlotOfferCard(
             .fillMaxWidth()
             .clip(CardShape)
             .background(Color.White)
-            .border(1.dp, MuyuForest, CardShape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
     ) {
         if (!imageUri.isNullOrBlank()) {
@@ -365,7 +362,7 @@ internal fun PlotOfferCard(
                 contentDescription = name,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(135.dp),
+                    .height(168.dp),
                 contentScale = ContentScale.Crop,
             )
         } else {
@@ -374,7 +371,7 @@ internal fun PlotOfferCard(
                 contentDescription = name,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(135.dp),
+                    .height(168.dp),
                 contentScale = ContentScale.Crop,
             )
         }
@@ -382,6 +379,7 @@ internal fun PlotOfferCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = name,
@@ -402,7 +400,7 @@ internal fun PlotOfferCard(
                     ),
                 )
             }
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
                     painter = painterResource(farmerPhoto),
@@ -412,7 +410,7 @@ internal fun PlotOfferCard(
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop,
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = farmer,
                     style = TextStyle(
@@ -423,20 +421,25 @@ internal fun PlotOfferCard(
                     ),
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                InfoChip(crop, MuyuApprovedBg, MuyuForest)
-                InfoChip(area, MuyuGrayChip, Color.Black.copy(alpha = 0.5f))
-                InfoChip(place, MuyuGrayChip, Color.Black.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(10.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MuyuApprovedBg)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = listOf(crop, area, place).filter { it.isNotBlank() }.joinToString(" · "),
+                    style = TextStyle(
+                        fontFamily = UrbanistSemiBold,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = MuyuForest,
+                    ),
+                )
             }
             Spacer(modifier = Modifier.height(10.dp))
-            MuyuAsset(
-                fileName = "merchant/card_line.svg",
-                contentDescription = null,
-                width = 305.dp,
-                height = 1.dp,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -445,44 +448,20 @@ internal fun PlotOfferCard(
                     text = stringResource(R.string.merchant_verified),
                     style = TextStyle(
                         fontFamily = UrbanistRegular,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 16.sp,
-                        color = MuyuForest,
+                        fontSize = 13.sp,
+                        color = MutedFooter,
                     ),
                 )
                 Text(
                     text = stringResource(R.string.merchant_milestones),
                     style = TextStyle(
                         fontFamily = UrbanistRegular,
-                        fontWeight = FontWeight.Normal,
                         fontSize = 13.sp,
-                        color = MuyuForest,
+                        color = MutedFooter,
                     ),
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun InfoChip(text: String, background: Color, color: Color) {
-    Box(
-        modifier = Modifier
-            .height(24.dp)
-            .clip(ChipShape)
-            .background(background)
-            .padding(horizontal = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            style = TextStyle(
-                fontFamily = UrbanistBold,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = color,
-            ),
-        )
     }
 }
 
