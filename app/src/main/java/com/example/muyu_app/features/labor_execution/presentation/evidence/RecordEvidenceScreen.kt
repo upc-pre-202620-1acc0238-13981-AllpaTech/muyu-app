@@ -260,7 +260,7 @@ fun RecordEvidenceScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "${plot?.name ?: "El Rosal Plot"}\n${plot?.crop ?: "Potato"}",
+                        text = "${plot?.name.orEmpty()}\n${plot?.crop.orEmpty()}",
                         style = TextStyle(
                             fontFamily = UrbanistRegular,
                             fontSize = 15.sp,
@@ -268,7 +268,10 @@ fun RecordEvidenceScreen(
                         ),
                     )
                     Text(
-                        text = "2026 Season",
+                        text = stringResource(
+                            R.string.evidence_season,
+                            PlotFinance.seasonYear(plot?.harvestDate.orEmpty()),
+                        ),
                         style = TextStyle(
                             fontFamily = UrbanistRegular,
                             fontSize = 15.sp,
