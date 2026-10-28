@@ -412,7 +412,10 @@
     <string name="profile_privacy">Política de privacidad</string>
     <string name="profile_logout">Cerrar sesión</string>
     <string name="profile_wholesale">Distribuidor mayorista</string>
+    <string name="profile_company_legal_name">Distribuidora La Cosecha SAC</string>
+    <string name="profile_company_location_email">Lima · contacto@lacosecha.pe</string>
     <string name="profile_new_plot_alerts">Alertas de parcelas nuevas</string>
+    <string name="profile_new_plot_alerts_body">Papas · Cusco · desde 5.000 kg</string>
     <string name="profile_saved_methods">Métodos de pago guardados</string>
     <string name="profile_visa_bcp">Visa terminada en 4821 · Transferencia BCP</string>
     <string name="profile_security_help">SEGURIDAD Y AYUDA</string>

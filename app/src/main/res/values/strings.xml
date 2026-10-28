@@ -412,7 +412,10 @@
     <string name="profile_privacy">Privacy Policy</string>
     <string name="profile_logout">Log out</string>
     <string name="profile_wholesale">Wholesale distributor</string>
+    <string name="profile_company_legal_name">Distribuidora La Cosecha SAC</string>
+    <string name="profile_company_location_email">Lima · contacto@lacosecha.pe</string>
     <string name="profile_new_plot_alerts">New plot alerts</string>
+    <string name="profile_new_plot_alerts_body">Potatoes · Cusco · from 5,000 kg</string>
     <string name="profile_saved_methods">Saved payment methods</string>
     <string name="profile_visa_bcp">Visa ending in 4821 · BCP transfer</string>
     <string name="profile_security_help">SECURITY &amp; HELP</string>
