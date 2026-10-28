@@ -265,11 +265,11 @@
     <string name="nav_catalog">Catálogo</string>
     <string name="nav_my_plots">Mis parcelas</string>
     <string name="nav_alerts">Alertas</string>
-    <string name="merchant_welcome">Bienvenido</string>
+    <string name="merchant_welcome">Bienvenido,</string>
     <string name="merchant_default_name">Valeria Mendoza</string>
     <string name="merchant_company_name">Distribuidora La Cosecha</string>
     <string name="merchant_name">José Arturo</string>
-    <string name="merchant_search">Buscar cultivos, ubicaciones...</string>
+    <string name="merchant_search">Buscar parcelas o GPS…</string>
     <string name="merchant_filter_all">Todos</string>
     <string name="merchant_filter_near">Cerca de mí</string>
     <string name="merchant_filter_recommended">Recomendados</string>
