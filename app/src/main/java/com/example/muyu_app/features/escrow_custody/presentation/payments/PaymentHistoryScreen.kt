@@ -3,7 +3,6 @@ package com.example.muyu_app.features.escrow_custody.presentation.payments
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,13 +51,22 @@ import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
-import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
-import com.example.muyu_app.ui.theme.MuyuOlive
+import com.example.muyu_app.ui.theme.MuyuApprovedBg
+import com.example.muyu_app.ui.theme.MuyuForest
+import com.example.muyu_app.ui.theme.MuyuNavBar
+import com.example.muyu_app.ui.theme.MuyuNearText
 import com.example.muyu_app.ui.theme.MuyuPageGray
+import com.example.muyu_app.ui.theme.MuyuPendingBg
+import com.example.muyu_app.ui.theme.MuyuPendingText
+import com.example.muyu_app.ui.theme.MuyuSkip
 import com.example.muyu_app.ui.theme.MuyuappTheme
+import com.example.muyu_app.ui.theme.UrbanistExtraBold
+import com.example.muyu_app.ui.theme.UrbanistLight
+import com.example.muyu_app.ui.theme.UrbanistRegular
+import com.example.muyu_app.ui.theme.UrbanistSemiBold
 
 private enum class PaymentFilter { All, Completed, Pending }
 
@@ -67,6 +76,7 @@ private data class FarmerPayment(
     val amount: Double,
     val completed: Boolean,
     val dateLabel: String,
+    val expectedLabel: String,
 )
 
 private fun Plot.toPayments(): List<FarmerPayment> {
@@ -81,17 +91,15 @@ private fun Plot.toPayments(): List<FarmerPayment> {
             milestone.submittedAtMillis > 0L -> PlotFinance.shortDateFromMillis(milestone.submittedAtMillis)
             else -> milestone.recordedAt
         }
-        FarmerPayment(this, milestone.key, step.amount, completed, date)
+        val expected = milestone.extensionDate.ifBlank { milestone.dueLabel }
+        FarmerPayment(this, milestone.key, step.amount, completed, date, expected)
     }
 }
 
 private val CardShape = RoundedCornerShape(20.dp)
-private val ChipShape = RoundedCornerShape(12.dp)
-
-private val LightGreenBg = Color(0xFFDCF0DD)
-private val DarkGreenText = Color(0xFF2E6930)
-private val OrangeChipBg = Color(0xFFFFE0B2)
-private val DarkOrangeText = Color(0xFFE65100)
+private val ChipShape = RoundedCornerShape(100.dp)
+private val TotalCardBg = Color(0xFFC4ECA8)
+private val MutedGreen = Color(0xFF4F7A3A)
 
 @Composable
 fun PaymentHistoryScreen(
@@ -142,8 +150,9 @@ fun PaymentHistoryScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
-                title = stringResource(R.string.payments_title),
+                title = stringResource(R.string.payment_details_title),
                 onBack = onBack,
+                backgroundColor = MuyuNavBar,
             )
 
             Column(
@@ -157,65 +166,60 @@ fun PaymentHistoryScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(CardShape)
-                        .background(MuyuOlive)
-                        .padding(20.dp),
+                        .background(TotalCardBg)
+                        .padding(horizontal = 20.dp, vertical = 18.dp),
                 ) {
                     Column {
                         Text(
                             text = stringResource(R.string.payments_total_received),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White.copy(alpha = 0.8f),
+                            style = TextStyle(
+                                fontFamily = UrbanistSemiBold,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = MuyuForest,
+                            ),
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = PlotFinance.formatAmount(totalReceived),
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                            style = TextStyle(
+                                fontFamily = UrbanistExtraBold,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 32.sp,
+                                color = MuyuForest,
+                            ),
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = stringResource(R.string.payments_completed_count, completedCount),
-                            fontSize = 14.sp,
-                            color = Color.White.copy(alpha = 0.9f),
+                            style = TextStyle(
+                                fontFamily = UrbanistLight,
+                                fontWeight = FontWeight.Light,
+                                fontSize = 14.sp,
+                                color = MutedGreen,
+                            ),
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(CardShape)
-                        .background(Color.White)
-                        .border(1.dp, Color.LightGray.copy(alpha = 0.6f), CardShape)
-                        .padding(6.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        FilterChip(
-                            text = stringResource(R.string.payments_filter_all),
-                            isSelected = selectedFilter == PaymentFilter.All,
-                            onClick = { selectedFilter = PaymentFilter.All },
-                            modifier = Modifier.weight(1f),
-                        )
-                        FilterChip(
-                            text = stringResource(R.string.payments_filter_completed),
-                            isSelected = selectedFilter == PaymentFilter.Completed,
-                            onClick = { selectedFilter = PaymentFilter.Completed },
-                            modifier = Modifier.weight(1f),
-                        )
-                        FilterChip(
-                            text = stringResource(R.string.payments_filter_pending),
-                            isSelected = selectedFilter == PaymentFilter.Pending,
-                            onClick = { selectedFilter = PaymentFilter.Pending },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        text = stringResource(R.string.payments_filter_all),
+                        isSelected = selectedFilter == PaymentFilter.All,
+                        onClick = { selectedFilter = PaymentFilter.All },
+                    )
+                    FilterChip(
+                        text = stringResource(R.string.payments_filter_completed),
+                        isSelected = selectedFilter == PaymentFilter.Completed,
+                        onClick = { selectedFilter = PaymentFilter.Completed },
+                    )
+                    FilterChip(
+                        text = stringResource(R.string.payments_filter_pending),
+                        isSelected = selectedFilter == PaymentFilter.Pending,
+                        onClick = { selectedFilter = PaymentFilter.Pending },
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -245,11 +249,21 @@ fun PaymentHistoryScreen(
 
                 visiblePayments.forEach { payment ->
                     val definition = MilestoneCatalog.definition(payment.milestoneKey)
+                    val expectedText = payment.expectedLabel.ifBlank { payment.dateLabel }
                     PaymentItemCard(
                         title = stringResource(definition.titleRes),
-                        subtitle = listOf(payment.plot.name, payment.dateLabel)
-                            .filter { it.isNotBlank() }
-                            .joinToString("  "),
+                        subtitle = if (payment.completed) {
+                            listOf(payment.plot.name, payment.dateLabel)
+                                .filter { it.isNotBlank() }
+                                .joinToString(" ")
+                        } else {
+                            payment.plot.name
+                        },
+                        expected = if (!payment.completed && expectedText.isNotBlank()) {
+                            stringResource(R.string.payments_expected, expectedText)
+                        } else {
+                            null
+                        },
                         amount = if (payment.completed) {
                             "+ ${PlotFinance.formatAmount(payment.amount)}"
                         } else {
@@ -288,21 +302,24 @@ private fun FilterChip(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .height(42.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (isSelected) MuyuOlive else Color(0xFFEEEEEE))
-            .clickable { onClick() },
+        modifier = Modifier
+            .height(32.dp)
+            .clip(ChipShape)
+            .background(if (isSelected) MuyuNavBar else MuyuSkip)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (isSelected) Color.White else Color.Black,
+            style = TextStyle(
+                fontFamily = UrbanistSemiBold,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = if (isSelected) Color.White else MuyuNearText,
+            ),
         )
     }
 }
@@ -311,11 +328,11 @@ private fun FilterChip(
 private fun PaymentItemCard(
     title: String,
     subtitle: String,
+    expected: String?,
     amount: String,
     status: String,
     isCompleted: Boolean,
     @DrawableRes imageRes: Int? = null,
-    iconAsset: String? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -324,9 +341,8 @@ private fun PaymentItemCard(
             .fillMaxWidth()
             .clip(CardShape)
             .background(Color.White)
-            .border(1.dp, MuyuOlive.copy(alpha = 0.5f), CardShape)
             .clickable { onClick() }
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -336,62 +352,66 @@ private fun PaymentItemCard(
                 Image(
                     painter = painterResource(id = imageRes),
                     contentDescription = title,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop,
-                )
-            } else if (iconAsset != null) {
-                MuyuAsset(
-                    fileName = iconAsset,
-                    contentDescription = null,
-                    width = 36.dp,
-                    height = 36.dp,
+                    modifier = Modifier.size(40.dp),
+                    contentScale = ContentScale.Fit,
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
+                    style = TextStyle(
+                        fontFamily = UrbanistSemiBold,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = Color.Black,
+                    ),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
-                    fontSize = 12.sp,
-                    color = Color.Gray,
+                    style = TextStyle(
+                        fontFamily = UrbanistRegular,
+                        fontSize = 13.sp,
+                        color = Color.Black.copy(alpha = 0.45f),
+                    ),
                 )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                if (!expected.isNullOrBlank()) {
                     Text(
-                        text = amount,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    MuyuAsset(
-                        fileName = "publish/chevron.svg",
-                        contentDescription = null,
-                        width = 10.dp,
-                        height = 10.dp,
+                        text = expected,
+                        style = TextStyle(
+                            fontFamily = UrbanistRegular,
+                            fontSize = 13.sp,
+                            color = Color.Black.copy(alpha = 0.45f),
+                        ),
                     )
                 }
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = amount,
+                    style = TextStyle(
+                        fontFamily = UrbanistSemiBold,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = Color.Black,
+                    ),
+                )
                 Spacer(modifier = Modifier.height(6.dp))
                 Box(
                     modifier = Modifier
                         .clip(ChipShape)
-                        .background(if (isCompleted) LightGreenBg else OrangeChipBg)
+                        .background(if (isCompleted) MuyuApprovedBg else MuyuPendingBg)
                         .padding(horizontal = 10.dp, vertical = 4.dp),
                 ) {
                     Text(
                         text = status,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isCompleted) DarkGreenText else DarkOrangeText,
+                        style = TextStyle(
+                            fontFamily = UrbanistSemiBold,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp,
+                            color = if (isCompleted) MuyuForest else MuyuPendingText,
+                        ),
                     )
                 }
             }
