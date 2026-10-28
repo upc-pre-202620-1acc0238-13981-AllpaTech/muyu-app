@@ -49,8 +49,8 @@ import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.core.network.MerchantNotificationRecord
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
 import com.example.muyu_app.features.plot_financing.presentation.evidence.formatMerchantRelativeTime
+import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuLocateBg
 import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistLight
@@ -87,7 +87,7 @@ fun MerchantAlertsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuLocateBg),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
