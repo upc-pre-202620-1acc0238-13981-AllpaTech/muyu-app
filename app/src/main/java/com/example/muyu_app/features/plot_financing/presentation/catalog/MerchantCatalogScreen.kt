@@ -239,9 +239,9 @@ private fun CatalogHeader(
             style = TextStyle(
                 fontFamily = UrbanistBlack,
                 fontWeight = FontWeight.Black,
-                fontSize = 28.sp,
+                fontSize = 24.sp,
                 color = Color.White,
-                lineHeight = 32.sp,
+                lineHeight = 28.sp,
             ),
         )
         Spacer(modifier = Modifier.height(8.dp))
