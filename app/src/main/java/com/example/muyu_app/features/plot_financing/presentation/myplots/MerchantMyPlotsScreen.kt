@@ -51,7 +51,6 @@ import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
-import com.example.muyu_app.core.di.MerchantEvidenceOrigin
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.Plot
@@ -83,7 +82,7 @@ private val WeatherEnd = Color(0xFF524FA0)
 
 @Composable
 fun MerchantMyPlotsScreen(
-    onPlotEvidenceClick: () -> Unit,
+    onPlotClick: () -> Unit,
     onTabSelected: (MerchantTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -180,9 +179,7 @@ fun MerchantMyPlotsScreen(
                             plot = plot,
                             onClick = {
                                 container.selectedPlot = plot
-                                container.selectedMilestoneKey = plot.evidenceMilestoneKey()
-                                container.merchantEvidenceOrigin = MerchantEvidenceOrigin.MyPlots
-                                onPlotEvidenceClick()
+                                onPlotClick()
                             },
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -511,7 +508,7 @@ private fun MerchantMyPlotsScreenPreview() {
     InstallMuyuImageLoader()
     CompositionLocalProvider(LocalAppContainer provides AppContainer()) {
         MuyuappTheme {
-            MerchantMyPlotsScreen(onPlotEvidenceClick = {}, onTabSelected = {})
+            MerchantMyPlotsScreen(onPlotClick = {}, onTabSelected = {})
         }
     }
 }

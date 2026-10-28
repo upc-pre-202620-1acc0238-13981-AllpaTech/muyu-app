@@ -50,6 +50,7 @@ import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.di.MerchantEvidenceOrigin
+import com.example.muyu_app.core.di.MerchantPlotReturn
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
@@ -66,7 +67,6 @@ import com.example.muyu_app.ui.theme.MuyuEscrowInfo
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuLocateBg
 import com.example.muyu_app.ui.theme.MuyuNavBar
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuSkip
 import com.example.muyu_app.ui.theme.MuyuTermsBg
 import com.example.muyu_app.ui.theme.MuyuappTheme
@@ -101,25 +101,16 @@ fun MerchantPlotDetailScreen(
         container.selectedPlot = withMilestones
     }
     val plotName = plot?.name.orEmpty()
-    val farmerName = plot?.ownerName.orEmpty()
-    val crop = plot?.crop.orEmpty()
-    val area = plot?.area.orEmpty()
-    val place = plot?.place.orEmpty()
-    val amount = plot?.amount.orEmpty()
-    val harvest = plot?.harvestDate.orEmpty()
-    val cycle = plot?.cycle.orEmpty()
-    val milestones = plot?.milestones?.ifBlank { null } ?: "4"
     val isFunded = plot?.status == "funded"
     val statusLabel = if (isFunded) {
         stringResource(R.string.merchant_status_funded_chip)
     } else {
         stringResource(R.string.merchant_available)
     }
-    val farmerFirst = farmerName.substringBefore(" ").ifBlank { farmerName }
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(if (isFunded) MuyuLocateBg else MuyuPageGray),
+            .background(MuyuLocateBg),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -153,66 +144,59 @@ fun MerchantPlotDetailScreen(
                     .padding(horizontal = 16.dp)
                     .padding(top = 16.dp, bottom = MuyuScrollBottomInset),
             ) {
-                val fundedPlot = plot
-                if (isFunded && fundedPlot != null) {
+                plot?.let { current ->
                     FundedPlotBody(
-                        plot = fundedPlot,
+                        plot = current,
                         statusLabel = statusLabel,
                         funderName = container.fakeStore.currentUser?.displayName
                             ?.ifBlank { null }
                             ?: stringResource(R.string.merchant_default_name),
                         companyName = stringResource(R.string.merchant_company_name),
-                    )
-                } else {
-                    AvailablePlotBody(
-                        plotName = plotName,
-                        statusLabel = statusLabel,
-                        crop = crop,
-                        area = area,
-                        place = place,
-                        farmerName = farmerName,
-                        farmerFirst = farmerFirst,
-                        harvest = harvest,
-                        amount = amount,
-                        cycle = cycle,
-                        milestones = milestones,
-                        onFundPlot = onFundPlot,
+                        showHarvestReceipt = isFunded,
                     )
                 }
             }
         }
-        if (isFunded) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 88.dp)
-                    .height(55.dp)
-                    .clip(CtaShape)
-                    .background(MuyuAction)
-                    .clickable {
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 88.dp)
+                .height(55.dp)
+                .clip(CtaShape)
+                .background(MuyuAction)
+                .clickable {
+                    if (isFunded) {
                         plot?.let {
                             container.selectedMilestoneKey = it.evidenceMilestoneKey()
                             container.merchantEvidenceOrigin = MerchantEvidenceOrigin.PlotDetail
                         }
                         onViewEvidence()
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.merchant_view_evidence),
-                    style = TextStyle(
-                        fontFamily = UrbanistSemiBold,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        color = Color.White,
-                    ),
-                )
-            }
+                    } else {
+                        onFundPlot()
+                    }
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(
+                    if (isFunded) R.string.merchant_view_evidence else R.string.merchant_fund_plot,
+                ),
+                style = TextStyle(
+                    fontFamily = UrbanistSemiBold,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = Color.White,
+                ),
+            )
         }
         MerchantBottomBar(
-            selectedTab = MerchantTab.Catalog,
+            selectedTab = when (container.merchantPlotReturn) {
+                MerchantPlotReturn.Catalog -> MerchantTab.Catalog
+                MerchantPlotReturn.MyPlots -> MerchantTab.MyPlots
+                MerchantPlotReturn.Alerts -> MerchantTab.Alerts
+            },
             onTabSelected = onTabSelected,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
@@ -351,6 +335,7 @@ private fun FundedPlotBody(
     statusLabel: String,
     funderName: String,
     companyName: String,
+    showHarvestReceipt: Boolean,
 ) {
     val area = formatPlotArea(plot.area)
     val deposit = PlotFinance.parseAmount(plot.amount)
@@ -533,7 +518,7 @@ private fun FundedPlotBody(
             ),
         )
     }
-    if (!harvestApproved) {
+    if (showHarvestReceipt && !harvestApproved) {
         Spacer(modifier = Modifier.height(16.dp))
         Box(
             modifier = Modifier

@@ -30,6 +30,12 @@ enum class FarmerPlotReturn {
     MyPlots,
 }
 
+enum class MerchantPlotReturn {
+    Catalog,
+    MyPlots,
+    Alerts,
+}
+
 class AppContainer(
     context: Context? = null,
 ) {
@@ -40,6 +46,7 @@ class AppContainer(
     var selectedMilestoneKey: String = "fertilization"
     var merchantEvidenceOrigin: MerchantEvidenceOrigin = MerchantEvidenceOrigin.Alerts
     var farmerPlotReturn: FarmerPlotReturn = FarmerPlotReturn.Home
+    var merchantPlotReturn: MerchantPlotReturn = MerchantPlotReturn.Catalog
     var rejectionReason: String = ""
     var rejectionCorrection: String = ""
     var reviewCompletedAt: Long = 0L

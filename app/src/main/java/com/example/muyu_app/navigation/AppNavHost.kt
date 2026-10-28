@@ -16,6 +16,7 @@ import androidx.core.view.WindowCompat
 import com.example.muyu_app.core.di.FarmerPlotReturn
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.di.MerchantEvidenceOrigin
+import com.example.muyu_app.core.di.MerchantPlotReturn
 import com.example.muyu_app.core.i18n.ProvideAppLocale
 import com.example.muyu_app.core.designsystem.components.BlankMerchantTabScreen
 import com.example.muyu_app.core.designsystem.components.BlankTabScreen
@@ -520,12 +521,21 @@ fun AppNavHost() {
             )
         }
         WalkthroughStep.MerchantCatalog -> MerchantCatalogScreen(
-            onPlotClick = { step = WalkthroughStep.MerchantPlotDetail },
+            onPlotClick = {
+                container.merchantPlotReturn = MerchantPlotReturn.Catalog
+                step = WalkthroughStep.MerchantPlotDetail
+            },
             onAlertsClick = { step = WalkthroughStep.MerchantAlerts },
             onTabSelected = selectMerchantTab,
         )
         WalkthroughStep.MerchantPlotDetail -> MerchantPlotDetailScreen(
-            onBack = { step = WalkthroughStep.MerchantCatalog },
+            onBack = {
+                step = when (container.merchantPlotReturn) {
+                    MerchantPlotReturn.Catalog -> WalkthroughStep.MerchantCatalog
+                    MerchantPlotReturn.MyPlots -> WalkthroughStep.MerchantMyPlots
+                    MerchantPlotReturn.Alerts -> WalkthroughStep.MerchantAlerts
+                }
+            },
             onFundPlot = { step = WalkthroughStep.FundPlot },
             onViewEvidence = { step = WalkthroughStep.MerchantMilestoneEvidence },
             onTabSelected = selectMerchantTab,
@@ -541,12 +551,18 @@ fun AppNavHost() {
             onTabSelected = selectMerchantTab,
         )
         WalkthroughStep.MerchantMyPlots -> MerchantMyPlotsScreen(
-            onPlotEvidenceClick = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onPlotClick = {
+                container.merchantPlotReturn = MerchantPlotReturn.MyPlots
+                step = WalkthroughStep.MerchantPlotDetail
+            },
             onTabSelected = selectMerchantTab,
         )
         WalkthroughStep.MerchantAlerts -> MerchantAlertsScreen(
             onBack = { step = WalkthroughStep.MerchantCatalog },
-            onPlotClick = { step = WalkthroughStep.MerchantPlotDetail },
+            onPlotClick = {
+                container.merchantPlotReturn = MerchantPlotReturn.Alerts
+                step = WalkthroughStep.MerchantPlotDetail
+            },
             onEvidenceClick = { step = WalkthroughStep.MerchantMilestoneEvidence },
             onTabSelected = selectMerchantTab,
         )
