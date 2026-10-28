@@ -45,12 +45,12 @@ import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
+import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuCheckbox
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuHeader
 import com.example.muyu_app.ui.theme.MuyuLime
 import com.example.muyu_app.ui.theme.MuyuNavBar
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBlack
 import com.example.muyu_app.ui.theme.UrbanistLight
@@ -98,7 +98,7 @@ fun MerchantProfileScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
