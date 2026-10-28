@@ -84,15 +84,13 @@ fun PublishPlotLocationScreen(
     val scope = rememberCoroutineScope()
     val sessionKey = draft.editingPlotId ?: 0
     var region by remember(sessionKey) {
-        mutableStateOf(
-            draft.regionName.ifBlank { draft.place.substringAfterLast(", ").ifBlank { "Amazonas" } },
-        )
+        mutableStateOf(draft.regionName.ifBlank { draft.place.substringAfterLast(", ") })
     }
     var province by remember(sessionKey) {
-        mutableStateOf(draft.provinceName.ifBlank { "Chachapoyas" })
+        mutableStateOf(draft.provinceName)
     }
     var district by remember(sessionKey) {
-        mutableStateOf(draft.districtName.ifBlank { "Chachapoyas" })
+        mutableStateOf(draft.districtName)
     }
     var address by remember(sessionKey) { mutableStateOf(draft.addressLine) }
     var provinceMenu by remember { mutableStateOf(false) }
@@ -358,6 +356,13 @@ fun PublishPlotLocationScreen(
                         .clip(CardShape)
                         .background(MuyuForest)
                         .clickable {
+                            draft.addressLine = address
+                            draft.districtName = district
+                            draft.provinceName = province
+                            draft.regionName = region
+                            draft.latitude = latitude
+                            draft.longitude = longitude
+                            draft.accuracyMeters = accuracy
                             draft.place = listOf(address, district, province, region)
                                 .filter { it.isNotBlank() }
                                 .joinToString(", ")

@@ -23,7 +23,7 @@ object PlotFinance {
 
     fun parseAmount(raw: String): Double {
         val digits = raw.replace(Regex("[^0-9.]"), "")
-        return digits.toDoubleOrNull() ?: 8500.0
+        return digits.toDoubleOrNull() ?: 0.0
     }
 
     fun formatAmount(value: Double): String {
@@ -32,9 +32,7 @@ object PlotFinance {
         return "S/ $grouped"
     }
 
-    fun defaultAmount(draft: PlotDraft): Double {
-        return if (draft.amount.isBlank()) 8500.0 else parseAmount(draft.amount)
-    }
+    fun defaultAmount(draft: PlotDraft): Double = parseAmount(draft.amount)
 
     fun disbursement(total: Double): List<DisbursementStep> {
         val planting = total * 0.2353

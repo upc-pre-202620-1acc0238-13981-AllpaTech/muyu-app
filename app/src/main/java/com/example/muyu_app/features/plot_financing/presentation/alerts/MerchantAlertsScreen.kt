@@ -1,20 +1,16 @@
 package com.example.muyu_app.features.plot_financing.presentation.alerts
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -26,23 +22,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.currentStateAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import com.example.muyu_app.R
+import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
@@ -53,23 +48,26 @@ import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.core.network.MerchantNotificationRecord
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
-import com.example.muyu_app.ui.theme.MuyuApprovedBg
+import com.example.muyu_app.features.plot_financing.presentation.evidence.formatMerchantRelativeTime
+import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuHeader
-import com.example.muyu_app.ui.theme.MuyuPageGray
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistLight
+import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
-import java.util.concurrent.TimeUnit
 
-private val CardShape = RoundedCornerShape(20.dp)
-private val IconShape = RoundedCornerShape(20.dp)
+private val CardShape = RoundedCornerShape(12.dp)
+private val IconPillShape = RoundedCornerShape(100.dp)
+private val IconPillBg = Color(0xFFA0C97F)
+private val OnSurface = Color(0xFF1D1B20)
 
 @Composable
 fun MerchantAlertsScreen(
     onPlotClick: () -> Unit,
     onEvidenceClick: () -> Unit,
     onTabSelected: (MerchantTab) -> Unit,
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val container = LocalAppContainer.current
@@ -89,33 +87,21 @@ fun MerchantAlertsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MuyuHeader)
-                    .statusBarsPadding()
-                    .padding(horizontal = 32.dp)
-                    .padding(top = 16.dp, bottom = 20.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.merchant_notifications_title),
-                    style = TextStyle(
-                        fontFamily = UrbanistSemiBold,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = Color.White,
-                    ),
-                )
-            }
+            GreenTitleHeader(
+                title = stringResource(R.string.merchant_notifications_title),
+                onBack = onBack,
+                backgroundColor = MuyuNavBar,
+            )
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 16.dp, bottom = MuyuScrollBottomInset),
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 24.dp, bottom = MuyuScrollBottomInset),
+                verticalArrangement = Arrangement.spacedBy(15.dp),
             ) {
                 if (items.isEmpty()) {
                     Text(
@@ -145,7 +131,6 @@ fun MerchantAlertsScreen(
                                 }
                             },
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
             }
@@ -165,104 +150,96 @@ private fun NotificationCard(
 ) {
     val title = notificationTitle(item)
     val body = notificationBody(item)
-    val time = formatRelativeTime(item.createdAtMillis)
+    val time = formatMerchantRelativeTime(item.createdAtMillis)
+    val icon = notificationIcon(item.type)
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(CardShape)
             .background(Color.White)
             .border(1.dp, MuyuForest, CardShape)
             .clickable(onClick = onClick)
-            .padding(14.dp),
-        verticalAlignment = Alignment.Top,
+            .padding(horizontal = 12.dp, vertical = 9.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(52.dp)
-                .clip(IconShape)
-                .background(MuyuApprovedBg),
-            contentAlignment = Alignment.Center,
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            NotificationIcon(type = item.type)
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            Box(
+                modifier = Modifier
+                    .size(width = 39.dp, height = 37.dp)
+                    .clip(IconPillShape)
+                    .background(IconPillBg),
+                contentAlignment = Alignment.Center,
+            ) {
+                MuyuAsset(
+                    fileName = icon.fileName,
+                    contentDescription = null,
+                    width = icon.width,
+                    height = icon.height,
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = title,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                     style = TextStyle(
                         fontFamily = UrbanistSemiBold,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,
-                        color = Color.Black,
+                        color = OnSurface,
                     ),
                 )
                 Text(
                     text = time,
                     style = TextStyle(
-                        fontFamily = UrbanistSemiBold,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = if (time == stringResource(R.string.merchant_time_yesterday)) 12.sp else 16.sp,
-                        color = Color.Black.copy(alpha = 0.5f),
+                        fontFamily = UrbanistRegular,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
+                        color = OnSurface,
                     ),
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = body,
-                style = TextStyle(
-                    fontFamily = UrbanistLight,
-                    fontWeight = FontWeight.Light,
-                    fontSize = 16.sp,
-                    color = Color.Black.copy(alpha = 0.5f),
-                    lineHeight = 22.sp,
-                ),
-            )
         }
+        Text(
+            text = body,
+            modifier = Modifier.padding(start = 16.dp, bottom = 12.dp, end = 8.dp),
+            style = TextStyle(
+                fontFamily = UrbanistLight,
+                fontWeight = FontWeight.Light,
+                fontSize = 16.sp,
+                color = Color.Black.copy(alpha = 0.5f),
+            ),
+        )
     }
 }
 
-@Composable
-private fun NotificationIcon(type: String) {
-    when (type) {
-        MerchantNotificationRecord.TYPE_EXTENSION -> {
-            Image(
-                painter = painterResource(R.drawable.plot_calendar),
-                contentDescription = null,
-                modifier = Modifier.size(34.dp),
-                contentScale = ContentScale.Fit,
-            )
-        }
-        MerchantNotificationRecord.TYPE_HARVEST -> {
-            MuyuAsset(
-                fileName = "evidence/harvest.svg",
-                contentDescription = null,
-                width = 30.dp,
-                height = 30.dp,
-            )
-        }
-        else -> {
-            MuyuAsset(
-                fileName = "merchant/alert_payment.svg",
-                contentDescription = null,
-                width = 36.dp,
-                height = 22.dp,
-            )
-        }
-    }
+private data class NotificationIconSpec(
+    val fileName: String,
+    val width: Dp,
+    val height: Dp,
+)
+
+private fun notificationIcon(type: String): NotificationIconSpec = when (type) {
+    MerchantNotificationRecord.TYPE_EXTENSION ->
+        NotificationIconSpec("merchant/notif_calendar.png", 18.dp, 17.dp)
+    MerchantNotificationRecord.TYPE_HARVEST ->
+        NotificationIconSpec("merchant/notif_crop.png", 17.dp, 21.dp)
+    MerchantNotificationRecord.TYPE_WEATHER ->
+        NotificationIconSpec("merchant/notif_rain.png", 15.dp, 15.dp)
+    else ->
+        NotificationIconSpec("merchant/notif_payment.png", 21.dp, 12.dp)
 }
 
 @Composable
 private fun notificationTitle(item: MerchantNotificationRecord): String = when (item.type) {
     MerchantNotificationRecord.TYPE_EXTENSION -> stringResource(R.string.merchant_alert_extension_title)
     MerchantNotificationRecord.TYPE_HARVEST -> stringResource(R.string.merchant_alert_harvest_title)
+    MerchantNotificationRecord.TYPE_WEATHER -> stringResource(R.string.weather_alert_title)
     else -> stringResource(R.string.merchant_alert_payment_review)
 }
 
@@ -282,6 +259,9 @@ private fun notificationBody(item: MerchantNotificationRecord): String {
             item.plotName,
             item.body,
         )
+        MerchantNotificationRecord.TYPE_WEATHER -> item.body.ifBlank {
+            stringResource(R.string.merchant_alert_weather_body, item.plotName)
+        }
         else -> stringResource(
             R.string.merchant_alert_payment_body,
             item.farmerName,
@@ -298,29 +278,6 @@ private fun milestoneLabel(key: String): String = when (key) {
     MilestoneState.KEY_FERTILIZATION -> stringResource(R.string.publish_plan_fertilization)
     MilestoneState.KEY_HARVEST -> stringResource(R.string.publish_plan_harvest)
     else -> key
-}
-
-@Composable
-private fun formatRelativeTime(createdAtMillis: Long): String {
-    if (createdAtMillis <= 0L) return stringResource(R.string.merchant_time_now)
-    val now = System.currentTimeMillis()
-    val diff = (now - createdAtMillis).coerceAtLeast(0L)
-    return when {
-        diff < TimeUnit.MINUTES.toMillis(1) -> stringResource(R.string.merchant_time_now)
-        diff < TimeUnit.HOURS.toMillis(1) -> {
-            val minutes = TimeUnit.MILLISECONDS.toMinutes(diff).coerceAtLeast(1)
-            stringResource(R.string.merchant_time_min, minutes)
-        }
-        diff < TimeUnit.DAYS.toMillis(1) -> {
-            val hours = TimeUnit.MILLISECONDS.toHours(diff).coerceAtLeast(1)
-            stringResource(R.string.merchant_time_hours, hours)
-        }
-        diff < TimeUnit.DAYS.toMillis(2) -> stringResource(R.string.merchant_time_yesterday)
-        else -> {
-            val days = TimeUnit.MILLISECONDS.toDays(diff).coerceAtLeast(2)
-            stringResource(R.string.merchant_time_days, days)
-        }
-    }
 }
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 874)

@@ -104,7 +104,7 @@ object MilestoneCatalog {
             MilestoneState(
                 key = item.key,
                 status = if (index < current) MilestoneState.STATUS_APPROVED else MilestoneState.STATUS_PENDING,
-                dueLabel = if (index == current) "Today" else "",
+                dueLabel = "",
             )
         }
     }

@@ -3,7 +3,6 @@ package com.example.muyu_app.features.plot_financing.presentation.catalog
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,33 +45,34 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.muyu_app.R
+import com.example.muyu_app.core.designsystem.components.LanguageToggleButton
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
+import com.example.muyu_app.core.i18n.AppLanguage
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.presentation.myplots.formatPlotArea
 import com.example.muyu_app.ui.theme.MuyuApprovedBg
+import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuGrayChip
-import com.example.muyu_app.ui.theme.MuyuHeader
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuNearText
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuSkip
-import com.example.muyu_app.ui.theme.MuyuWeatherChip
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBlack
-import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistExtraBold
 import com.example.muyu_app.ui.theme.UrbanistLight
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
 
 private val CardShape = RoundedCornerShape(20.dp)
-private val ChipShape = RoundedCornerShape(20.dp)
+private val ChipShape = RoundedCornerShape(100.dp)
+private val SearchShape = RoundedCornerShape(100.dp)
+private val MutedFooter = Color.Black.copy(alpha = 0.4f)
 
 private enum class CatalogFilter { All, Near, Recommended }
 
@@ -84,8 +84,6 @@ fun MerchantCatalogScreen(
     modifier: Modifier = Modifier,
 ) {
     val container = LocalAppContainer.current
-    val merchantName = container.fakeStore.currentUser?.displayName?.ifBlank { null }
-        ?: stringResource(R.string.merchant_default_name)
     var plots by remember { mutableStateOf<List<Plot>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf(CatalogFilter.All) }
@@ -121,27 +119,42 @@ fun MerchantCatalogScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             CatalogHeader(
-                merchantName = merchantName,
                 companyName = stringResource(R.string.merchant_company_name),
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
-                selectedFilter = selectedFilter,
-                onFilterSelected = { selectedFilter = it },
                 language = languages.merchant,
                 onLanguageToggle = { languages.toggle(isMerchant = true) },
-                onAlertsClick = onAlertsClick,
             )
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 30.dp)
+                    .padding(horizontal = 24.dp)
                     .padding(top = 16.dp, bottom = MuyuScrollBottomInset),
             ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        text = stringResource(R.string.merchant_filter_all),
+                        selected = selectedFilter == CatalogFilter.All,
+                        onClick = { selectedFilter = CatalogFilter.All },
+                    )
+                    FilterChip(
+                        text = stringResource(R.string.merchant_filter_near),
+                        selected = selectedFilter == CatalogFilter.Near,
+                        onClick = { selectedFilter = CatalogFilter.Near },
+                    )
+                    FilterChip(
+                        text = stringResource(R.string.merchant_filter_recommended),
+                        selected = selectedFilter == CatalogFilter.Recommended,
+                        onClick = { selectedFilter = CatalogFilter.Recommended },
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
                 if (filteredPlots.isEmpty()) {
                     Text(
                         text = stringResource(R.string.merchant_no_plots),
@@ -201,41 +214,37 @@ internal fun farmerPhoto(plot: Plot): Int {
 
 @Composable
 private fun CatalogHeader(
-    merchantName: String,
     companyName: String,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
-    selectedFilter: CatalogFilter,
-    onFilterSelected: (CatalogFilter) -> Unit,
-    language: com.example.muyu_app.core.i18n.AppLanguage,
+    language: AppLanguage,
     onLanguageToggle: () -> Unit,
-    onAlertsClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MuyuHeader)
+            .background(MuyuNavBar)
             .statusBarsPadding()
-            .padding(horizontal = 30.dp)
-            .padding(top = 12.dp, bottom = 16.dp),
+            .padding(horizontal = 24.dp)
+            .padding(top = 16.dp, bottom = 20.dp),
     ) {
-        Text(
-            text = stringResource(R.string.merchant_welcome),
-            style = TextStyle(
-                fontFamily = UrbanistLight,
-                fontWeight = FontWeight.Light,
-                fontSize = 20.sp,
-                color = Color.White,
-            ),
-        )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = merchantName,
+                    text = stringResource(R.string.merchant_welcome),
+                    style = TextStyle(
+                        fontFamily = UrbanistLight,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 20.sp,
+                        color = Color.White,
+                    ),
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = companyName,
                     style = TextStyle(
                         fontFamily = UrbanistBlack,
                         fontWeight = FontWeight.Black,
@@ -244,51 +253,40 @@ private fun CatalogHeader(
                         lineHeight = 28.sp,
                     ),
                 )
-                Text(
-                    text = companyName,
-                    style = TextStyle(
-                        fontFamily = UrbanistSemiBold,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                        color = Color(0xFFFEFEFE),
-                    ),
-                )
             }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                com.example.muyu_app.core.designsystem.components.LanguageToggleButton(
-                    language = language,
-                    onToggle = onLanguageToggle,
-                )
-
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MuyuWeatherChip)
-                        .clickable(onClick = onAlertsClick),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.merchant_bell),
-                        contentDescription = stringResource(R.string.nav_alerts),
-                        modifier = Modifier.size(23.dp),
-                        contentScale = ContentScale.Fit,
-                    )
-                }
-            }
+            LanguageToggleButton(
+                language = language,
+                onToggle = onLanguageToggle,
+            )
         }
-        Spacer(modifier = Modifier.height(14.dp))
-
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            MuyuAsset(
+                fileName = "home/flag_peru.svg",
+                contentDescription = stringResource(R.string.farmer_flag_peru),
+                width = 28.dp,
+                height = 16.dp,
+            )
+            Text(
+                text = stringResource(R.string.farmer_country_peru),
+                style = TextStyle(
+                    fontFamily = UrbanistRegular,
+                    fontSize = 14.sp,
+                    color = Color.White,
+                ),
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(38.dp)
-                .clip(CardShape)
+                .height(44.dp)
+                .clip(SearchShape)
                 .background(Color.White)
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             MuyuAsset(
@@ -300,16 +298,15 @@ private fun CatalogHeader(
             Spacer(modifier = Modifier.width(10.dp))
             Box(
                 modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterStart
+                contentAlignment = Alignment.CenterStart,
             ) {
                 if (searchQuery.isEmpty()) {
                     Text(
                         text = stringResource(R.string.merchant_search),
                         style = TextStyle(
-                            fontFamily = UrbanistBold,
-                            fontWeight = FontWeight.Bold,
+                            fontFamily = UrbanistRegular,
                             fontSize = 16.sp,
-                            color = Color.Black.copy(alpha = 0.5f),
+                            color = Color.Black.copy(alpha = 0.45f),
                         ),
                     )
                 }
@@ -318,59 +315,14 @@ private fun CatalogHeader(
                     onValueChange = onSearchQueryChange,
                     singleLine = true,
                     textStyle = TextStyle(
-                        fontFamily = UrbanistBold,
-                        fontWeight = FontWeight.Bold,
+                        fontFamily = UrbanistRegular,
                         fontSize = 16.sp,
                         color = Color.Black,
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
-            MuyuAsset(
-                fileName = "farmer/filter.svg",
-                contentDescription = stringResource(R.string.farmer_filter_icon),
-                width = 18.dp,
-                height = 15.dp,
-            )
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                text = stringResource(R.string.merchant_filter_all),
-                selected = selectedFilter == CatalogFilter.All,
-                onClick = { onFilterSelected(CatalogFilter.All) }
-            )
-            FilterChip(
-                text = stringResource(R.string.merchant_filter_near),
-                selected = selectedFilter == CatalogFilter.Near,
-                onClick = { onFilterSelected(CatalogFilter.Near) }
-            )
-            FilterChip(
-                text = stringResource(R.string.merchant_filter_recommended),
-                selected = selectedFilter == CatalogFilter.Recommended,
-                onClick = { onFilterSelected(CatalogFilter.Recommended) }
-            )
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painter = painterResource(R.drawable.merchant_bell),
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                contentScale = ContentScale.Fit,
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = stringResource(R.string.merchant_notify),
-                style = TextStyle(
-                    fontFamily = UrbanistSemiBold,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    color = Color(0xFFFFFEFE),
-                ),
-            )
         }
     }
 }
@@ -379,20 +331,20 @@ private fun CatalogHeader(
 private fun FilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .height(24.dp)
+            .height(32.dp)
             .clip(ChipShape)
-            .background(if (selected) MuyuForest else MuyuSkip)
+            .background(if (selected) MuyuNavBar else MuyuSkip)
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             style = TextStyle(
-                fontFamily = UrbanistBold,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = if (selected) Color(0xFFFFFEFE) else MuyuNearText,
+                fontFamily = UrbanistSemiBold,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = if (selected) Color.White else MuyuNearText,
             ),
         )
     }
@@ -416,7 +368,6 @@ internal fun PlotOfferCard(
             .fillMaxWidth()
             .clip(CardShape)
             .background(Color.White)
-            .border(1.dp, MuyuForest, CardShape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
     ) {
         if (!imageUri.isNullOrBlank()) {
@@ -425,7 +376,7 @@ internal fun PlotOfferCard(
                 contentDescription = name,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(135.dp),
+                    .height(168.dp),
                 contentScale = ContentScale.Crop,
             )
         } else {
@@ -434,7 +385,7 @@ internal fun PlotOfferCard(
                 contentDescription = name,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(135.dp),
+                    .height(168.dp),
                 contentScale = ContentScale.Crop,
             )
         }
@@ -442,6 +393,7 @@ internal fun PlotOfferCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = name,
@@ -462,7 +414,7 @@ internal fun PlotOfferCard(
                     ),
                 )
             }
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
                     painter = painterResource(farmerPhoto),
@@ -472,7 +424,7 @@ internal fun PlotOfferCard(
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop,
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = farmer,
                     style = TextStyle(
@@ -483,20 +435,25 @@ internal fun PlotOfferCard(
                     ),
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                InfoChip(crop, MuyuApprovedBg, MuyuForest)
-                InfoChip(area, MuyuGrayChip, Color.Black.copy(alpha = 0.5f))
-                InfoChip(place, MuyuGrayChip, Color.Black.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(10.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MuyuApprovedBg)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = listOf(crop, area, place).filter { it.isNotBlank() }.joinToString(" · "),
+                    style = TextStyle(
+                        fontFamily = UrbanistSemiBold,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = MuyuForest,
+                    ),
+                )
             }
             Spacer(modifier = Modifier.height(10.dp))
-            MuyuAsset(
-                fileName = "merchant/card_line.svg",
-                contentDescription = null,
-                width = 305.dp,
-                height = 1.dp,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -505,44 +462,20 @@ internal fun PlotOfferCard(
                     text = stringResource(R.string.merchant_verified),
                     style = TextStyle(
                         fontFamily = UrbanistRegular,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 16.sp,
-                        color = MuyuForest,
+                        fontSize = 13.sp,
+                        color = MutedFooter,
                     ),
                 )
                 Text(
                     text = stringResource(R.string.merchant_milestones),
                     style = TextStyle(
                         fontFamily = UrbanistRegular,
-                        fontWeight = FontWeight.Normal,
                         fontSize = 13.sp,
-                        color = MuyuForest,
+                        color = MutedFooter,
                     ),
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun InfoChip(text: String, background: Color, color: Color) {
-    Box(
-        modifier = Modifier
-            .height(24.dp)
-            .clip(ChipShape)
-            .background(background)
-            .padding(horizontal = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            style = TextStyle(
-                fontFamily = UrbanistBold,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = color,
-            ),
-        )
     }
 }
 

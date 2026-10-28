@@ -22,6 +22,6 @@ fun cycleLabelToRes(cycle: String): Int = when {
 }
 
 fun draftAmountDisplay(amount: String): String {
-    if (amount.isBlank()) return PlotFinance.formatAmount(8500.0)
+    if (amount.isBlank()) return ""
     return if (amount.contains("S/", ignoreCase = true)) amount else PlotFinance.formatAmount(PlotFinance.parseAmount(amount))
 }

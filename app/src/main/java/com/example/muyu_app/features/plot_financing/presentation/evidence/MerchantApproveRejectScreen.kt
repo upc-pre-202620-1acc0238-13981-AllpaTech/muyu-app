@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.evidence
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,7 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -36,30 +38,30 @@ import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.MuyuAsset
-import com.example.muyu_app.core.plot.refreshSelectedPlot
 import com.example.muyu_app.core.plot.rememberLiveFundedPlot
 import com.example.muyu_app.features.plot_approval.domain.milestoneForEvidence
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
-import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.ui.theme.MuyuAction
 import com.example.muyu_app.ui.theme.MuyuForest
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuPageGray
-import com.example.muyu_app.ui.theme.UrbanistBold
-import com.example.muyu_app.ui.theme.UrbanistExtraBold
 import com.example.muyu_app.ui.theme.UrbanistLight
-import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
 
 private val CardShape = RoundedCornerShape(20.dp)
 private val BadgeShape = RoundedCornerShape(8.dp)
 private val Muted = Color(0xFF4F5A50)
 private val RedReject = Color(0xFFB84444)
+private val RedRejectButton = Color(0xFF9E2F2F)
+private val BadgeFill = Color(0xFFFFF3E0)
+private val BadgeText = Color(0xFF9A5B00)
 
 @Composable
 fun MerchantApproveRejectScreen(
     onBack: () -> Unit,
-    onFinished: () -> Unit,
+    onApprove: () -> Unit,
+    onReject: () -> Unit,
     onTabSelected: (MerchantTab) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -99,6 +101,7 @@ fun MerchantApproveRejectScreen(
             GreenTitleHeader(
                 title = stringResource(R.string.merchant_approve_reject_title),
                 onBack = onBack,
+                backgroundColor = MuyuNavBar,
             )
             Column(
                 modifier = Modifier
@@ -108,58 +111,67 @@ fun MerchantApproveRejectScreen(
                     .padding(top = 32.dp, bottom = MuyuScrollBottomInset),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(CardShape)
                         .background(Color.White)
                         .border(1.dp, MuyuForest, CardShape)
                         .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = stringResource(
-                                R.string.merchant_approve_summary_title,
-                                milestoneTitle,
-                                plotName,
-                            ),
-                            style = TextStyle(
-                                fontFamily = UrbanistSemiBold,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp,
-                                color = Color.Black,
-                            ),
-                        )
-                        Text(
-                            text = stringResource(
-                                R.string.merchant_approve_farmer_line,
-                                plotName,
-                                farmerName,
-                            ),
-                            style = TextStyle(
-                                fontFamily = UrbanistLight,
-                                fontWeight = FontWeight.Light,
-                                fontSize = 16.sp,
-                                color = Muted,
-                            ),
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .clip(BadgeShape)
-                            .background(Color(0xFFFFF3E0))
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    Image(
+                        painter = painterResource(milestoneImage(milestoneKey)),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        contentScale = ContentScale.Fit,
+                    )
+                    Spacer(modifier = Modifier.width(24.dp))
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.spacedBy(20.dp),
                     ) {
-                        Text(
-                            text = evidenceBadge,
-                            style = TextStyle(
-                                fontFamily = UrbanistSemiBold,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 12.sp,
-                                color = Color(0xFF9A5B00),
-                            ),
-                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = stringResource(
+                                    R.string.merchant_approve_summary_title,
+                                    milestoneTitle,
+                                    plotName,
+                                ),
+                                style = TextStyle(
+                                    fontFamily = UrbanistSemiBold,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 16.sp,
+                                    color = Color.Black,
+                                ),
+                            )
+                            Text(
+                                text = farmerName.ifBlank { "—" },
+                                style = TextStyle(
+                                    fontFamily = UrbanistLight,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = 16.sp,
+                                    color = Muted,
+                                ),
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(BadgeShape)
+                                .background(BadgeFill)
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                        ) {
+                            Text(
+                                text = evidenceBadge,
+                                style = TextStyle(
+                                    fontFamily = UrbanistSemiBold,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp,
+                                    color = BadgeText,
+                                ),
+                            )
+                        }
                     }
                 }
 
@@ -174,7 +186,7 @@ fun MerchantApproveRejectScreen(
                     borderColor = MuyuForest,
                     leading = {
                         MuyuAsset(
-                            fileName = "publish/check.svg",
+                            fileName = "merchant/circle_check_fill.svg",
                             contentDescription = null,
                             width = 24.dp,
                             height = 24.dp,
@@ -187,15 +199,11 @@ fun MerchantApproveRejectScreen(
                     body = stringResource(R.string.merchant_reject_explainer, releaseLabel),
                     borderColor = RedReject,
                     leading = {
-                        Text(
-                            text = "!",
-                            style = TextStyle(
-                                fontFamily = UrbanistBold,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
-                                color = RedReject,
-                            ),
-                            modifier = Modifier.size(24.dp),
+                        MuyuAsset(
+                            fileName = "merchant/error_circle.svg",
+                            contentDescription = null,
+                            width = 24.dp,
+                            height = 24.dp,
                         )
                     },
                 )
@@ -204,24 +212,12 @@ fun MerchantApproveRejectScreen(
                     PrimaryActionButton(
                         text = stringResource(R.string.merchant_approve_release),
                         background = MuyuAction,
-                        onClick = {
-                            if (plotId != null) {
-                                container.fakeStore.reviewMilestone(plotId, milestoneKey, approved = true)
-                                container.refreshSelectedPlot()
-                            }
-                            onFinished()
-                        },
+                        onClick = onApprove,
                     )
                     PrimaryActionButton(
                         text = stringResource(R.string.merchant_reject_explain),
-                        background = RedReject,
-                        onClick = {
-                            if (plotId != null) {
-                                container.fakeStore.reviewMilestone(plotId, milestoneKey, approved = false)
-                                container.refreshSelectedPlot()
-                            }
-                            onFinished()
-                        },
+                        background = RedRejectButton,
+                        onClick = onReject,
                     )
                 }
             }
@@ -232,33 +228,6 @@ fun MerchantApproveRejectScreen(
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
-}
-
-private data class EscrowSummary(
-    val balanceLabel: String,
-    val afterReleaseLabel: String,
-)
-
-private fun computeEscrowSummary(
-    plot: com.example.muyu_app.features.plot_approval.domain.Plot,
-    milestoneKey: String,
-): EscrowSummary {
-    val total = PlotFinance.parseAmount(plot.amount)
-    val steps = PlotFinance.disbursement(total)
-    val states = plot.milestoneStates
-    val released = MilestoneCatalog.all.indices.sumOf { index ->
-        val key = MilestoneCatalog.all[index].key
-        val approved = states.find { it.key == key }?.status == MilestoneState.STATUS_APPROVED
-        if (approved) steps.getOrNull(index)?.amount ?: 0.0 else 0.0
-    }
-    val releaseIndex = MilestoneCatalog.all.indexOfFirst { it.key == milestoneKey }.coerceAtLeast(0)
-    val releaseAmount = steps.getOrNull(releaseIndex)?.amount ?: 0.0
-    val balance = (total - released).coerceAtLeast(0.0)
-    val after = (balance - releaseAmount).coerceAtLeast(0.0)
-    return EscrowSummary(
-        balanceLabel = PlotFinance.formatAmount(balance),
-        afterReleaseLabel = PlotFinance.formatAmount(after),
-    )
 }
 
 @Composable
@@ -283,9 +252,9 @@ private fun DecisionOptionCard(
             Text(
                 text = title,
                 style = TextStyle(
-                    fontFamily = UrbanistBold,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
+                    fontFamily = UrbanistSemiBold,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
                     color = Color.Black,
                 ),
             )
@@ -293,11 +262,10 @@ private fun DecisionOptionCard(
         Text(
             text = body,
             style = TextStyle(
-                fontFamily = UrbanistRegular,
-                fontWeight = FontWeight.Normal,
+                fontFamily = UrbanistLight,
+                fontWeight = FontWeight.Light,
                 fontSize = 16.sp,
-                color = Muted,
-                lineHeight = 22.sp,
+                color = Color.Black.copy(alpha = 0.5f),
             ),
         )
     }
@@ -321,11 +289,20 @@ private fun PrimaryActionButton(
         Text(
             text = text,
             style = TextStyle(
-                fontFamily = UrbanistExtraBold,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 20.sp,
-                color = Color(0xFFFEFEFE),
+                fontFamily = UrbanistSemiBold,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                lineHeight = 23.sp,
+                color = Color.White,
             ),
         )
     }
+}
+
+private fun milestoneImage(key: String): Int = when (key.lowercase()) {
+    MilestoneState.KEY_PLANTING -> R.drawable.milestone_planting
+    MilestoneState.KEY_IRRIGATION -> R.drawable.milestone_irrigation
+    MilestoneState.KEY_FERTILIZATION -> R.drawable.milestone_fertilization
+    MilestoneState.KEY_HARVEST -> R.drawable.milestone_harvest
+    else -> R.drawable.milestone_fertilization
 }

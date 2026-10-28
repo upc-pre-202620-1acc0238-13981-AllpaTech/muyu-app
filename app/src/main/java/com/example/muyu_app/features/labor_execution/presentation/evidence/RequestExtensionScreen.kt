@@ -64,7 +64,7 @@ fun RequestExtensionScreen(
     val current = plot?.currentMilestone()
     val definition = MilestoneCatalog.definition(current?.key ?: container.selectedMilestoneKey)
     val milestoneTitle = stringResource(definition.titleRes)
-    val currentDeadline = current?.dueLabel?.ifBlank { null } ?: "03 Oct 2026"
+    val currentDeadline = current?.dueLabel.orEmpty()
     val minimumDate = remember(currentDeadline) {
         val today = LocalDate.now()
         maxOf(today, parseExtensionDate(currentDeadline) ?: today)
@@ -103,7 +103,7 @@ fun RequestExtensionScreen(
                 ) {
                     Column {
                         Text(
-                            text = "$milestoneTitle · ${plot?.name ?: "El Rosal Plot"}",
+                            text = "$milestoneTitle · ${plot?.name.orEmpty()}",
                             style = TextStyle(
                                 fontFamily = UrbanistBold,
                                 fontWeight = FontWeight.Bold,

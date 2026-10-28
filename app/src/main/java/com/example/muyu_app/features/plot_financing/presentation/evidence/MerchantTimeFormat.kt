@@ -54,6 +54,27 @@ fun formatEvidenceDateTimeLine(millis: Long, locale: Locale = Locale.getDefault(
     return "$date · $time"
 }
 
+fun formatEvidenceTimeCommaDate(millis: Long, locale: Locale = Locale.getDefault()): String {
+    if (millis <= 0L) return "—"
+    val date = SimpleDateFormat("d MMM", locale).format(Date(millis))
+    val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(millis))
+    return "$time, $date"
+}
+
+fun formatEvidenceFullDateTime(millis: Long, locale: Locale = Locale.getDefault()): String {
+    if (millis <= 0L) return "—"
+    val date = SimpleDateFormat("d MMM yyyy", locale).format(Date(millis))
+    val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(millis))
+    return "$date · $time"
+}
+
+fun formatEvidenceLongDateTime(millis: Long, locale: Locale = Locale.getDefault()): String {
+    if (millis <= 0L) return "—"
+    val date = SimpleDateFormat("dd MMMM yyyy", locale).format(Date(millis))
+    val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(millis))
+    return "$date · $time"
+}
+
 fun isSameCalendarDay(millis: Long, nowMillis: Long = System.currentTimeMillis()): Boolean {
     if (millis <= 0L) return false
     val a = Calendar.getInstance().apply { timeInMillis = millis }

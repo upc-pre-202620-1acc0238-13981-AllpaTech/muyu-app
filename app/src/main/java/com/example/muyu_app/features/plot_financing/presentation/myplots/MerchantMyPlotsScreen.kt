@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.myplots
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,10 +16,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -47,28 +51,38 @@ import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
-import com.example.muyu_app.core.di.MerchantEvidenceOrigin
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
-import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
-import com.example.muyu_app.features.plot_approval.domain.MilestoneState
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.ui.theme.MuyuAction
-import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuHeader
+import com.example.muyu_app.ui.theme.MuyuBackground
+import com.example.muyu_app.ui.theme.MuyuFinancedBg
+import com.example.muyu_app.ui.theme.MuyuGrayChip
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuPageGray
+import com.example.muyu_app.ui.theme.MuyuPendingBg
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistLight
+import com.example.muyu_app.ui.theme.UrbanistMedium
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
 
-private val CardShape = RoundedCornerShape(20.dp)
+private val CardShape = RoundedCornerShape(16.dp)
+private val ChipShape = RoundedCornerShape(100.dp)
+private val WeatherImageShape = RoundedCornerShape(12.dp)
 private val Muted = Color.Black.copy(alpha = 0.5f)
+private val CardOutline = Color(0xFFCAC4D0)
+private val OnSurface = Color(0xFF1D1B20)
+private val WarningText = Color(0xFF774308)
+private val FundedText = Color(0xFF244398)
+private val TempChipBg = Color(0xFFFEF7FF)
+private val WeatherStart = Color(0xFF162A50)
+private val WeatherEnd = Color(0xFF524FA0)
 
 @Composable
 fun MerchantMyPlotsScreen(
-    onPlotEvidenceClick: () -> Unit,
+    onPlotClick: () -> Unit,
     onTabSelected: (MerchantTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -96,18 +110,16 @@ fun MerchantMyPlotsScreen(
             plots.sortedBy { it.name }
         }
     }
-    val cuscoCount = remember(plots) { cuscoFundedPlots(plots).size }
-
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MuyuHeader)
+                    .background(MuyuNavBar)
                     .statusBarsPadding()
                     .padding(horizontal = 30.dp)
                     .padding(top = 16.dp, bottom = 20.dp),
@@ -125,7 +137,7 @@ fun MerchantMyPlotsScreen(
                 Text(
                     text = stringResource(R.string.merchant_active_funded_plots, plots.size),
                     style = TextStyle(
-                        fontFamily = UrbanistSemiBold,
+                        fontFamily = UrbanistMedium,
                         fontWeight = FontWeight.Medium,
                         fontSize = 16.sp,
                         color = Color(0xFFFEFEFE),
@@ -136,19 +148,20 @@ fun MerchantMyPlotsScreen(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 30.dp)
-                    .padding(top = 16.dp, bottom = MuyuScrollBottomInset),
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 24.dp, bottom = MuyuScrollBottomInset),
             ) {
-                if (plots.isNotEmpty() && cuscoCount > 0) {
+                if (plots.isNotEmpty()) {
                     RainRiskBanner(
-                        plotCount = cuscoCount,
+                        plotCount = plots.size,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
                 ReviewFirstToggle(
                     enabled = reviewFirst,
-                    onToggle = { reviewFirst = !reviewFirst },
+                    onCheckedChange = { reviewFirst = it },
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 if (displayPlots.isEmpty()) {
@@ -166,9 +179,7 @@ fun MerchantMyPlotsScreen(
                             plot = plot,
                             onClick = {
                                 container.selectedPlot = plot
-                                container.selectedMilestoneKey = plot.evidenceMilestoneKey()
-                                container.merchantEvidenceOrigin = MerchantEvidenceOrigin.MyPlots
-                                onPlotEvidenceClick()
+                                onPlotClick()
                             },
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -186,63 +197,80 @@ fun MerchantMyPlotsScreen(
 
 @Composable
 private fun RainRiskBanner(plotCount: Int, modifier: Modifier = Modifier) {
-    Box(
+    val body = if (plotCount == 1) {
+        stringResource(R.string.merchant_rain_risk_body, plotCount)
+    } else {
+        stringResource(R.string.merchant_rain_risk_body_plural, plotCount)
+    }
+    Row(
         modifier = modifier
-            .height(93.dp)
             .clip(CardShape)
-            .background(
-                Brush.horizontalGradient(
-                    colors = listOf(Color(0xFF162A50), Color(0xFF524FA0)),
+            .background(Brush.horizontalGradient(listOf(WeatherStart, WeatherEnd)))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.weather_rain),
+            contentDescription = null,
+            modifier = Modifier
+                .size(64.dp)
+                .clip(WeatherImageShape),
+            contentScale = ContentScale.Fit,
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.merchant_rain_risk_title),
+                style = TextStyle(
+                    fontFamily = UrbanistMedium,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    lineHeight = 24.sp,
+                    color = Color(0xFFFEFEFE),
                 ),
             )
-            .border(1.dp, Color(0xFF524FA0), CardShape)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            MuyuAsset(
-                fileName = "weather/check.svg",
-                contentDescription = null,
-                width = 32.dp,
-                height = 32.dp,
+            Text(
+                text = body,
+                style = TextStyle(
+                    fontFamily = UrbanistRegular,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    color = Color.White,
+                ),
             )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.merchant_rain_risk_title),
-                    style = TextStyle(
-                        fontFamily = UrbanistBold,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = Color(0xFFFEFEFE),
-                    ),
-                )
-                Text(
-                    text = stringResource(R.string.merchant_rain_risk_weather),
-                    style = TextStyle(
-                        fontFamily = UrbanistLight,
-                        fontWeight = FontWeight.Light,
-                        fontSize = 16.sp,
-                        color = Color(0xFFFEFEFE),
-                    ),
-                )
-            }
+        }
+        Box(
+            modifier = Modifier
+                .clip(ChipShape)
+                .background(TempChipBg)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.merchant_rain_risk_temp),
+                style = TextStyle(
+                    fontFamily = UrbanistMedium,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    color = OnSurface,
+                ),
+            )
         }
     }
 }
 
 @Composable
-private fun ReviewFirstToggle(enabled: Boolean, onToggle: () -> Unit) {
+private fun ReviewFirstToggle(
+    enabled: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .height(70.dp)
             .clip(CardShape)
-            .background(Color.White)
-            .border(1.dp, MuyuForest, CardShape)
-            .padding(horizontal = 18.dp),
+            .background(MuyuPageGray)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -251,28 +279,23 @@ private fun ReviewFirstToggle(enabled: Boolean, onToggle: () -> Unit) {
             style = TextStyle(
                 fontFamily = UrbanistRegular,
                 fontSize = 16.sp,
-                color = Color.Black,
+                lineHeight = 24.sp,
+                color = OnSurface,
             ),
             modifier = Modifier.weight(1f),
         )
-        Box(
-            modifier = Modifier
-                .size(45.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(if (enabled) MuyuAction else Color.LightGray)
-                .clickable(onClick = onToggle),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(R.string.merchant_filter_yes),
-                style = TextStyle(
-                    fontFamily = UrbanistBold,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.White,
-                ),
-            )
-        }
+        Switch(
+            checked = enabled,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = MuyuAction,
+                checkedBorderColor = Color.Transparent,
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = CardOutline,
+                uncheckedBorderColor = Color.Transparent,
+            ),
+        )
     }
 }
 
@@ -294,24 +317,58 @@ private fun FundedPlotCard(plot: Plot, onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(CardShape)
             .background(Color.White)
-            .border(1.dp, MuyuForest, CardShape)
+            .border(1.dp, CardOutline, CardShape)
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = plot.name,
-                style = TextStyle(
-                    fontFamily = UrbanistSemiBold,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    color = Color.Black,
-                ),
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = plot.name,
+                    style = TextStyle(
+                        fontFamily = UrbanistSemiBold,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = Color.Black,
+                    ),
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = plot.crop,
+                        style = TextStyle(
+                            fontFamily = UrbanistLight,
+                            fontWeight = FontWeight.Light,
+                            fontSize = 16.sp,
+                            color = Muted,
+                        ),
+                    )
+                    Text(
+                        text = "  ·  ",
+                        style = TextStyle(
+                            fontFamily = UrbanistRegular,
+                            fontSize = 14.sp,
+                            color = Muted,
+                        ),
+                    )
+                    Text(
+                        text = plot.ownerName.ifBlank { "—" },
+                        style = TextStyle(
+                            fontFamily = UrbanistLight,
+                            fontWeight = FontWeight.Light,
+                            fontSize = 16.sp,
+                            color = Muted,
+                        ),
+                    )
+                }
+            }
             StatusChip(
                 label = if (needsReview) {
                     stringResource(R.string.merchant_in_progress)
@@ -321,118 +378,70 @@ private fun FundedPlotCard(plot: Plot, onClick: () -> Unit) {
                 needsReview = needsReview,
             )
         }
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = "${plot.crop} · ${plot.ownerName.ifBlank { "—" }}",
-            style = TextStyle(
-                fontFamily = UrbanistRegular,
-                fontSize = 16.sp,
-                color = Muted,
-            ),
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = stringResource(R.string.merchant_milestones_fraction, approved, total),
-                style = TextStyle(
-                    fontFamily = UrbanistRegular,
-                    fontSize = 16.sp,
-                    color = Muted,
-                ),
-            )
-            Text(
-                text = "$progress%",
-                style = TextStyle(
-                    fontFamily = UrbanistRegular,
-                    fontSize = 16.sp,
-                    color = Muted,
-                ),
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        ProgressBar(progress = progress)
-        Spacer(modifier = Modifier.height(10.dp))
-        if (needsReview && milestoneTitle.isNotBlank()) {
-            Text(
-                text = stringResource(R.string.merchant_current_milestone),
-                style = TextStyle(
-                    fontFamily = UrbanistRegular,
-                    fontSize = 16.sp,
-                    color = Muted,
-                ),
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
             ) {
+                Text(
+                    text = stringResource(R.string.merchant_milestones_fraction, approved, total),
+                    style = MutedLabelStyle,
+                )
+                Text(
+                    text = "$progress%",
+                    style = MutedLabelStyle,
+                )
+            }
+            ProgressBar(progress = progress)
+        }
+        if (needsReview && milestoneTitle.isNotBlank()) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(R.string.merchant_current_milestone),
+                    style = MutedLabelStyle,
+                )
+                StatusChip(
+                    label = stringResource(R.string.merchant_needs_your_review),
+                    needsReview = true,
+                )
                 Text(
                     text = milestoneTitle,
                     style = TextStyle(
                         fontFamily = UrbanistRegular,
                         fontSize = 16.sp,
-                        color = Color.Black,
+                        lineHeight = 24.sp,
+                        color = OnSurface,
                     ),
                 )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0xFFFED2BD))
-                        .clickable(onClick = onClick)
-                        .padding(horizontal = 10.dp, vertical = 3.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.merchant_review_evidence),
-                        style = TextStyle(
-                            fontFamily = UrbanistBold,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = Color(0xFFA65E12),
-                        ),
-                    )
-                }
             }
         } else if (milestoneTitle.isNotBlank()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row {
-                    Text(
-                        text = stringResource(R.string.merchant_next_milestone),
-                        style = TextStyle(
-                            fontFamily = UrbanistRegular,
-                            fontSize = 16.sp,
-                            color = Muted,
-                        ),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = milestoneTitle,
-                        style = TextStyle(
-                            fontFamily = UrbanistRegular,
-                            fontSize = 16.sp,
-                            color = Color.Black,
-                        ),
-                    )
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(R.string.merchant_next_milestone),
+                    style = MutedLabelStyle,
+                )
+                Text(
+                    text = milestoneTitle,
+                    style = TextStyle(
+                        fontFamily = UrbanistRegular,
+                        fontSize = 16.sp,
+                        lineHeight = 24.sp,
+                        color = OnSurface,
+                    ),
+                )
                 if (!nextDue.isNullOrBlank()) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(Color(0xFFE6E6E6).copy(alpha = 0.9f))
-                            .padding(horizontal = 10.dp, vertical = 3.dp),
+                            .clip(ChipShape)
+                            .background(MuyuGrayChip)
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
                     ) {
                         Text(
                             text = nextDue,
                             style = TextStyle(
-                                fontFamily = UrbanistBold,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
+                                fontFamily = UrbanistMedium,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 12.sp,
                                 color = Muted,
                             ),
                         )
@@ -445,20 +454,20 @@ private fun FundedPlotCard(plot: Plot, onClick: () -> Unit) {
 
 @Composable
 private fun StatusChip(label: String, needsReview: Boolean) {
-    val bg = if (needsReview) Color(0xFFFED2BD) else Color(0xFFC8DBFF)
-    val fg = if (needsReview) Color(0xFFA65E12) else Color(0xFF3A5DD2)
+    val bg = if (needsReview) MuyuPendingBg else MuyuFinancedBg
+    val fg = if (needsReview) WarningText else FundedText
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(ChipShape)
             .background(bg)
-            .padding(horizontal = 10.dp, vertical = 3.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp),
     ) {
         Text(
             text = label,
             style = TextStyle(
-                fontFamily = UrbanistBold,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                fontFamily = UrbanistSemiBold,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 12.sp,
                 color = fg,
             ),
         )
@@ -470,19 +479,28 @@ private fun ProgressBar(progress: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(16.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFE6E6E6).copy(alpha = 0.9f)),
+            .height(12.dp)
+            .clip(ChipShape)
+            .background(MuyuGrayChip),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(progress / 100f)
-                .clip(RoundedCornerShape(20.dp))
-                .background(MuyuHeader),
-        )
+        if (progress > 0) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(progress / 100f)
+                    .clip(ChipShape)
+                    .background(MuyuAction),
+            )
+        }
     }
 }
+
+private val MutedLabelStyle = TextStyle(
+    fontFamily = UrbanistRegular,
+    fontSize = 14.sp,
+    lineHeight = 20.sp,
+    color = Muted,
+)
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 874)
 @Composable
@@ -490,7 +508,7 @@ private fun MerchantMyPlotsScreenPreview() {
     InstallMuyuImageLoader()
     CompositionLocalProvider(LocalAppContainer provides AppContainer()) {
         MuyuappTheme {
-            MerchantMyPlotsScreen(onPlotEvidenceClick = {}, onTabSelected = {})
+            MerchantMyPlotsScreen(onPlotClick = {}, onTabSelected = {})
         }
     }
 }

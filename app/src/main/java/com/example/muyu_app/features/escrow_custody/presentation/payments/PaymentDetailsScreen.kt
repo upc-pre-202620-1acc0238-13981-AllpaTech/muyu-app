@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,8 +40,13 @@ import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
+import com.example.muyu_app.core.di.AppContainer
+import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
+import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
+import com.example.muyu_app.features.plot_approval.domain.PlotFinance
+import com.example.muyu_app.features.plot_financing.presentation.evidence.mockTransactionId
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
@@ -59,6 +65,24 @@ fun PaymentDetailsScreen(
     modifier: Modifier = Modifier,
     bottomBar: (@Composable BoxScope.() -> Unit)? = null,
 ) {
+    val container = LocalAppContainer.current
+    val plot = container.selectedPlot
+    val milestone = plot?.milestoneStates?.firstOrNull { it.key == container.selectedMilestoneKey }
+    val stepIndex = MilestoneCatalog.all.indexOfFirst { it.key == container.selectedMilestoneKey }
+    val amount = plot?.let { current ->
+        PlotFinance.disbursement(PlotFinance.parseAmount(current.amount)).getOrNull(stepIndex)?.amount
+    }
+    val amountLabel = amount?.let { PlotFinance.formatAmount(it) }.orEmpty()
+    val milestoneTitle = stringResource(MilestoneCatalog.definition(container.selectedMilestoneKey).titleRes)
+    val plotName = plot?.name.orEmpty()
+    val releaseDate = when {
+        (milestone?.submittedAtMillis ?: 0L) > 0L -> PlotFinance.shortDateFromMillis(milestone?.submittedAtMillis ?: 0L)
+        !milestone?.recordedAt.isNullOrBlank() -> milestone?.recordedAt.orEmpty()
+        else -> ""
+    }
+    val completed = milestone?.isApproved == true
+    val transactionId = mockTransactionId(container.selectedMilestoneKey, milestone?.submittedAtMillis ?: 0L)
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -96,7 +120,7 @@ fun PaymentDetailsScreen(
 
                 // Monto principal
                 Text(
-                    text = "S/ 2,000",
+                    text = amountLabel,
                     fontSize = 36.sp,
                     fontWeight = FontWeight.Bold,
                     color = DarkGreenText,
@@ -112,7 +136,9 @@ fun PaymentDetailsScreen(
                         .padding(horizontal = 16.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.payments_filter_completed),
+                        text = stringResource(
+                            if (completed) R.string.payments_filter_completed else R.string.payments_filter_pending,
+                        ),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = DarkGreenText,
@@ -139,19 +165,22 @@ fun PaymentDetailsScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        DetailRow(label = stringResource(R.string.payment_label_milestone), value = stringResource(R.string.plot_fertilization))
+                        DetailRow(label = stringResource(R.string.payment_label_milestone), value = milestoneTitle)
                         Divider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
 
-                        DetailRow(label = stringResource(R.string.payment_label_plot), value = "El Rosal Plot")
+                        DetailRow(label = stringResource(R.string.payment_label_plot), value = plotName)
                         Divider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
 
-                        DetailRow(label = stringResource(R.string.payment_label_release_date), value = "30 Sep 2026")
+                        DetailRow(label = stringResource(R.string.payment_label_release_date), value = releaseDate)
                         Divider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
 
-                        DetailRow(label = stringResource(R.string.payment_label_account), value = ".... 7642")
+                        DetailRow(
+                            label = stringResource(R.string.payment_label_account),
+                            value = container.fakeStore.currentUser?.phone.orEmpty(),
+                        )
                         Divider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
 
-                        DetailRow(label = stringResource(R.string.payment_label_txid), value = "MYU-20260930-1842")
+                        DetailRow(label = stringResource(R.string.payment_label_txid), value = transactionId)
                     }
                 }
 
@@ -181,7 +210,7 @@ fun PaymentDetailsScreen(
                         ) {
                             EscrowStepItem(
                                 title = stringResource(R.string.payment_evidence_approved),
-                                isChecked = true,
+                                isChecked = milestone?.isApproved == true || milestone?.isSubmitted == true,
                                 modifier = Modifier.weight(1f),
                             )
 
@@ -194,7 +223,7 @@ fun PaymentDetailsScreen(
 
                             EscrowStepItem(
                                 title = stringResource(R.string.payment_funds_released),
-                                isChecked = true,
+                                isChecked = completed,
                                 modifier = Modifier.weight(1f),
                             )
 
@@ -207,7 +236,7 @@ fun PaymentDetailsScreen(
 
                             EscrowStepItem(
                                 title = stringResource(R.string.payment_received),
-                                isChecked = true,
+                                isChecked = completed,
                                 modifier = Modifier.weight(1f),
                             )
                         }
@@ -354,7 +383,9 @@ private fun CheckMarkIcon(color: Color, modifier: Modifier = Modifier) {
 @Composable
 private fun PaymentDetailsScreenPreview() {
     InstallMuyuImageLoader()
-    MuyuappTheme {
-        PaymentDetailsScreen(onBack = {}, onTabSelected = {})
+    CompositionLocalProvider(LocalAppContainer provides AppContainer()) {
+        MuyuappTheme {
+            PaymentDetailsScreen(onBack = {}, onTabSelected = {})
+        }
     }
 }

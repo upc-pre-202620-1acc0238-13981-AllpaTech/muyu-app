@@ -3,6 +3,7 @@ package com.example.muyu_app.core.designsystem.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,44 +32,63 @@ fun GreenTitleHeader(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    backgroundColor: Color = MuyuHeader,
+    eyebrow: String? = null,
     trailing: @Composable (() -> Unit)? = null,
 ) {
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MuyuHeader)
-            .statusBarsPadding()
-            .height(56.dp)
-            .padding(start = 32.dp, end = 20.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .background(backgroundColor)
+            .statusBarsPadding(),
     ) {
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .clickable(onClick = onBack),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            MuyuAsset(
-                fileName = "publish/back.svg",
-                contentDescription = stringResource(R.string.plot_back),
-                width = 17.dp,
-                height = 19.dp,
-                modifier = Modifier.rotate(-90f),
-            )
-            Spacer(modifier = Modifier.width(20.dp))
+        if (!eyebrow.isNullOrBlank()) {
             Text(
-                text = title,
+                text = eyebrow,
+                modifier = Modifier.padding(start = 32.dp, end = 20.dp, top = 8.dp),
                 style = TextStyle(
                     fontFamily = UrbanistBold,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.White,
+                    fontSize = 11.sp,
+                    color = Color.White.copy(alpha = 0.85f),
                 ),
             )
         }
-        if (trailing != null) {
-            Box(contentAlignment = Alignment.Center) {
-                trailing()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(start = 32.dp, end = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(onClick = onBack),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                MuyuAsset(
+                    fileName = "publish/back.svg",
+                    contentDescription = stringResource(R.string.plot_back),
+                    width = 17.dp,
+                    height = 19.dp,
+                    modifier = Modifier.rotate(-90f),
+                )
+                Spacer(modifier = Modifier.width(20.dp))
+                Text(
+                    text = title,
+                    style = TextStyle(
+                        fontFamily = UrbanistBold,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color.White,
+                    ),
+                )
+            }
+            if (trailing != null) {
+                Box(contentAlignment = Alignment.Center) {
+                    trailing()
+                }
             }
         }
     }

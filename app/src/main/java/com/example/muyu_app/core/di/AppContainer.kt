@@ -22,11 +22,18 @@ import com.example.muyu_app.core.designsystem.components.MerchantTab
 enum class MerchantEvidenceOrigin {
     Alerts,
     MyPlots,
+    PlotDetail,
 }
 
 enum class FarmerPlotReturn {
     Home,
     MyPlots,
+}
+
+enum class MerchantPlotReturn {
+    Catalog,
+    MyPlots,
+    Alerts,
 }
 
 class AppContainer(
@@ -39,10 +46,15 @@ class AppContainer(
     var selectedMilestoneKey: String = "fertilization"
     var merchantEvidenceOrigin: MerchantEvidenceOrigin = MerchantEvidenceOrigin.Alerts
     var farmerPlotReturn: FarmerPlotReturn = FarmerPlotReturn.Home
+    var merchantPlotReturn: MerchantPlotReturn = MerchantPlotReturn.Catalog
+    var rejectionReason: String = ""
+    var rejectionCorrection: String = ""
+    var reviewCompletedAt: Long = 0L
 
     fun merchantEvidenceBottomTab(): MerchantTab = when (merchantEvidenceOrigin) {
         MerchantEvidenceOrigin.MyPlots -> MerchantTab.MyPlots
         MerchantEvidenceOrigin.Alerts -> MerchantTab.Alerts
+        MerchantEvidenceOrigin.PlotDetail -> MerchantTab.Catalog
     }
 
     private val retrofit = NetworkModule.provideRetrofit(fakeStore)
@@ -66,6 +78,9 @@ class AppContainer(
         fakeStore.endSession()
         selectedPlot = null
         selectedMilestoneKey = "fertilization"
+        rejectionReason = ""
+        rejectionCorrection = ""
+        reviewCompletedAt = 0L
         plotDraft.clear()
     }
 }
