@@ -453,6 +453,7 @@
     <string name="payments_filter_all">Todos</string>
     <string name="payments_filter_completed">Completado</string>
     <string name="payments_filter_pending">Pendiente</string>
+    <string name="payments_expected">Previsto %1$s</string>
     <string name="payment_details_title">Detalles del pago</string>
     <string name="payment_transaction_details">DETALLES DE LA TRANSACCIÓN</string>
     <string name="payment_label_milestone">Hito</string>
