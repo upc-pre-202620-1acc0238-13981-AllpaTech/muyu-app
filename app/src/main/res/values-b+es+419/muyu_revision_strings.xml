@@ -3,4 +3,5 @@
     <string name="muyu_funding_processing">Procesando…</string>
     <string name="muyu_funding_confirm">Confirmar financiamiento</string>
     <string name="muyu_close_photo">Cerrar foto</string>
+    <string name="muyu_email_invalid">Ingresa un correo electronico valido.</string>
 </resources>

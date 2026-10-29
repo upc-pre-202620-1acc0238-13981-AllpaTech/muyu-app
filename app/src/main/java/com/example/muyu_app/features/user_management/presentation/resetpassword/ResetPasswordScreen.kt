@@ -53,6 +53,7 @@ fun ResetPasswordScreen(
     modifier: Modifier = Modifier,
 ) {
     var email by rememberSaveable { mutableStateOf("") }
+    var showEmailError by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -118,9 +119,17 @@ fun ResetPasswordScreen(
             Spacer(modifier = Modifier.height(10.dp))
             AuthTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it; showEmailError = false },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             )
+            // Explica por qué no se puede avanzar con el correo ingresado.
+            if (showEmailError) {
+                Text(
+                    text = stringResource(R.string.muyu_email_invalid),
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
             Spacer(modifier = Modifier.height(24.dp))
             AuthPrimaryButton(
                 text = stringResource(R.string.reset_next),
@@ -129,6 +138,8 @@ fun ResetPasswordScreen(
                     if (Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
                         email = email.trim()
                         onNext()
+                    } else {
+                        showEmailError = true
                     }
                 },
             )

@@ -3,4 +3,5 @@
     <string name="muyu_funding_processing">Processing…</string>
     <string name="muyu_funding_confirm">Confirm funding</string>
     <string name="muyu_close_photo">Close photo</string>
+    <string name="muyu_email_invalid">Enter a valid email address.</string>
 </resources>
