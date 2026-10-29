@@ -131,8 +131,9 @@ fun SafetyPinScreen(
             )
             Spacer(modifier = Modifier.height(14.dp))
             AuthPrimaryButton(
+                // Limpia el PIN para volver a ingresarlo, sin reenviar un código.
                 text = stringResource(R.string.pin_try_again),
-                onClick = {},
+                onClick = { digits = List(4) { "" } },
                 background = MuyuOlive,
                 contentColor = MuyuTryAgainText,
             )
