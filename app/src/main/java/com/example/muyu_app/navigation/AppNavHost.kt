@@ -598,11 +598,13 @@ fun AppNavHost() {
                 }
             },
             onViewPlot = {
-                step = when (container.merchantEvidenceOrigin) {
-                    MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
-                    MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
-                    MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
+                // Abre la parcela seleccionada y conserva el origen para regresar.
+                container.merchantPlotReturn = when (container.merchantEvidenceOrigin) {
+                    MerchantEvidenceOrigin.MyPlots -> MerchantPlotReturn.MyPlots
+                    MerchantEvidenceOrigin.Alerts -> MerchantPlotReturn.Alerts
+                    MerchantEvidenceOrigin.PlotDetail -> container.merchantPlotReturn
                 }
+                step = WalkthroughStep.MerchantPlotDetail
             },
             onViewReceipt = { step = WalkthroughStep.PaymentHistory },
             onTabSelected = selectMerchantTab,
