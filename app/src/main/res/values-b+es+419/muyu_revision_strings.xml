@@ -6,4 +6,5 @@
     <string name="muyu_email_invalid">Ingresa un correo electronico valido.</string>
     <string name="muyu_contact_missing">No hay un correo de contacto valido disponible.</string>
     <string name="muyu_contact_unavailable">No se pudo abrir una aplicacion de correo.</string>
+    <string name="muyu_location_reference_only">Ubicacion de referencia de la parcela. No se pudo verificar la ubicacion de la evidencia.</string>
 </resources>

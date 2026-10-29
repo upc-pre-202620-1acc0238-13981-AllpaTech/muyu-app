@@ -121,7 +121,7 @@ fun MerchantMilestoneEvidenceScreen(
     } else {
         null
     }
-    val locationOk = distance == null || distance <= PLOT_MATCH_METERS
+    val locationOk = distance != null && distance <= PLOT_MATCH_METERS
     val canReview = milestone?.status == MilestoneState.STATUS_SUBMITTED
     val photoUri = milestone?.photoUri?.takeIf { it.isNotBlank() }
     val hasVerifiedLocation = lat != null && lng != null
@@ -221,13 +221,14 @@ fun MerchantMilestoneEvidenceScreen(
                             )
                         }
                         Text(
+                            // Distingue la ubicación de referencia de la parcela de la ubicación verificada de la evidencia.
                             text = when {
+                                distance == null -> stringResource(R.string.muyu_location_reference_only)
                                 !locationOk -> stringResource(R.string.evidence_location_wrong_body)
-                                distance != null -> stringResource(
+                                else -> stringResource(
                                     R.string.merchant_location_within_plot,
                                     distance,
                                 )
-                                else -> stringResource(R.string.merchant_location_verified_generic)
                             },
                             style = bodyVariantStyle(),
                         )
