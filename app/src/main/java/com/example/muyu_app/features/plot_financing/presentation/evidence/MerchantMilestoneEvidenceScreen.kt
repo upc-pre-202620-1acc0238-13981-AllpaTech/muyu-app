@@ -395,7 +395,8 @@ private fun EvidencePhotoTile(
         ) {
             AsyncImage(
                 model = photoUri,
-                contentDescription = null,
+                // Describe el hito y los datos de la fotografía para el lector de pantalla.
+                contentDescription = "$title · $subTitle",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
