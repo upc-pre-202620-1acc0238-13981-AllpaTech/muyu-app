@@ -113,7 +113,6 @@ fun MerchantMilestoneEvidenceScreen(
     val photoDateLabel = formatEvidenceShortDate(sentAt, locale)
     val gpsVerifiedShort = stringResource(R.string.merchant_gps_verified_short)
     val gpsNotRecorded = stringResource(R.string.merchant_gps_not_recorded)
-    val photoTimeGps = "${formatEvidenceTime(sentAt)} · ${if (lat != null && lng != null) gpsVerifiedShort else gpsNotRecorded}"
     val mapLat = lat ?: plot?.latitude
     val mapLng = lng ?: plot?.longitude
     val distance = if (plot != null && lat != null && lng != null) {
@@ -122,6 +121,14 @@ fun MerchantMilestoneEvidenceScreen(
         null
     }
     val locationOk = distance != null && distance <= PLOT_MATCH_METERS
+    // Refleja en la fotografía si el GPS está ausente, sin verificar o fuera de la parcela.
+    val photoGpsLabel = when {
+        lat == null || lng == null -> gpsNotRecorded
+        distance == null -> stringResource(R.string.muyu_location_reference_only)
+        locationOk -> gpsVerifiedShort
+        else -> stringResource(R.string.muyu_gps_outside)
+    }
+    val photoTimeGps = "${formatEvidenceTime(sentAt)} · $photoGpsLabel"
     val canReview = milestone?.status == MilestoneState.STATUS_SUBMITTED
     val photoUri = milestone?.photoUri?.takeIf { it.isNotBlank() }
     val hasVerifiedLocation = lat != null && lng != null

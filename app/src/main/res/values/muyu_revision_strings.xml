@@ -7,4 +7,5 @@
     <string name="muyu_contact_missing">No valid contact email is available.</string>
     <string name="muyu_contact_unavailable">No email app could be opened.</string>
     <string name="muyu_location_reference_only">Plot reference location. Evidence location could not be verified.</string>
+    <string name="muyu_gps_outside">GPS outside plot</string>
 </resources>
