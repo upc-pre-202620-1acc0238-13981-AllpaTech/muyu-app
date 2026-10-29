@@ -53,6 +53,8 @@ fun OnboardingScaffold(
     skipLabel: String? = null,
     illustrationContentDescription: String? = null,
     modifier: Modifier = Modifier,
+    // Permite omitir la introducción mediante la acción configurada por la pantalla.
+    onSkip: () -> Unit = onPrimary,
 ) {
     Column(
         modifier = modifier
@@ -131,7 +133,7 @@ fun OnboardingScaffold(
                     background = MuyuSkip,
                     contentColor = Color.Black.copy(alpha = 0.5f),
                     modifier = Modifier.width(150.dp),
-                    onClick = {},
+                    onClick = onSkip,
                 )
                 OnboardingButton(
                     text = primaryLabel,

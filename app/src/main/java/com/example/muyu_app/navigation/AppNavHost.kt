@@ -322,9 +322,11 @@ fun AppNavHost() {
         )
         WalkthroughStep.OnboardingPlot -> ListPlotOnboardingScreen(
             onNext = { step = WalkthroughStep.OnboardingEscrow },
+            onSkip = { step = WalkthroughStep.Role },
         )
         WalkthroughStep.OnboardingEscrow -> EscrowOnboardingScreen(
             onNext = { step = WalkthroughStep.OnboardingWeather },
+            onSkip = { step = WalkthroughStep.Role },
         )
         WalkthroughStep.OnboardingWeather -> WeatherOnboardingScreen(
             onStart = { step = WalkthroughStep.Role },
