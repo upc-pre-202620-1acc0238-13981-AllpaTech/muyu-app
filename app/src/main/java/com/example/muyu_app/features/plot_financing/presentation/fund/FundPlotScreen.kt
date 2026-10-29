@@ -230,13 +230,12 @@ fun FundPlotScreen(
                         // Exige aceptar los términos antes de financiar.
                         .clickable(enabled = accepted && plot != null && plot.status != "funded") {
                             scope.launch {
-                                val id = plot?.id
-                                if (id != null) {
-                                    container.fundPlotUseCase(id).onSuccess {
-                                        container.selectedPlot = it
-                                    }
+                                val id = plot?.id ?: return@launch
+                                container.fundPlotUseCase(id).onSuccess {
+                                    // Avanza al resultado exitoso solo cuando se confirma el financiamiento.
+                                    container.selectedPlot = it
+                                    onAcceptTerms()
                                 }
-                                onAcceptTerms()
                             }
                         },
                     contentAlignment = Alignment.Center,
