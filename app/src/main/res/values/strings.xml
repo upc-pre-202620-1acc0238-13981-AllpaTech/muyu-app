@@ -39,7 +39,7 @@
     <string name="register_confirm_password">Confirm Password</string>
     <string name="register_button">Register</string>
     <string name="register_have_account">Do you have an account?</string>
-    <string name="reset_title">Create account</string>
+    <string name="reset_title">Reset password</string>
     <string name="reset_heading">Reset password?</string>
     <string name="reset_body">Enter the email address you used to register, and instructions for recovering your password will be sent to you.</string>
     <string name="reset_email_prompt">Enter your email address</string>

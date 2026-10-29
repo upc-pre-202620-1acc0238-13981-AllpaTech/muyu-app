@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.pin
 
+import com.example.muyu_app.core.designsystem.components.AuthFlowTitle
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -65,6 +66,7 @@ private val PinShape = RoundedCornerShape(20.dp)
 fun SafetyPinScreen(
     onAccept: () -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
 ) {
     var digits by rememberSaveable { mutableStateOf(List(4) { "" }) }
     // Permite avanzar el foco entre las casillas y volver a la primera al reintentar.
@@ -77,20 +79,7 @@ fun SafetyPinScreen(
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = stringResource(R.string.pin_title),
-            modifier = Modifier
-                .statusBarsPadding()
-                .padding(top = 10.dp)
-                .fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            style = TextStyle(
-                fontFamily = FredokaSemiBold,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 32.sp,
-                color = MuyuForest,
-            ),
-        )
+        AuthFlowTitle(stringResource(R.string.pin_title), onBack)
         Spacer(modifier = Modifier.height(24.dp))
         Image(
             painter = painterResource(R.drawable.pin_hero),

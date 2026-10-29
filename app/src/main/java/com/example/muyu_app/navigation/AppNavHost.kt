@@ -1,5 +1,8 @@
 package com.example.muyu_app.navigation
 
+import com.example.muyu_app.features.user_management.presentation.password.ChangePasswordScreen
+import com.example.muyu_app.features.user_management.presentation.password.PasswordInstructionsScreen
+import com.example.muyu_app.features.user_management.presentation.password.PasswordFlowCompleteScreen
 import androidx.activity.compose.BackHandler
 import android.app.Activity
 import androidx.compose.foundation.layout.BoxScope
@@ -76,6 +79,9 @@ private enum class WalkthroughStep {
     Login,
     Register,
     ResetPassword,
+    PasswordInstructions,
+    NewPassword,
+    PasswordFlowComplete,
     SafetyPin,
     Loading,
     OnboardingPlot,
@@ -122,6 +128,9 @@ private val PublicSteps = setOf(
     WalkthroughStep.Login,
     WalkthroughStep.Register,
     WalkthroughStep.ResetPassword,
+    WalkthroughStep.PasswordInstructions,
+    WalkthroughStep.NewPassword,
+    WalkthroughStep.PasswordFlowComplete,
     WalkthroughStep.SafetyPin,
     WalkthroughStep.Terms,
 )
@@ -132,6 +141,8 @@ fun AppNavHost() {
     var tab by rememberSaveable { mutableStateOf<String?>(null) }
     var isMerchant by rememberSaveable { mutableStateOf(false) }
     var termsReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.Register) }
+    var passwordFromProfile by rememberSaveable { mutableStateOf(false) }
+    var recoveryEmail by rememberSaveable { mutableStateOf("") }
     val container = LocalAppContainer.current
     val languages = container.languages
     val appLanguage = languages.current(isMerchant)
@@ -199,7 +210,10 @@ fun AppNavHost() {
     // Hace que el botón Volver del sistema siga el recorrido de estas pantallas.
     val reviewBackStep = when (step) {
         WalkthroughStep.Register, WalkthroughStep.ResetPassword -> WalkthroughStep.Login
-        WalkthroughStep.SafetyPin -> WalkthroughStep.ResetPassword
+        WalkthroughStep.PasswordInstructions -> WalkthroughStep.ResetPassword
+        WalkthroughStep.SafetyPin -> WalkthroughStep.PasswordInstructions
+        WalkthroughStep.NewPassword -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.SafetyPin
+        WalkthroughStep.PasswordFlowComplete -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
         WalkthroughStep.Terms -> termsReturnStep
         WalkthroughStep.MerchantApproveReject -> WalkthroughStep.MerchantMilestoneEvidence
         WalkthroughStep.MerchantConfirmApproval -> WalkthroughStep.MerchantApproveReject
@@ -257,6 +271,9 @@ fun AppNavHost() {
                 WalkthroughStep.Login,
                 WalkthroughStep.Register,
                 WalkthroughStep.ResetPassword,
+                WalkthroughStep.PasswordInstructions,
+                WalkthroughStep.NewPassword,
+                WalkthroughStep.PasswordFlowComplete,
                 WalkthroughStep.SafetyPin,
             ) || greenHeader
             ) && currentTab == null
@@ -301,7 +318,11 @@ fun AppNavHost() {
         WalkthroughStep.Login -> LoginScreen(
             onLoginSuccess = { step = WalkthroughStep.Loading },
             onRegister = { step = WalkthroughStep.Register },
-            onForgotPassword = { step = WalkthroughStep.ResetPassword },
+            onForgotPassword = {
+                passwordFromProfile = false
+                recoveryEmail = ""
+                step = WalkthroughStep.ResetPassword
+            },
         )
         WalkthroughStep.Register -> RegisterScreen(
             onRegister = goToLogin,
@@ -313,10 +334,32 @@ fun AppNavHost() {
         )
         WalkthroughStep.Terms -> TermsAndConditionsScreen(onBack = { step = termsReturnStep })
         WalkthroughStep.ResetPassword -> ResetPasswordScreen(
-            onNext = { step = WalkthroughStep.SafetyPin },
+            onNext = { step = WalkthroughStep.PasswordInstructions },
+            onEmailEntered = { recoveryEmail = it },
+            onBack = { step = WalkthroughStep.Login },
+        )
+        WalkthroughStep.PasswordInstructions -> PasswordInstructionsScreen(
+            email = recoveryEmail,
+            onBack = { step = WalkthroughStep.ResetPassword },
+            onContinue = { step = WalkthroughStep.SafetyPin },
         )
         WalkthroughStep.SafetyPin -> SafetyPinScreen(
-            onAccept = goToLogin,
+            // Continúa el prototipo sin verificar el PIN ni modificar credenciales.
+            onAccept = { step = WalkthroughStep.NewPassword },
+            onBack = { step = WalkthroughStep.PasswordInstructions },
+        )
+        WalkthroughStep.NewPassword -> ChangePasswordScreen(
+            onBack = {
+                step = if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.SafetyPin
+            },
+            onContinue = { step = WalkthroughStep.PasswordFlowComplete },
+        )
+        WalkthroughStep.PasswordFlowComplete -> PasswordFlowCompleteScreen(
+            fromProfile = passwordFromProfile,
+            onContinue = {
+                recoveryEmail = ""
+                step = if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
+            },
         )
         WalkthroughStep.Loading -> LoadingScreen(
             onFinished = { step = WalkthroughStep.OnboardingPlot },
@@ -516,6 +559,12 @@ fun AppNavHost() {
             } else {
                 ProfileScreen(
                     onTabSelected = selectTab,
+                    // Abre el cambio de contraseña del agricultor y conserva su destino de regreso.
+                    onChangePassword = {
+                        tab = null
+                        passwordFromProfile = true
+                        step = WalkthroughStep.NewPassword
+                    },
                     onLogout = goToLogin,
                     onTerms = {
                         termsReturnStep = WalkthroughStep.Profile

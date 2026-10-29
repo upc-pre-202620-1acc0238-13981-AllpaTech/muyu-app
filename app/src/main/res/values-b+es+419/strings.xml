@@ -39,7 +39,7 @@
     <string name="register_confirm_password">Confirmar contraseña</string>
     <string name="register_button">Registrarse</string>
     <string name="register_have_account">¿Ya tienes una cuenta?</string>
-    <string name="reset_title">Crear cuenta</string>
+    <string name="reset_title">Recuperar contraseña</string>
     <string name="reset_heading">¿Restablecer contraseña?</string>
     <string name="reset_body">Ingresa el correo con el que te registraste y te enviaremos las instrucciones para recuperar tu contraseña.</string>
     <string name="reset_email_prompt">Ingresa tu correo electrónico</string>
