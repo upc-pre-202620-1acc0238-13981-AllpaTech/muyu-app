@@ -304,12 +304,10 @@ fun MerchantMilestoneEvidenceScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
+                            // El insumo es un dato declarado y no implica una verificación de ubicación.
                             text = stringResource(R.string.merchant_input_used).uppercase(),
                             style = sectionTitleStyle(),
                         )
-                        if (!inputUsed.isNullOrBlank()) {
-                            VerifiedChip()
-                        }
                     }
                     Text(
                         text = inputUsed ?: "—",
