@@ -1,5 +1,7 @@
 package com.example.muyu_app.core.designsystem.components
 
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -117,6 +119,7 @@ fun AuthPrimaryButton(
     background: Color = MuyuLime,
     contentColor: Color = Color.Black,
     height: Dp = 56.dp,
+    enabled: Boolean = true,
 ) {
     Box(
         modifier = modifier
@@ -124,7 +127,8 @@ fun AuthPrimaryButton(
             .height(height)
             .clip(AuthFieldShape)
             .background(background)
-            .clickable(onClick = onClick),
+            .alpha(if (enabled) 1f else 0.5f)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(

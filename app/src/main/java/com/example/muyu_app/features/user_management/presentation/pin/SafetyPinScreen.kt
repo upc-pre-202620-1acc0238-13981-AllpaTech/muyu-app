@@ -125,7 +125,9 @@ fun SafetyPinScreen(
             Spacer(modifier = Modifier.height(36.dp))
             AuthPrimaryButton(
                 text = stringResource(R.string.pin_accept),
-                onClick = onAccept,
+                // Exige completar las cuatro casillas; esto no verifica el código con un servidor.
+                enabled = digits.all { it.length == 1 },
+                onClick = { if (digits.all { it.length == 1 }) onAccept() },
             )
             Spacer(modifier = Modifier.height(14.dp))
             AuthPrimaryButton(
