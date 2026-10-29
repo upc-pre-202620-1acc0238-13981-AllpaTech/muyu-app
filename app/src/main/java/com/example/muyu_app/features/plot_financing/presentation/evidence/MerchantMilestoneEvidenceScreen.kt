@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.evidence
 
+import com.example.muyu_app.core.contact.openFarmerContact
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
@@ -322,7 +323,7 @@ fun MerchantMilestoneEvidenceScreen(
                             text = stringResource(R.string.merchant_contact_farmer, farmerFirst),
                             enabled = true,
                             extraBold = false,
-                            onClick = {},
+                            onClick = { openFarmerContact(context, plot?.ownerEmail.orEmpty()) },
                         )
                     }
                     if (canReview) {

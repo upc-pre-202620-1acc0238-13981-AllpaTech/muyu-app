@@ -4,4 +4,6 @@
     <string name="muyu_funding_confirm">Confirm funding</string>
     <string name="muyu_close_photo">Close photo</string>
     <string name="muyu_email_invalid">Enter a valid email address.</string>
+    <string name="muyu_contact_missing">No valid contact email is available.</string>
+    <string name="muyu_contact_unavailable">No email app could be opened.</string>
 </resources>
