@@ -1,5 +1,6 @@
 package com.example.muyu_app.navigation
 
+import androidx.activity.compose.BackHandler
 import android.app.Activity
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
@@ -193,6 +194,27 @@ fun AppNavHost() {
         tab = null
         isMerchant = false
         step = WalkthroughStep.Login
+    }
+
+    // Hace que el botón Volver del sistema siga el recorrido de estas pantallas.
+    val reviewBackStep = when (step) {
+        WalkthroughStep.Register, WalkthroughStep.ResetPassword -> WalkthroughStep.Login
+        WalkthroughStep.SafetyPin -> WalkthroughStep.ResetPassword
+        WalkthroughStep.Terms -> termsReturnStep
+        WalkthroughStep.MerchantApproveReject -> WalkthroughStep.MerchantMilestoneEvidence
+        WalkthroughStep.MerchantConfirmApproval -> WalkthroughStep.MerchantApproveReject
+        WalkthroughStep.MerchantRejectionReason -> WalkthroughStep.MerchantApproveReject
+        WalkthroughStep.MerchantMilestoneEvidence,
+        WalkthroughStep.MerchantMilestoneApproved,
+        WalkthroughStep.MerchantReviewOutcome -> when (container.merchantEvidenceOrigin) {
+            MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
+            MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+            MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
+        }
+        else -> null
+    }
+    BackHandler(enabled = currentTab == null && reviewBackStep != null) {
+        step = checkNotNull(reviewBackStep)
     }
 
     val greenHeader = step in setOf(
