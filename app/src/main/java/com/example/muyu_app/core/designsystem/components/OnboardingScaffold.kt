@@ -125,21 +125,22 @@ fun OnboardingScaffold(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 24.dp),
-            horizontalArrangement = if (skipLabel == null) Arrangement.Center else Arrangement.SpaceBetween,
+            // Distribuye el espacio de los botones para que quepan en pantallas pequeñas.
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (skipLabel != null) {
                 OnboardingButton(
                     text = skipLabel,
                     background = MuyuSkip,
                     contentColor = Color.Black.copy(alpha = 0.5f),
-                    modifier = Modifier.width(150.dp),
+                    modifier = Modifier.weight(1f),
                     onClick = onSkip,
                 )
                 OnboardingButton(
                     text = primaryLabel,
                     background = MuyuAction,
                     contentColor = Color.White,
-                    modifier = Modifier.width(150.dp),
+                    modifier = Modifier.weight(1f),
                     onClick = onPrimary,
                 )
             } else {
@@ -147,7 +148,7 @@ fun OnboardingScaffold(
                     text = primaryLabel,
                     background = MuyuAction,
                     contentColor = Color.White,
-                    modifier = Modifier.width(291.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = onPrimary,
                 )
             }
