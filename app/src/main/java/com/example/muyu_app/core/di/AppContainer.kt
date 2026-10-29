@@ -51,10 +51,15 @@ class AppContainer(
     var rejectionCorrection: String = ""
     var reviewCompletedAt: Long = 0L
 
+    // Mantiene la pestaña desde la que se abrió el detalle de la parcela.
     fun merchantEvidenceBottomTab(): MerchantTab = when (merchantEvidenceOrigin) {
         MerchantEvidenceOrigin.MyPlots -> MerchantTab.MyPlots
         MerchantEvidenceOrigin.Alerts -> MerchantTab.Alerts
-        MerchantEvidenceOrigin.PlotDetail -> MerchantTab.Catalog
+        MerchantEvidenceOrigin.PlotDetail -> when (merchantPlotReturn) {
+            MerchantPlotReturn.Catalog -> MerchantTab.Catalog
+            MerchantPlotReturn.MyPlots -> MerchantTab.MyPlots
+            MerchantPlotReturn.Alerts -> MerchantTab.Alerts
+        }
     }
 
     private val retrofit = NetworkModule.provideRetrofit(fakeStore)
