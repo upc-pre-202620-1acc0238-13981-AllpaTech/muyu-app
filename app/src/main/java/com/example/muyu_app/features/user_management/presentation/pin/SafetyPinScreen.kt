@@ -114,11 +114,13 @@ fun SafetyPinScreen(
             Spacer(modifier = Modifier.height(28.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 digits.forEachIndexed { index, digit ->
                     PinBox(
                         value = digit,
+                        // Reparte el ancho disponible entre las cuatro casillas del PIN.
+                        modifier = Modifier.weight(1f),
                         fieldModifier = Modifier.focusRequester(pinFocus[index]),
                         onValueChange = { value ->
                             digits = digits.toMutableList().also { list ->
@@ -156,10 +158,11 @@ private fun PinBox(
     value: String,
     onValueChange: (String) -> Unit,
     fieldModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
-            .size(70.dp)
+        modifier = modifier
+            .height(70.dp)
             .clip(PinShape)
             .background(Color.White)
             .border(1.dp, Color.Black, PinShape),
