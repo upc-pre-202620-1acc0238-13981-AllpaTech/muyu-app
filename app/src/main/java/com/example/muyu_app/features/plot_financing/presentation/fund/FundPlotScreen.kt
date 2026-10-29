@@ -92,6 +92,8 @@ fun FundPlotScreen(
     val area = plot?.area.orEmpty()
     var method by remember { mutableStateOf(PayMethod.Card) }
     var accepted by remember { mutableStateOf(false) }
+    // Bloquea nuevas solicitudes mientras el financiamiento está en curso.
+    var funding by remember(plot?.id) { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -228,13 +230,19 @@ fun FundPlotScreen(
                         .background(MuyuTermsBg)
                         .border(1.dp, Color.Black, CardShape)
                         // Exige aceptar los términos antes de financiar.
-                        .clickable(enabled = accepted && plot != null && plot.status != "funded") {
+                        .clickable(enabled = accepted && plot != null && plot.status != "funded" && !funding) {
+                            if (funding) return@clickable
+                            funding = true
                             scope.launch {
-                                val id = plot?.id ?: return@launch
-                                container.fundPlotUseCase(id).onSuccess {
-                                    // Avanza al resultado exitoso solo cuando se confirma el financiamiento.
-                                    container.selectedPlot = it
-                                    onAcceptTerms()
+                                try {
+                                    val id = plot?.id ?: return@launch
+                                    container.fundPlotUseCase(id).onSuccess {
+                                        // Avanza al resultado exitoso solo cuando se confirma el financiamiento.
+                                        container.selectedPlot = it
+                                        onAcceptTerms()
+                                    }
+                                } finally {
+                                    funding = false
                                 }
                             }
                         },
