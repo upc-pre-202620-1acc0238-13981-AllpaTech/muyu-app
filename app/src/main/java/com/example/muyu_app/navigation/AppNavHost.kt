@@ -1,5 +1,8 @@
 package com.example.muyu_app.navigation
 
+import com.example.muyu_app.features.user_management.presentation.pin.ChangePinScreen
+import com.example.muyu_app.features.user_management.presentation.pin.PinFlowCompleteScreen
+
 import com.example.muyu_app.features.user_management.presentation.password.ChangePasswordScreen
 import com.example.muyu_app.features.user_management.presentation.password.PasswordInstructionsScreen
 import com.example.muyu_app.features.user_management.presentation.password.PasswordFlowCompleteScreen
@@ -82,6 +85,8 @@ private enum class WalkthroughStep {
     PasswordInstructions,
     NewPassword,
     PasswordFlowComplete,
+    ChangePin,
+    PinFlowComplete,
     SafetyPin,
     Loading,
     OnboardingPlot,
@@ -214,6 +219,7 @@ fun AppNavHost() {
         WalkthroughStep.SafetyPin -> WalkthroughStep.PasswordInstructions
         WalkthroughStep.NewPassword -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.SafetyPin
         WalkthroughStep.PasswordFlowComplete -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
+        WalkthroughStep.ChangePin, WalkthroughStep.PinFlowComplete -> WalkthroughStep.Profile
         WalkthroughStep.Terms -> termsReturnStep
         WalkthroughStep.MerchantApproveReject -> WalkthroughStep.MerchantMilestoneEvidence
         WalkthroughStep.MerchantConfirmApproval -> WalkthroughStep.MerchantApproveReject
@@ -274,6 +280,8 @@ fun AppNavHost() {
                 WalkthroughStep.PasswordInstructions,
                 WalkthroughStep.NewPassword,
                 WalkthroughStep.PasswordFlowComplete,
+                WalkthroughStep.ChangePin,
+                WalkthroughStep.PinFlowComplete,
                 WalkthroughStep.SafetyPin,
             ) || greenHeader
             ) && currentTab == null
@@ -353,6 +361,13 @@ fun AppNavHost() {
                 step = if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.SafetyPin
             },
             onContinue = { step = WalkthroughStep.PasswordFlowComplete },
+        )
+        WalkthroughStep.ChangePin -> ChangePinScreen(
+            onBack = { step = WalkthroughStep.Profile },
+            onComplete = { step = WalkthroughStep.PinFlowComplete },
+        )
+        WalkthroughStep.PinFlowComplete -> PinFlowCompleteScreen(
+            onBackToProfile = { step = WalkthroughStep.Profile },
         )
         WalkthroughStep.PasswordFlowComplete -> PasswordFlowCompleteScreen(
             fromProfile = passwordFromProfile,
@@ -564,6 +579,11 @@ fun AppNavHost() {
                         tab = null
                         passwordFromProfile = true
                         step = WalkthroughStep.NewPassword
+                    },
+                    // Conecta el cambio de PIN del perfil con su propio recorrido de demostración.
+                    onChangePin = {
+                        tab = null
+                        step = WalkthroughStep.ChangePin
                     },
                     onLogout = goToLogin,
                     onTerms = {
