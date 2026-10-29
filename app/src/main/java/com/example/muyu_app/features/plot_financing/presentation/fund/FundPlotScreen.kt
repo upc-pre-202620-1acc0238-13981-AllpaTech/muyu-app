@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.fund
 
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -90,8 +91,9 @@ fun FundPlotScreen(
     val plotName = plot?.name.orEmpty()
     val crop = plot?.crop.orEmpty()
     val area = plot?.area.orEmpty()
-    var method by remember { mutableStateOf(PayMethod.Card) }
-    var accepted by remember { mutableStateOf(false) }
+    // Conserva el método elegido al rotar y separa el estado de cada parcela.
+    var method by rememberSaveable(plot?.id) { mutableStateOf(PayMethod.Card) }
+    var accepted by rememberSaveable(plot?.id) { mutableStateOf(false) }
     // Bloquea nuevas solicitudes mientras el financiamiento está en curso.
     var funding by remember(plot?.id) { mutableStateOf(false) }
     var fundingFailed by remember(plot?.id) { mutableStateOf(false) }
