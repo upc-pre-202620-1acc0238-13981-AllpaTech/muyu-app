@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.fund
 
+import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -191,7 +192,7 @@ fun FundPlotScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                DisbursementCard()
+                DisbursementCard(total = PlotFinance.parseAmount(amount))
                 Spacer(modifier = Modifier.height(12.dp))
                 EscrowProtectCard()
                 Spacer(modifier = Modifier.height(12.dp))
@@ -289,7 +290,9 @@ fun FundPlotScreen(
 }
 
 @Composable
-private fun DisbursementCard() {
+// Calcula los montos de los hitos a partir del total de la parcela.
+private fun DisbursementCard(total: Double) {
+    val steps = PlotFinance.disbursement(total)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -308,18 +311,18 @@ private fun DisbursementCard() {
             ),
         )
         Spacer(modifier = Modifier.height(12.dp))
-        PlanRow(1, R.string.merchant_planting, R.string.merchant_pct_23)
+        PlanRow(1, steps[0].titleRes, R.string.merchant_pct_23, PlotFinance.formatAmount(steps[0].amount))
         MuyuAsset("merchant/plan_line.svg", null, 297.dp, 1.dp)
-        PlanRow(2, R.string.merchant_irrigation, R.string.merchant_pct_18)
+        PlanRow(2, steps[1].titleRes, R.string.merchant_pct_18, PlotFinance.formatAmount(steps[1].amount))
         MuyuAsset("merchant/plan_line.svg", null, 297.dp, 1.dp)
-        PlanRow(3, R.string.merchant_fertilization, R.string.merchant_pct_23)
+        PlanRow(3, steps[2].titleRes, R.string.merchant_pct_23, PlotFinance.formatAmount(steps[2].amount))
         MuyuAsset("merchant/plan_line.svg", null, 297.dp, 1.dp)
-        PlanRow(4, R.string.merchant_harvest, R.string.merchant_pct_36)
+        PlanRow(4, steps[3].titleRes, R.string.merchant_pct_36, PlotFinance.formatAmount(steps[3].amount))
     }
 }
 
 @Composable
-private fun PlanRow(step: Int, title: Int, percent: Int) {
+private fun PlanRow(step: Int, title: Int, percent: Int, amountLabel: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -351,7 +354,7 @@ private fun PlanRow(step: Int, title: Int, percent: Int) {
         )
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = stringResource(R.string.merchant_step_amount),
+                text = amountLabel,
                 style = TextStyle(
                     fontFamily = UrbanistSemiBold,
                     fontWeight = FontWeight.SemiBold,
