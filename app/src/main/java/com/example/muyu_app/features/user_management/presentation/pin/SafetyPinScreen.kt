@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.pin
 
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -176,6 +177,8 @@ private fun PinBox(
                 textAlign = TextAlign.Center,
             ),
             singleLine = true,
+            // Oculta las cifras ingresadas sin cambiar el valor del PIN.
+            visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             cursorBrush = SolidColor(Color.Black),
         )
