@@ -94,6 +94,7 @@ fun FundPlotScreen(
     var accepted by remember { mutableStateOf(false) }
     // Bloquea nuevas solicitudes mientras el financiamiento está en curso.
     var funding by remember(plot?.id) { mutableStateOf(false) }
+    var fundingFailed by remember(plot?.id) { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -222,6 +223,14 @@ fun FundPlotScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
+                // Informa el fallo para que el usuario pueda reintentar el financiamiento.
+                if (fundingFailed) {
+                    Text(
+                        text = stringResource(R.string.muyu_funding_error),
+                        color = Color(0xFF9E2F2F),
+                        modifier = Modifier.padding(bottom = 12.dp),
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -233,6 +242,7 @@ fun FundPlotScreen(
                         .clickable(enabled = accepted && plot != null && plot.status != "funded" && !funding) {
                             if (funding) return@clickable
                             funding = true
+                            fundingFailed = false
                             scope.launch {
                                 try {
                                     val id = plot?.id ?: return@launch
@@ -240,6 +250,8 @@ fun FundPlotScreen(
                                         // Avanza al resultado exitoso solo cuando se confirma el financiamiento.
                                         container.selectedPlot = it
                                         onAcceptTerms()
+                                    }.onFailure {
+                                        fundingFailed = true
                                     }
                                 } finally {
                                     funding = false
@@ -249,7 +261,13 @@ fun FundPlotScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = stringResource(R.string.merchant_accept_first),
+                        text = stringResource(
+                            when {
+                                funding -> R.string.muyu_funding_processing
+                                accepted -> R.string.muyu_funding_confirm
+                                else -> R.string.merchant_accept_first
+                            },
+                        ),
                         style = TextStyle(
                             fontFamily = UrbanistExtraBold,
                             fontWeight = FontWeight.ExtraBold,

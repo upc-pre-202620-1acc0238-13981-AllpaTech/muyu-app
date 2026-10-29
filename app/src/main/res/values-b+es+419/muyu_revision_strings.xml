@@ -1,0 +1,5 @@
+<resources>
+    <string name="muyu_funding_error">No se pudo completar el financiamiento. Intenta nuevamente.</string>
+    <string name="muyu_funding_processing">Procesando…</string>
+    <string name="muyu_funding_confirm">Confirmar financiamiento</string>
+</resources>
