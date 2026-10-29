@@ -82,6 +82,10 @@ class AppContainer(
     fun clearSession() {
         fakeStore.endSession()
         selectedPlot = null
+        // Limpia los destinos anteriores para no heredarlos en otra sesión.
+        merchantEvidenceOrigin = MerchantEvidenceOrigin.Alerts
+        merchantPlotReturn = MerchantPlotReturn.Catalog
+        farmerPlotReturn = FarmerPlotReturn.Home
         selectedMilestoneKey = "fertilization"
         rejectionReason = ""
         rejectionCorrection = ""
