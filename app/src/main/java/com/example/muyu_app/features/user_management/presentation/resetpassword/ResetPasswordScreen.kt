@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.resetpassword
 
+import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -123,7 +124,13 @@ fun ResetPasswordScreen(
             Spacer(modifier = Modifier.height(24.dp))
             AuthPrimaryButton(
                 text = stringResource(R.string.reset_next),
-                onClick = onNext,
+                onClick = {
+                    // Valida el formato del correo antes de avanzar en la demostración de recuperación.
+                    if (Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
+                        email = email.trim()
+                        onNext()
+                    }
+                },
             )
         }
     }
