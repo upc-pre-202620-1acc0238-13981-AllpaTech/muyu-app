@@ -1,5 +1,7 @@
 package com.example.muyu_app.features.user_management.presentation.pin
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
@@ -99,7 +101,8 @@ fun SafetyPinScreen(
             contentScale = ContentScale.Fit,
         )
         Spacer(modifier = Modifier.height(16.dp))
-        AuthSheet(modifier = Modifier.weight(1f)) {
+        // Permite desplazar el formulario cuando el teclado reduce el espacio visible.
+        AuthSheet(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Text(
                 text = stringResource(R.string.pin_heading),
                 modifier = Modifier.fillMaxWidth(),
