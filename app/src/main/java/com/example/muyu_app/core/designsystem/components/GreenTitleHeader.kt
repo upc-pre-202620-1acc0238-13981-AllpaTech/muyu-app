@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
 import com.example.muyu_app.core.image.MuyuAsset
-import com.example.muyu_app.ui.theme.MuyuHeader
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.UrbanistBold
 
 @Composable
@@ -32,7 +32,8 @@ fun GreenTitleHeader(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = MuyuHeader,
+    // Usa el verde oscuro compartido en los encabezados de producto.
+    backgroundColor: Color = MuyuNavBar,
     eyebrow: String? = null,
     trailing: @Composable (() -> Unit)? = null,
 ) {

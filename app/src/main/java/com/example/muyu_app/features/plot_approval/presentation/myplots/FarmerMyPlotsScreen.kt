@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_approval.presentation.myplots
 
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -115,7 +116,8 @@ fun FarmerMyPlotsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MuyuHeader)
+                    // Unifica el encabezado de la parcela con el verde oscuro de la navegación.
+                    .background(MuyuNavBar)
                     .statusBarsPadding()
                     .padding(horizontal = 28.dp)
                     .padding(top = 16.dp, bottom = 18.dp),

@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_approval.presentation.plotdetail
 
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -152,7 +153,8 @@ private fun PlotHeader() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MuyuHeader)
+            // Unifica el encabezado de la parcela con el verde oscuro de la navegación.
+            .background(MuyuNavBar)
             .statusBarsPadding()
             .height(56.dp)
             .padding(horizontal = 30.dp),

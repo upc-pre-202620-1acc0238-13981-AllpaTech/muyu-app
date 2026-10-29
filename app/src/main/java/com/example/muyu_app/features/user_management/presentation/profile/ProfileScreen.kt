@@ -51,7 +51,7 @@ import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.Plot
-import com.example.muyu_app.ui.theme.MuyuOlive
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
 
@@ -109,7 +109,8 @@ fun ProfileScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MuyuOlive)
+                    // Mantiene el perfil del agricultor con el mismo encabezado oscuro.
+                    .background(MuyuNavBar)
                     .statusBarsPadding()
                     .padding(horizontal = 27.dp)
                     .padding(top = 16.dp, bottom = 24.dp),

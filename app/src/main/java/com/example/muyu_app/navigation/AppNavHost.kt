@@ -218,6 +218,7 @@ fun AppNavHost() {
     }
 
     val greenHeader = step in setOf(
+        WalkthroughStep.Terms,
         WalkthroughStep.PlotDetail,
         WalkthroughStep.FarmerHome,
         WalkthroughStep.FarmerMyPlots,

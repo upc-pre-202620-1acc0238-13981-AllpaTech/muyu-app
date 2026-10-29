@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.legal
 
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,7 +22,7 @@ import com.example.muyu_app.ui.theme.MuyuPageGray
 fun TermsAndConditionsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxSize().background(MuyuPageGray)) {
         Row(
-            Modifier.fillMaxWidth().background(MuyuOlive).statusBarsPadding().padding(20.dp),
+            Modifier.fillMaxWidth().background(MuyuNavBar).statusBarsPadding().padding(20.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("‹", color = Color.White, fontSize = 40.sp, modifier = Modifier.clickable { onBack() })

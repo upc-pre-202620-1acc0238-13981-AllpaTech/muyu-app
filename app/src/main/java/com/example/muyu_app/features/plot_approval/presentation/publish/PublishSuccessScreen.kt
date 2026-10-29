@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_approval.presentation.publish
 
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -315,7 +316,8 @@ internal fun FarmerContextHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MuyuHeader)
+            // Unifica el encabezado de la parcela con el verde oscuro de la navegación.
+            .background(MuyuNavBar)
             .statusBarsPadding()
             .padding(horizontal = 24.dp)
             .padding(top = 8.dp, bottom = 14.dp),
