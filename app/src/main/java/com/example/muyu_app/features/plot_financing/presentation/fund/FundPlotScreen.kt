@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.fund
 
+import java.util.Locale
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.Image
@@ -311,18 +312,19 @@ private fun DisbursementCard(total: Double) {
             ),
         )
         Spacer(modifier = Modifier.height(12.dp))
-        PlanRow(1, steps[0].titleRes, R.string.merchant_pct_23, PlotFinance.formatAmount(steps[0].amount))
+        PlanRow(1, steps[0].titleRes, "%.2f%%".format(Locale.getDefault(), steps[0].percent), PlotFinance.formatAmount(steps[0].amount))
         MuyuAsset("merchant/plan_line.svg", null, 297.dp, 1.dp)
-        PlanRow(2, steps[1].titleRes, R.string.merchant_pct_18, PlotFinance.formatAmount(steps[1].amount))
+        PlanRow(2, steps[1].titleRes, "%.2f%%".format(Locale.getDefault(), steps[1].percent), PlotFinance.formatAmount(steps[1].amount))
         MuyuAsset("merchant/plan_line.svg", null, 297.dp, 1.dp)
-        PlanRow(3, steps[2].titleRes, R.string.merchant_pct_23, PlotFinance.formatAmount(steps[2].amount))
+        PlanRow(3, steps[2].titleRes, "%.2f%%".format(Locale.getDefault(), steps[2].percent), PlotFinance.formatAmount(steps[2].amount))
         MuyuAsset("merchant/plan_line.svg", null, 297.dp, 1.dp)
-        PlanRow(4, steps[3].titleRes, R.string.merchant_pct_36, PlotFinance.formatAmount(steps[3].amount))
+        PlanRow(4, steps[3].titleRes, "%.2f%%".format(Locale.getDefault(), steps[3].percent), PlotFinance.formatAmount(steps[3].amount))
     }
 }
 
 @Composable
-private fun PlanRow(step: Int, title: Int, percent: Int, amountLabel: String) {
+// Muestra el porcentaje calculado por la misma regla de desembolso.
+private fun PlanRow(step: Int, title: Int, percent: String, amountLabel: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -363,7 +365,7 @@ private fun PlanRow(step: Int, title: Int, percent: Int, amountLabel: String) {
                 ),
             )
             Text(
-                text = stringResource(percent),
+                text = percent,
                 style = TextStyle(
                     fontFamily = UrbanistRegular,
                     fontWeight = FontWeight.Normal,
