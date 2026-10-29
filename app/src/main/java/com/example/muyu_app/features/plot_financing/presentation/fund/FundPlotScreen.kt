@@ -227,7 +227,8 @@ fun FundPlotScreen(
                         .clip(CardShape)
                         .background(MuyuTermsBg)
                         .border(1.dp, Color.Black, CardShape)
-                        .clickable {
+                        // Exige aceptar los términos antes de financiar.
+                        .clickable(enabled = accepted && plot != null && plot.status != "funded") {
                             scope.launch {
                                 val id = plot?.id
                                 if (id != null) {
