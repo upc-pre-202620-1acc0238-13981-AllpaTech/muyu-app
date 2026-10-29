@@ -1,6 +1,7 @@
 package com.example.muyu_app.features.user_management.presentation.password
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -130,13 +131,15 @@ internal fun PasswordFlowScaffold(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     @DrawableRes illustration: Int = R.drawable.pin_hero,
+    // Describe la ilustración según el flujo de contraseña o PIN que la utiliza.
+    @StringRes illustrationDescription: Int = R.string.password_hero_description,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier.fillMaxSize().background(MuyuBackground).imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally) {
         AuthFlowTitle(title, onBack)
         Spacer(Modifier.height(8.dp))
-        Image(painterResource(illustration), stringResource(R.string.password_hero_description),
+        Image(painterResource(illustration), stringResource(illustrationDescription),
             modifier = Modifier.fillMaxWidth(0.8f).height(180.dp), contentScale = ContentScale.Fit)
         Spacer(Modifier.height(12.dp))
         // Mantiene accesibles los campos y las acciones con el teclado abierto.
