@@ -1,5 +1,7 @@
 package com.example.muyu_app.features.plot_financing.presentation.fund
 
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import java.util.Locale
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -205,7 +207,8 @@ fun FundPlotScreen(
                         .clip(CardShape)
                         .background(MuyuTermsBg)
                         .border(1.dp, MuyuForest, CardShape)
-                        .clickable { accepted = !accepted }
+                        // Permite que el lector de pantalla anuncie la aceptación de términos.
+                        .toggleable(value = accepted, role = Role.Checkbox, onValueChange = { accepted = it })
                         .padding(horizontal = 18.dp, vertical = 22.dp),
                     verticalAlignment = Alignment.Top,
                 ) {
