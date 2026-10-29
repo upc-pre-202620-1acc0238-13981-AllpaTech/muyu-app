@@ -1,5 +1,12 @@
 package com.example.muyu_app.features.plot_financing.presentation.evidence
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -355,6 +362,25 @@ private fun EvidencePhotoTile(
     subTitle: String,
     modifier: Modifier = Modifier,
 ) {
+    // Permite revisar la fotografía completa sin recortarla en la miniatura.
+    var expanded by rememberSaveable(photoUri) { mutableStateOf(false) }
+    if (expanded) {
+        Dialog(onDismissRequest = { expanded = false }) {
+            Column(
+                modifier = Modifier.fillMaxWidth().background(Color.Black).padding(16.dp),
+            ) {
+                AsyncImage(
+                    model = photoUri,
+                    contentDescription = title,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp, max = 480.dp),
+                    contentScale = ContentScale.Fit,
+                )
+                TextButton(onClick = { expanded = false }) {
+                    Text(stringResource(R.string.muyu_close_photo), color = Color.White)
+                }
+            }
+        }
+    }
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -363,7 +389,8 @@ private fun EvidencePhotoTile(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(128.dp)
-                .clip(PhotoShape),
+                .clip(PhotoShape)
+                .clickable { expanded = true },
         ) {
             AsyncImage(
                 model = photoUri,
