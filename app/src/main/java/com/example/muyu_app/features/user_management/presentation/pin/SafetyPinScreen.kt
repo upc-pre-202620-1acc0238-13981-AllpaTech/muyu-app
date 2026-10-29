@@ -115,7 +115,8 @@ fun SafetyPinScreen(
                         value = digit,
                         onValueChange = { value ->
                             digits = digits.toMutableList().also { list ->
-                                list[index] = value.takeLast(1).filter { it.isDigit() }
+                                // Acepta únicamente una cifra del cero al nueve en cada casilla.
+                                list[index] = value.filter { it in '0'..'9' }.takeLast(1)
                             }
                         },
                     )
