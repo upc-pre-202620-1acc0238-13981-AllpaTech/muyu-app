@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.evidence
 
+import com.example.muyu_app.features.labor_execution.presentation.evidence.isEvidenceLocationValid
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -69,7 +70,9 @@ fun MerchantConfirmApprovalScreen(
     } else {
         null
     }
-    val locationOk = distance == null || distance <= PLOT_MATCH_METERS
+    // Aplica la misma comprobación de ubicación antes de mostrar la confirmación de aprobación.
+    val locationOk = distance != null && plot != null && lat != null && lng != null &&
+        isEvidenceLocationValid(lat, lng, plot, milestone?.accuracyMeters)
     val farmerName = plot?.ownerName.orEmpty()
     val farmerFirst = farmerName.substringBefore(" ").ifBlank { farmerName }
     val escrow = plot?.let { computeEscrowSummary(it, milestoneKey) }
@@ -97,6 +100,7 @@ fun MerchantConfirmApprovalScreen(
     }
     val locationTitle = when {
         lat == null || lng == null -> stringResource(R.string.merchant_gps_not_recorded)
+        distance == null -> stringResource(R.string.muyu_location_reference_only)
         locationOk -> stringResource(R.string.merchant_location_inside)
         else -> stringResource(R.string.merchant_location_outside)
     }

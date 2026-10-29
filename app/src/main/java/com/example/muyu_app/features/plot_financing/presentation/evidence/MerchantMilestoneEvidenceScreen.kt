@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.evidence
 
+import com.example.muyu_app.features.labor_execution.presentation.evidence.isEvidenceLocationValid
 import com.example.muyu_app.core.contact.openFarmerContact
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.TextButton
@@ -120,7 +121,9 @@ fun MerchantMilestoneEvidenceScreen(
     } else {
         null
     }
-    val locationOk = distance != null && distance <= PLOT_MATCH_METERS
+    // Usa la misma validación de distancia y precisión aplicada al registrar la evidencia.
+    val locationOk = distance != null && plot != null && lat != null && lng != null &&
+        isEvidenceLocationValid(lat, lng, plot, milestone?.accuracyMeters)
     // Refleja en la fotografía si el GPS está ausente, sin verificar o fuera de la parcela.
     val photoGpsLabel = when {
         lat == null || lng == null -> gpsNotRecorded
@@ -131,7 +134,8 @@ fun MerchantMilestoneEvidenceScreen(
     val photoTimeGps = "${formatEvidenceTime(sentAt)} · $photoGpsLabel"
     val canReview = milestone?.status == MilestoneState.STATUS_SUBMITTED
     val photoUri = milestone?.photoUri?.takeIf { it.isNotBlank() }
-    val hasVerifiedLocation = lat != null && lng != null
+    val hasVerifiedLocation = locationOk
+    val hasEvidenceCoordinates = lat != null && lng != null
     val inputUsed = milestone?.inputUsed?.ifBlank { null }
     val amountApplied = milestone?.amountApplied?.ifBlank { null }
 
@@ -269,7 +273,7 @@ fun MerchantMilestoneEvidenceScreen(
                         label = stringResource(R.string.merchant_verified_weather),
                         value = stringResource(R.string.merchant_weather_not_recorded),
                     )
-                    if (hasVerifiedLocation) {
+                    if (hasEvidenceCoordinates) {
                         LabeledValue(
                             label = stringResource(R.string.merchant_verified_coords),
                             value = PlotFinance.formatCoordinates(lat, lng),
