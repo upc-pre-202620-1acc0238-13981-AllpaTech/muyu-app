@@ -40,6 +40,8 @@ import com.example.muyu_app.features.labor_execution.presentation.evidence.Recor
 import com.example.muyu_app.features.labor_execution.presentation.evidence.RequestExtensionScreen
 import com.example.muyu_app.features.labor_execution.presentation.evidence.SelectMilestoneScreen
 import com.example.muyu_app.features.plot_financing.presentation.visit.VisitOutcomeScreen
+import com.example.muyu_app.features.plot_financing.presentation.visit.MerchantVisitRequestScreen
+import com.example.muyu_app.features.plot_financing.presentation.visit.MerchantVisitSentScreen
 import com.example.muyu_app.features.labor_execution.presentation.sync.SyncConnectedScreen
 import com.example.muyu_app.features.labor_execution.presentation.sync.SyncScreen
 import com.example.muyu_app.features.plot_approval.presentation.home.FarmerHomeScreen
@@ -117,6 +119,8 @@ private enum class WalkthroughStep {
     MerchantPlotDetail,
     FundPlot,
     FundSuccess,
+    MerchantVisitRequest,
+    MerchantVisitSent,
     MerchantMyPlots,
     MerchantAlerts,
     MerchantMilestoneEvidence,
@@ -224,6 +228,8 @@ fun AppNavHost() {
         WalkthroughStep.MerchantApproveReject -> WalkthroughStep.MerchantMilestoneEvidence
         WalkthroughStep.MerchantConfirmApproval -> WalkthroughStep.MerchantApproveReject
         WalkthroughStep.MerchantRejectionReason -> WalkthroughStep.MerchantApproveReject
+        WalkthroughStep.MerchantVisitRequest -> WalkthroughStep.MerchantPlotDetail
+        WalkthroughStep.MerchantVisitSent -> WalkthroughStep.MerchantVisitRequest
         WalkthroughStep.MerchantMilestoneEvidence,
         WalkthroughStep.MerchantMilestoneApproved,
         WalkthroughStep.MerchantReviewOutcome -> when (container.merchantEvidenceOrigin) {
@@ -262,6 +268,8 @@ fun AppNavHost() {
         WalkthroughStep.MerchantPlotDetail,
         WalkthroughStep.FundPlot,
         WalkthroughStep.FundSuccess,
+        WalkthroughStep.MerchantVisitRequest,
+        WalkthroughStep.MerchantVisitSent,
         WalkthroughStep.MerchantMyPlots,
         WalkthroughStep.MerchantAlerts,
         WalkthroughStep.MerchantMilestoneEvidence,
@@ -631,6 +639,7 @@ fun AppNavHost() {
                 }
             },
             onFundPlot = { step = WalkthroughStep.FundPlot },
+            onRequestVisit = { step = WalkthroughStep.MerchantVisitRequest },
             onViewEvidence = { step = WalkthroughStep.MerchantMilestoneEvidence },
             onTabSelected = selectMerchantTab,
         )
@@ -643,6 +652,14 @@ fun AppNavHost() {
             onBack = { step = WalkthroughStep.FundPlot },
             onViewPlot = { step = WalkthroughStep.MerchantPlotDetail },
             onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.MerchantVisitRequest -> MerchantVisitRequestScreen(
+            onBack = { step = WalkthroughStep.MerchantPlotDetail },
+            onRequestSent = { step = WalkthroughStep.MerchantVisitSent },
+        )
+        WalkthroughStep.MerchantVisitSent -> MerchantVisitSentScreen(
+            onBack = { step = WalkthroughStep.MerchantVisitRequest },
+            onBackToPlot = { step = WalkthroughStep.MerchantPlotDetail },
         )
         WalkthroughStep.MerchantMyPlots -> MerchantMyPlotsScreen(
             onPlotClick = {
