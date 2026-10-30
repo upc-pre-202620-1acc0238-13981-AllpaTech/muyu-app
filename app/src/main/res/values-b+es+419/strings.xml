@@ -746,6 +746,13 @@
     <string name="merchant_no_confirmed_payment">No se confirmó ningún pago a tu nombre. Si existe un pago pendiente, revisa Pagos antes de reintentar.</string>
     <string name="merchant_view_other_plots">Ver otras parcelas</string>
     <string name="merchant_back_catalog">Volver al catálogo</string>
+    <string name="visit_request_pending">En espera de confirmación</string>
+    <string name="visit_request_confirmed">Visita confirmada</string>
+    <string name="visit_request_accept">Aceptar visita</string>
+    <string name="merchant_visit_confirmed">Visita confirmada</string>
+    <string name="merchant_visit_confirmed_body">%1$s aceptó tu propuesta de visita.</string>
+    <string name="merchant_visit_meeting_point">Punto de encuentro</string>
+    <string name="merchant_visit_meeting_hint">Entrada de la parcela cerca de la vía principal. Coordina con el agricultor antes de llegar.</string>
     <string name="farmer_country_peru">PERÚ</string>
     <string name="farmer_progress_complete">%1$d%% completado</string>
     <string name="farmer_plots_loading_error">No se pudieron cargar las parcelas. Inténtalo de nuevo.</string>
