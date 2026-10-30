@@ -36,6 +36,13 @@ enum class MerchantPlotReturn {
     Alerts,
 }
 
+data class MerchantVisitRequest(
+    val date: String = "28/08/2026",
+    val time: String = "10:00",
+    val message: String = "",
+    val confirmed: Boolean = false,
+)
+
 class AppContainer(
     context: Context? = null,
 ) {
@@ -50,6 +57,7 @@ class AppContainer(
     var rejectionReason: String = ""
     var rejectionCorrection: String = ""
     var reviewCompletedAt: Long = 0L
+    var merchantVisitRequest: MerchantVisitRequest? = null
 
     // Mantiene la pestaña desde la que se abrió el detalle de la parcela.
     fun merchantEvidenceBottomTab(): MerchantTab = when (merchantEvidenceOrigin) {
@@ -90,6 +98,7 @@ class AppContainer(
         rejectionReason = ""
         rejectionCorrection = ""
         reviewCompletedAt = 0L
+        merchantVisitRequest = null
         plotDraft.clear()
     }
 }
