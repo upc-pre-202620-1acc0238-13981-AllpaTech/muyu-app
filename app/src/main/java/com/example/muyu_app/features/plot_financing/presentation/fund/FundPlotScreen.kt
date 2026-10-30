@@ -82,10 +82,13 @@ private val SoftWhite = Color.White.copy(alpha = 0.7f)
 private enum class PayMethod { Card, Wallet, Agent, Bank }
 private enum class FundingStage { Summary, Payment, Review, Unconfirmed, Unavailable }
 
+// Coordinates the merchant financing wizard and delays the API mutation until final confirmation.
+
 @Composable
 fun FundPlotScreen(
     onBack: () -> Unit,
     onBackToCatalog: () -> Unit,
+    onCheckTransactions: () -> Unit,
     onAcceptTerms: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -136,7 +139,7 @@ fun FundPlotScreen(
         } else if (stage == FundingStage.Unconfirmed) {
             PaymentUnconfirmedContent(
                 amount = amount,
-                onCheckTransactions = { stage = FundingStage.Payment },
+                onCheckTransactions = onCheckTransactions,
                 onChangeMethod = {
                     accepted = false
                     stage = FundingStage.Payment
@@ -775,7 +778,7 @@ private fun FundPlotScreenPreview() {
     InstallMuyuImageLoader()
     CompositionLocalProvider(LocalAppContainer provides AppContainer()) {
         MuyuappTheme {
-            FundPlotScreen(onBack = {}, onBackToCatalog = {}, onAcceptTerms = {})
+            FundPlotScreen(onBack = {}, onBackToCatalog = {}, onCheckTransactions = {}, onAcceptTerms = {})
         }
     }
 }
