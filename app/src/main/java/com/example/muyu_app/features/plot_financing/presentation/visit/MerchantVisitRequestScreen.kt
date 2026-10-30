@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
+import com.example.muyu_app.core.designsystem.components.MuyuDatePickerField
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.di.MerchantVisitRequest
 import com.example.muyu_app.ui.theme.MuyuAction
@@ -47,9 +48,13 @@ import com.example.muyu_app.ui.theme.MuyuTermsBg
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 private val VisitCardShape = RoundedCornerShape(16.dp)
 private val VisitFieldShape = RoundedCornerShape(12.dp)
+
+// Owns the merchant visit proposal and status views without coupling them to financing state.
 
 @Composable
 fun MerchantVisitRequestScreen(
@@ -59,7 +64,7 @@ fun MerchantVisitRequestScreen(
 ) {
     val container = LocalAppContainer.current
     val plot = container.selectedPlot
-    var date by rememberSaveable(plot?.id) { mutableStateOf("28/08/2026") }
+    var date by remember(plot?.id) { mutableStateOf(LocalDate.now().plusDays(7)) }
     var time by rememberSaveable(plot?.id) { mutableStateOf("10:00") }
     var message by rememberSaveable(plot?.id) { mutableStateOf("") }
 
@@ -92,11 +97,17 @@ fun MerchantVisitRequestScreen(
             }
             Spacer(Modifier.height(14.dp))
             VisitCard {
-                VisitLabel(R.string.merchant_visit_proposed_date)
-                VisitInput(value = date, onValueChange = { date = it })
+                MuyuDatePickerField(
+                    label = stringResource(R.string.merchant_visit_proposed_date),
+                    selectedDate = date,
+                    onDateSelected = { date = it },
+                    minDate = LocalDate.now(),
+                    containerColor = MuyuSkip,
+                    labelColor = Color.Black,
+                )
                 Spacer(Modifier.height(16.dp))
                 VisitLabel(R.string.merchant_visit_preferred_time)
-                VisitInput(value = time, onValueChange = { time = it })
+                VisitTimeSelector(value = time, onValueChange = { time = it })
                 Spacer(Modifier.height(16.dp))
                 VisitLabel(R.string.merchant_visit_message)
                 VisitInput(
@@ -115,9 +126,15 @@ fun MerchantVisitRequestScreen(
             VisitPrimaryButton(
                 label = stringResource(R.string.merchant_visit_send),
                 onClick = {
-                    if (date.isBlank() || time.isBlank() || plot == null) return@VisitPrimaryButton
+                    if (time.isBlank() || plot == null) return@VisitPrimaryButton
                     container.merchantVisitRequest = MerchantVisitRequest(
-                        date = date.trim(),
+                        plotId = plot.id,
+                        plotName = plot.name,
+                        plotPlace = plot.place,
+                        farmerEmail = plot.ownerEmail,
+                        farmerName = plot.ownerName,
+                        merchantName = container.fakeStore.currentUser?.displayName.orEmpty(),
+                        date = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                         time = time.trim(),
                         message = message.trim(),
                     )
@@ -137,6 +154,7 @@ fun MerchantVisitSentScreen(
     val container = LocalAppContainer.current
     val plot = container.selectedPlot
     val request = container.merchantVisitRequest
+    val confirmed = request?.confirmed == true
 
     Column(
         modifier = modifier
@@ -173,28 +191,50 @@ fun MerchantVisitSentScreen(
                 }
             }
             Text(
-                text = stringResource(R.string.merchant_visit_sent),
+                text = stringResource(if (confirmed) R.string.merchant_visit_confirmed else R.string.merchant_visit_sent),
                 style = visitTextStyle(25.sp, FontWeight.Bold, MuyuForest),
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = stringResource(R.string.merchant_visit_sent_body, plot?.ownerName.orEmpty()),
+                text = if (confirmed) {
+                    stringResource(R.string.merchant_visit_confirmed_body, request?.farmerName.orEmpty())
+                } else {
+                    stringResource(R.string.merchant_visit_sent_body, request?.farmerName.orEmpty())
+                },
                 textAlign = TextAlign.Center,
                 style = visitTextStyle(14.sp, FontWeight.Normal, Color.Black.copy(alpha = .55f)),
             )
             Spacer(Modifier.height(16.dp))
             VisitCard {
                 Text(
-                    text = stringResource(R.string.merchant_visit_to_plot, plot?.name.orEmpty()),
+                    text = stringResource(R.string.merchant_visit_to_plot, request?.plotName ?: plot?.name.orEmpty()),
                     style = visitTextStyle(17.sp, FontWeight.SemiBold),
                 )
                 Spacer(Modifier.height(12.dp))
                 VisitSummaryRow(stringResource(R.string.merchant_visit_date), request?.date.orEmpty())
                 VisitSummaryRow(stringResource(R.string.merchant_visit_time), request?.time.orEmpty())
-                VisitSummaryRow(stringResource(R.string.merchant_visit_place), plot?.place.orEmpty())
+                VisitSummaryRow(stringResource(R.string.merchant_visit_place), request?.plotPlace ?: plot?.place.orEmpty())
                 if (!request?.message.isNullOrBlank()) {
                     Spacer(Modifier.height(8.dp))
                     Text(request?.message.orEmpty(), style = visitTextStyle(13.sp, FontWeight.Normal))
+                }
+            }
+            if (confirmed) {
+                Spacer(Modifier.height(12.dp))
+                VisitCard {
+                    Text(
+                        text = stringResource(R.string.merchant_visit_meeting_point),
+                        style = visitTextStyle(16.sp, FontWeight.Bold, MuyuForest),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = request?.plotPlace.orEmpty(),
+                        style = visitTextStyle(14.sp, FontWeight.Normal),
+                    )
+                    Text(
+                        text = stringResource(R.string.merchant_visit_meeting_hint),
+                        style = visitTextStyle(12.sp, FontWeight.Normal, Color.Gray),
+                    )
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -267,6 +307,27 @@ private fun VisitInput(
             }
         },
     )
+}
+
+@Composable
+private fun VisitTimeSelector(value: String, onValueChange: (String) -> Unit) {
+    val options = listOf("08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00")
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(VisitFieldShape)
+            .background(MuyuSkip)
+            .border(1.dp, MuyuAction, VisitFieldShape)
+            .clickable {
+                val next = (options.indexOf(value).takeIf { it >= 0 } ?: 0) + 1
+                onValueChange(options[next % options.size])
+            }
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text("$value  ▾", style = visitTextStyle(15.sp, FontWeight.Normal))
+    }
 }
 
 @Composable
