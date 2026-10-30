@@ -132,6 +132,8 @@ private enum class WalkthroughStep {
     Terms,
 }
 
+// Keeps the prototype routes explicit while preserving each merchant flow return destination.
+
 private val PublicSteps = setOf(
     WalkthroughStep.Splash,
     WalkthroughStep.Login,
@@ -639,19 +641,25 @@ fun AppNavHost() {
                 }
             },
             onFundPlot = { step = WalkthroughStep.FundPlot },
-            onRequestVisit = { step = WalkthroughStep.MerchantVisitRequest },
+            onRequestVisit = {
+                step = if (container.merchantVisitRequest?.plotId == container.selectedPlot?.id) {
+                    WalkthroughStep.MerchantVisitSent
+                } else {
+                    WalkthroughStep.MerchantVisitRequest
+                }
+            },
             onViewEvidence = { step = WalkthroughStep.MerchantMilestoneEvidence },
             onTabSelected = selectMerchantTab,
         )
         WalkthroughStep.FundPlot -> FundPlotScreen(
             onBack = { step = WalkthroughStep.MerchantPlotDetail },
             onBackToCatalog = { step = WalkthroughStep.MerchantCatalog },
+            onCheckTransactions = { step = WalkthroughStep.PaymentHistory },
             onAcceptTerms = { step = WalkthroughStep.FundSuccess },
         )
         WalkthroughStep.FundSuccess -> FundSuccessScreen(
             onBack = { step = WalkthroughStep.FundPlot },
             onViewPlot = { step = WalkthroughStep.MerchantPlotDetail },
-            onTabSelected = selectMerchantTab,
         )
         WalkthroughStep.MerchantVisitRequest -> MerchantVisitRequestScreen(
             onBack = { step = WalkthroughStep.MerchantPlotDetail },
