@@ -645,8 +645,8 @@ fun AppNavHost() {
         )
         WalkthroughStep.FundPlot -> FundPlotScreen(
             onBack = { step = WalkthroughStep.MerchantPlotDetail },
+            onBackToCatalog = { step = WalkthroughStep.MerchantCatalog },
             onAcceptTerms = { step = WalkthroughStep.FundSuccess },
-            onTabSelected = selectMerchantTab,
         )
         WalkthroughStep.FundSuccess -> FundSuccessScreen(
             onBack = { step = WalkthroughStep.FundPlot },
