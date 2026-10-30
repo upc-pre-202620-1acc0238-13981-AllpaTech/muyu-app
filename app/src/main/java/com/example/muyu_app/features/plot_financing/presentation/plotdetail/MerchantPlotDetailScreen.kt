@@ -53,6 +53,7 @@ import com.example.muyu_app.core.di.MerchantEvidenceOrigin
 import com.example.muyu_app.core.di.MerchantPlotReturn
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
+import com.example.muyu_app.core.location.PlotLocationMap
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
 import com.example.muyu_app.features.plot_approval.domain.Plot
@@ -82,6 +83,8 @@ private val CtaShape = RoundedCornerShape(15.dp)
 private val Muted = Color.Black.copy(alpha = 0.5f)
 private val TitleMuted = Color.Black.copy(alpha = 0.6f)
 private val SecondaryText = Color(0xFF4F5A50)
+
+// Presents the selected plot and exposes financing, evidence, and visit actions by plot status.
 
 @Composable
 fun MerchantPlotDetailScreen(
@@ -481,6 +484,10 @@ private fun FundedPlotBody(
     }
     Spacer(modifier = Modifier.height(16.dp))
     FundedFarmerCard(farmerName = plot.ownerName)
+    if (plot.status != "funded") {
+        Spacer(modifier = Modifier.height(16.dp))
+        DynamicLocationCard(plot)
+    }
     Spacer(modifier = Modifier.height(16.dp))
     Box(
         modifier = Modifier
@@ -565,6 +572,34 @@ private fun FundedPlotBody(
                 ),
             )
         }
+    }
+}
+
+@Composable
+private fun DynamicLocationCard(plot: Plot) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(Color.White)
+            .border(1.dp, MuyuForest, CardShape)
+            .padding(14.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.merchant_exact_location),
+            style = TextStyle(fontFamily = UrbanistExtraBold, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp),
+        )
+        Spacer(Modifier.height(8.dp))
+        PlotLocationMap(
+            latitude = plot.latitude,
+            longitude = plot.longitude,
+            modifier = Modifier.fillMaxWidth().height(150.dp),
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = plot.place,
+            style = TextStyle(fontFamily = UrbanistSemiBold, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MuyuForest),
+        )
     }
 }
 
