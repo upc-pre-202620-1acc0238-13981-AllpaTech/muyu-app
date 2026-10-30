@@ -36,7 +36,14 @@ enum class MerchantPlotReturn {
     Alerts,
 }
 
+// Carries the cross-role visit proposal until the remote API exposes visit endpoints.
 data class MerchantVisitRequest(
+    val plotId: Int = 0,
+    val plotName: String = "",
+    val plotPlace: String = "",
+    val farmerEmail: String = "",
+    val farmerName: String = "",
+    val merchantName: String = "",
     val date: String = "28/08/2026",
     val time: String = "10:00",
     val message: String = "",
@@ -98,7 +105,7 @@ class AppContainer(
         rejectionReason = ""
         rejectionCorrection = ""
         reviewCompletedAt = 0L
-        merchantVisitRequest = null
+        // Visit requests model server-owned data and must survive account switching in the demo flow.
         plotDraft.clear()
     }
 }
