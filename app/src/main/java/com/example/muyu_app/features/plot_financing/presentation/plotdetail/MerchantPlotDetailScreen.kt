@@ -87,6 +87,7 @@ private val SecondaryText = Color(0xFF4F5A50)
 fun MerchantPlotDetailScreen(
     onBack: () -> Unit,
     onFundPlot: () -> Unit,
+    onRequestVisit: () -> Unit = {},
     onViewEvidence: () -> Unit = {},
     onTabSelected: (MerchantTab) -> Unit,
     modifier: Modifier = Modifier,
@@ -165,6 +166,7 @@ fun MerchantPlotDetailScreen(
                                 onFundPlot()
                             }
                         },
+                        onRequestVisit = onRequestVisit,
                     )
                 }
             }
@@ -316,6 +318,7 @@ private fun FundedPlotBody(
     showHarvestReceipt: Boolean,
     ctaLabel: String,
     onCtaClick: () -> Unit,
+    onRequestVisit: () -> Unit,
 ) {
     val area = formatPlotArea(plot.area)
     val deposit = PlotFinance.parseAmount(plot.amount)
@@ -539,6 +542,29 @@ private fun FundedPlotBody(
                 color = Color.White,
             ),
         )
+    }
+    if (plot.status != "funded") {
+        Spacer(modifier = Modifier.height(10.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp)
+                .clip(CtaShape)
+                .background(Color.White)
+                .border(1.dp, MuyuForest, CtaShape)
+                .clickable(onClick = onRequestVisit),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(R.string.merchant_visit_request_button),
+                style = TextStyle(
+                    fontFamily = UrbanistSemiBold,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = MuyuForest,
+                ),
+            )
+        }
     }
 }
 
