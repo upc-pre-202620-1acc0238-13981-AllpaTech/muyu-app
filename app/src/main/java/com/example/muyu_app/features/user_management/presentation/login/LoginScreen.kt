@@ -66,6 +66,8 @@ import com.example.muyu_app.ui.theme.UrbanistSemiBold
 private val SheetShape = RoundedCornerShape(topStart = 63.dp, topEnd = 63.dp)
 private val FieldShape = RoundedCornerShape(10.dp)
 
+// Connects credential input to LoginUseCase while keeping navigation owned by AppNavHost.
+
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
