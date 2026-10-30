@@ -1,5 +1,11 @@
 package com.example.muyu_app.features.plot_financing.presentation.fund
 
+import android.content.Context
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,8 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
-import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
-import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
@@ -60,14 +65,36 @@ private val ButtonShape = RoundedCornerShape(16.dp)
 private val ChipShape = RoundedCornerShape(20.dp)
 private val LabelGray = Color(0xFF777777)
 
+// Renders the confirmed Escrow receipt and exports the same data as a user-selected PDF file.
+
 @Composable
 fun FundSuccessScreen(
     onBack: () -> Unit,
     onViewPlot: () -> Unit,
-    onTabSelected: (MerchantTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val amount = LocalAppContainer.current.selectedPlot?.amount.orEmpty()
+    val container = LocalAppContainer.current
+    val context = LocalContext.current
+    val plot = container.selectedPlot
+    val amount = plot?.amount.orEmpty()
+    val receiptTitle = stringResource(R.string.merchant_funds_secured)
+    val paymentMethod = stringResource(R.string.merchant_card_masked)
+    val heldStatus = stringResource(R.string.merchant_held)
+    val receiptLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf"),
+    ) { uri ->
+        if (uri != null) {
+            writeReceiptPdf(
+                context = context,
+                uri = uri,
+                title = receiptTitle,
+                plotName = plot?.name.orEmpty(),
+                amount = amount,
+                paymentMethod = paymentMethod,
+                status = heldStatus,
+            )
+        }
+    }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -222,7 +249,13 @@ fun FundSuccessScreen(
                         .height(62.dp)
                         .clip(RoundedCornerShape(20.dp))
                         .background(Color.White)
-                        .border(1.dp, MuyuForest, RoundedCornerShape(20.dp)),
+                        .border(1.dp, MuyuForest, RoundedCornerShape(20.dp))
+                        .clickable {
+                            val safeName = plot?.name.orEmpty()
+                                .ifBlank { "plot" }
+                                .replace(Regex("[^A-Za-z0-9_-]"), "_")
+                            receiptLauncher.launch("muyu_receipt_$safeName.pdf")
+                        },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -237,11 +270,43 @@ fun FundSuccessScreen(
                 }
             }
         }
-        MerchantBottomBar(
-            selectedTab = MerchantTab.Catalog,
-            onTabSelected = onTabSelected,
-            modifier = Modifier.align(Alignment.BottomCenter),
-        )
+    }
+}
+
+private fun writeReceiptPdf(
+    context: Context,
+    uri: Uri,
+    title: String,
+    plotName: String,
+    amount: String,
+    paymentMethod: String,
+    status: String,
+) {
+    runCatching {
+        val document = PdfDocument()
+        val page = document.startPage(PdfDocument.PageInfo.Builder(595, 842, 1).create())
+        val canvas = page.canvas
+        val titlePaint = Paint().apply {
+            textSize = 28f
+            isFakeBoldText = true
+            color = android.graphics.Color.rgb(31, 77, 25)
+        }
+        val bodyPaint = Paint().apply {
+            textSize = 18f
+            color = android.graphics.Color.BLACK
+        }
+        canvas.drawText("MUYU", 48f, 70f, titlePaint)
+        canvas.drawText(title, 48f, 120f, titlePaint)
+        canvas.drawText("Plot: $plotName", 48f, 190f, bodyPaint)
+        canvas.drawText("Amount: $amount", 48f, 230f, bodyPaint)
+        canvas.drawText("Payment method: $paymentMethod", 48f, 270f, bodyPaint)
+        canvas.drawText("Status: $status", 48f, 310f, bodyPaint)
+        canvas.drawText("Funds are held in Escrow and released by approved milestones.", 48f, 370f, bodyPaint)
+        document.finishPage(page)
+        context.contentResolver.openOutputStream(uri)?.use { output ->
+            document.writeTo(output)
+        }
+        document.close()
     }
 }
 
@@ -284,7 +349,7 @@ private fun FundSuccessScreenPreview() {
     InstallMuyuImageLoader()
     CompositionLocalProvider(LocalAppContainer provides AppContainer()) {
         MuyuappTheme {
-            FundSuccessScreen(onBack = {}, onViewPlot = {}, onTabSelected = {})
+            FundSuccessScreen(onBack = {}, onViewPlot = {})
         }
     }
 }
