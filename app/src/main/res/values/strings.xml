@@ -746,6 +746,13 @@
     <string name="merchant_no_confirmed_payment">No confirmed payment was made in your name. If a payment is pending, check Payments before retrying.</string>
     <string name="merchant_view_other_plots">View other plots</string>
     <string name="merchant_back_catalog">Back to catalog</string>
+    <string name="visit_request_pending">Awaiting confirmation</string>
+    <string name="visit_request_confirmed">Visit confirmed</string>
+    <string name="visit_request_accept">Accept visit</string>
+    <string name="merchant_visit_confirmed">Visit confirmed</string>
+    <string name="merchant_visit_confirmed_body">%1$s accepted your visit proposal.</string>
+    <string name="merchant_visit_meeting_point">Meeting point</string>
+    <string name="merchant_visit_meeting_hint">Entrance to the plot near the main road. Coordinate with the farmer before arriving.</string>
     <string name="farmer_country_peru">PERU</string>
     <string name="farmer_progress_complete">%1$d%% complete</string>
     <string name="farmer_plots_loading_error">Unable to load plots. Please try again.</string>
