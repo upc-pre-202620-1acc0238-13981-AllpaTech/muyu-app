@@ -76,6 +76,8 @@ private val MutedFooter = Color.Black.copy(alpha = 0.4f)
 
 private enum class CatalogFilter { All, Near, Recommended }
 
+// Loads available plots and applies the merchant search and catalog filters locally.
+
 @Composable
 fun MerchantCatalogScreen(
     onPlotClick: () -> Unit,
