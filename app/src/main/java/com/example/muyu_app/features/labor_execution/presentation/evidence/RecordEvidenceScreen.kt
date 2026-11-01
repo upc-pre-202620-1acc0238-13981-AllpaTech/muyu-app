@@ -1,6 +1,7 @@
 package com.example.muyu_app.features.labor_execution.presentation.evidence
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.example.muyu_app.R
@@ -120,6 +122,7 @@ fun RecordEvidenceScreen(
     var locationCheck by remember { mutableStateOf(LocationCheck.Idle) }
     var locating by remember { mutableStateOf(false) }
     var queued by remember { mutableStateOf(false) }
+    var cameraDenied by remember { mutableStateOf(false) }
 
     fun applyLocation(lat: Double, lng: Double, acc: Int?) {
         latitude = lat
@@ -217,13 +220,20 @@ fun RecordEvidenceScreen(
                 )
             }
             photoUri = uri.toString()
+            cameraDenied = false
             afterPhotoCaptured()
         }
     }
     val cameraPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
+        cameraDenied = !granted
         if (granted) cameraLauncher.launch(null)
+    }
+    fun openGallery() {
+        galleryLauncher.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+        )
     }
 
     val canSave = photoUri.isNotBlank() && inputUsed.isNotBlank() && amount.isNotBlank()
@@ -235,6 +245,64 @@ fun RecordEvidenceScreen(
             hasGpsFix
         )
     val continueEnabled = canSave && locationReady
+
+    if (cameraDenied) {
+        val lat = latitude
+        val lng = longitude
+        val gps = when {
+            lat == null || lng == null -> EvidenceGpsSummary(
+                title = stringResource(R.string.evidence_gps_pending),
+                detail = stringResource(R.string.evidence_gps_pending_body),
+                valid = false,
+            )
+            else -> {
+                val detail = accuracy?.let {
+                    stringResource(R.string.evidence_gps_detail, PlotFinance.formatCoordinates(lat, lng), it)
+                } ?: PlotFinance.formatCoordinates(lat, lng)
+                when (locationCheck) {
+                    LocationCheck.Mismatch -> EvidenceGpsSummary(
+                        stringResource(R.string.evidence_location_wrong),
+                        detail,
+                        valid = false,
+                    )
+                    LocationCheck.Matching -> EvidenceGpsSummary(
+                        stringResource(R.string.evidence_gps_valid_inside),
+                        detail,
+                        valid = true,
+                    )
+                    else -> EvidenceGpsSummary(
+                        stringResource(R.string.evidence_location_recorded),
+                        detail,
+                        valid = true,
+                    )
+                }
+            }
+        }
+        CameraAccessDeniedContent(
+            plot = plot,
+            online = online,
+            milestoneTitle = stringResource(definition.titleRes),
+            inputUsed = inputUsed,
+            amount = amount,
+            hasPhoto = photoUri.isNotBlank(),
+            gps = gps,
+            onRetry = {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                    PackageManager.PERMISSION_GRANTED
+                ) {
+                    cameraDenied = false
+                    cameraLauncher.launch(null)
+                } else {
+                    cameraPermission.launch(Manifest.permission.CAMERA)
+                }
+            },
+            onOpenSettings = { context.openAppSettings() },
+            onUploadFromGallery = { openGallery() },
+            onBackToDraft = { cameraDenied = false },
+            modifier = modifier,
+        )
+        return
+    }
 
     Box(
         modifier = modifier
@@ -349,11 +417,7 @@ fun RecordEvidenceScreen(
                     onTakePhoto = {
                         cameraPermission.launch(Manifest.permission.CAMERA)
                     },
-                    onOpenGallery = {
-                        galleryLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                        )
-                    },
+                    onOpenGallery = { openGallery() },
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
