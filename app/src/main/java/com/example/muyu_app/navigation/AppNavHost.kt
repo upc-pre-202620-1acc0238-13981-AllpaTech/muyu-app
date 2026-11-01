@@ -47,6 +47,7 @@ import com.example.muyu_app.features.labor_execution.presentation.sync.SyncScree
 import com.example.muyu_app.features.plot_approval.presentation.home.FarmerHomeScreen
 import com.example.muyu_app.features.plot_approval.presentation.myplots.FarmerMyPlotsScreen
 import com.example.muyu_app.features.plot_approval.presentation.onboarding.ListPlotOnboardingScreen
+import com.example.muyu_app.features.plot_approval.presentation.plotdetail.AvailablePlotScreen
 import com.example.muyu_app.features.plot_approval.presentation.plotdetail.MyPlotScreen
 import com.example.muyu_app.features.plot_approval.presentation.plotdetail.PlotDetailScreen
 import com.example.muyu_app.features.plot_approval.presentation.visits.VisitRequestsScreen
@@ -103,6 +104,7 @@ private enum class WalkthroughStep {
     PublishFinancing,
     PublishSuccess,
     MyPlot,
+    AvailablePlot,
     VisitRequests,
     FundedPlot,
     VisitOutcome,
@@ -152,6 +154,9 @@ fun AppNavHost() {
     var tab by rememberSaveable { mutableStateOf<String?>(null) }
     var isMerchant by rememberSaveable { mutableStateOf(false) }
     var termsReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.Register) }
+    // Pantallas a las que vuelven la lista de visitas y el resultado de la visita.
+    var visitsReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.AvailablePlot) }
+    var outcomeReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.AvailablePlot) }
     var passwordFromProfile by rememberSaveable { mutableStateOf(false) }
     var recoveryEmail by rememberSaveable { mutableStateOf("") }
     val container = LocalAppContainer.current
@@ -255,6 +260,7 @@ fun AppNavHost() {
         WalkthroughStep.PublishFinancing,
         WalkthroughStep.PublishSuccess,
         WalkthroughStep.MyPlot,
+        WalkthroughStep.AvailablePlot,
         WalkthroughStep.FundedPlot,
         WalkthroughStep.VisitOutcome,
         WalkthroughStep.RequestExtension,
@@ -420,7 +426,11 @@ fun AppNavHost() {
                 onTabSelected = selectTab,
                 onPlotSelected = {
                     container.farmerPlotReturn = FarmerPlotReturn.Home
-                    step = WalkthroughStep.FundedPlot
+                    step = if (container.selectedPlot?.status == "funded") {
+                        WalkthroughStep.FundedPlot
+                    } else {
+                        WalkthroughStep.AvailablePlot
+                    }
                 },
             )
         }
@@ -440,6 +450,13 @@ fun AppNavHost() {
                     } else {
                         WalkthroughStep.MyPlot
                     }
+                },
+                onEditPlot = { plot ->
+                    container.selectedPlot = plot
+                    container.farmerPlotReturn = FarmerPlotReturn.MyPlots
+                    container.plotDraft.clear()
+                    container.plotDraft.loadFrom(plot)
+                    step = WalkthroughStep.PublishInfo
                 },
             )
         }
@@ -494,13 +511,40 @@ fun AppNavHost() {
                     }
                 },
                 onTabSelected = selectTab,
-                onViewVisitRequests = { step = WalkthroughStep.VisitRequests },
+                onViewVisitRequests = {
+                    visitsReturnStep = WalkthroughStep.MyPlot
+                    step = WalkthroughStep.VisitRequests
+                },
                 fromHome = container.farmerPlotReturn == FarmerPlotReturn.Home,
             )
         }
         WalkthroughStep.VisitRequests -> TabOrContent(currentTab, selectTab) {
             VisitRequestsScreen(
-                onBack = { step = WalkthroughStep.MyPlot },
+                onBack = { step = visitsReturnStep },
+                onTabSelected = selectTab,
+                onRecordOutcome = {
+                    outcomeReturnStep = WalkthroughStep.VisitRequests
+                    step = WalkthroughStep.VisitOutcome
+                },
+                selectedTab = if (visitsReturnStep == WalkthroughStep.MyPlot) MuyuTab.Plot else MuyuTab.Home,
+            )
+        }
+        WalkthroughStep.AvailablePlot -> TabOrContent(currentTab, selectTab) {
+            AvailablePlotScreen(
+                onBack = {
+                    step = when (container.farmerPlotReturn) {
+                        FarmerPlotReturn.Home -> WalkthroughStep.FarmerHome
+                        FarmerPlotReturn.MyPlots -> WalkthroughStep.FarmerMyPlots
+                    }
+                },
+                onViewVisitOutcome = {
+                    outcomeReturnStep = WalkthroughStep.AvailablePlot
+                    step = WalkthroughStep.VisitOutcome
+                },
+                onManageVisits = {
+                    visitsReturnStep = WalkthroughStep.AvailablePlot
+                    step = WalkthroughStep.VisitRequests
+                },
                 onTabSelected = selectTab,
             )
         }
@@ -523,10 +567,10 @@ fun AppNavHost() {
         }
         WalkthroughStep.VisitOutcome -> TabOrContent(currentTab, selectTab) {
             VisitOutcomeScreen(
-                onBack = { step = WalkthroughStep.FundedPlot },
-                onSaved = { step = WalkthroughStep.FundedPlot },
-                onReleased = { step = WalkthroughStep.FarmerHome },
+                onBack = { step = outcomeReturnStep },
+                onSaved = { step = outcomeReturnStep },
                 onTabSelected = selectTab,
+                selectedTab = if (visitsReturnStep == WalkthroughStep.MyPlot) MuyuTab.Plot else MuyuTab.Home,
             )
         }
         WalkthroughStep.RequestExtension -> TabOrContent(currentTab, selectTab) {

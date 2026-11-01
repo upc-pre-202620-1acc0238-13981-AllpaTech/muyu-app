@@ -3,21 +3,24 @@ package com.example.muyu_app.features.plot_financing.presentation.visit
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +28,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
@@ -34,49 +38,50 @@ import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
 import com.example.muyu_app.core.di.LocalAppContainer
-import com.example.muyu_app.core.plot.liveFundedPlot
-import com.example.muyu_app.core.plot.merchantDisplayName
-import com.example.muyu_app.core.plot.refreshSelectedPlot
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
-import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.ui.theme.MuyuAction
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuLocateBg
-import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
+import com.example.muyu_app.ui.theme.MuyuSkip
+import com.example.muyu_app.ui.theme.MuyuSurface
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.coroutines.launch
 
+// Frames "iPhone 17 - 247" y " Visit agreement with new price" (Mockups - Mobile).
 private val CardShape = RoundedCornerShape(20.dp)
-private val SelectedBg = Color(0xFFEAFBE2)
+private val FieldShape = RoundedCornerShape(12.dp)
+private val Muted = Color(0xFF4F5A50)
+private val ErrorText = Color(0xFF9E2F2F)
 
+/**
+ * El agricultor registra el resultado de una visita confirmada. Se guarda en el
+ * fake-api para que el comerciante y la parcela reflejen el mismo resultado.
+ */
 @Composable
 fun VisitOutcomeScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit,
-    onReleased: () -> Unit,
     onTabSelected: (MuyuTab) -> Unit,
+    selectedTab: MuyuTab = MuyuTab.Home,
     modifier: Modifier = Modifier,
 ) {
     val container = LocalAppContainer.current
-    val plot = remember { container.liveFundedPlot() }
-    val merchant = container.merchantDisplayName(plot)
-    val plotName = plot?.name.orEmpty()
-    val visitWhen = remember(plot?.visitDate, plot?.publishedAt) {
-        formatVisitWhen(plot?.visitDate?.ifBlank { null } ?: plot?.publishedAt.orEmpty())
+    val visit = container.selectedVisit
+    val scope = rememberCoroutineScope()
+    var outcome by remember(visit?.id) {
+        mutableStateOf(visit?.outcome.orEmpty().ifBlank { MilestoneState.VISIT_AGREEMENT })
     }
-    var outcome by remember {
-        mutableStateOf(plot?.visitOutcome.orEmpty().ifBlank { MilestoneState.VISIT_AGREEMENT })
-    }
+    var price by remember(visit?.id) { mutableStateOf(visit?.agreedPrice.orEmpty()) }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val agreement = outcome == MilestoneState.VISIT_AGREEMENT
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuSurface),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -87,84 +92,131 @@ fun VisitOutcomeScreen(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 16.dp, bottom = MuyuScrollBottomInset),
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 18.dp, bottom = MuyuScrollBottomInset),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
+                if (visit == null) {
+                    Text(
+                        text = stringResource(R.string.visit_outcome_missing),
+                        style = textStyle(UrbanistRegular, 16, Muted),
+                    )
+                    return@Column
+                }
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(CardShape)
                         .background(Color.White)
                         .border(1.dp, MuyuForest, CardShape)
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
+                    Text(text = visit.plotName, style = textStyle(UrbanistSemiBold, 16, Color.Black))
                     Text(
-                        text = plotName,
-                        style = TextStyle(
-                            fontFamily = UrbanistSemiBold,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp,
-                            color = Color.Black,
-                        ),
+                        text = listOf(visit.farmerName, visit.merchantName)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" · "),
+                        style = textStyle(UrbanistRegular, 16, Muted),
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = stringResource(R.string.visit_card_merchant, merchant, visitWhen),
-                        style = TextStyle(
-                            fontFamily = UrbanistRegular,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp,
-                            color = Color.Black.copy(alpha = 0.5f),
-                        ),
+                        text = listOf(visit.date, visit.time).filter { it.isNotBlank() }.joinToString(", "),
+                        style = textStyle(UrbanistRegular, 16, Muted),
                     )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+
                 OutcomeOption(
                     title = stringResource(R.string.visit_agreement),
                     body = stringResource(R.string.visit_agreement_body),
-                    selected = outcome == MilestoneState.VISIT_AGREEMENT,
+                    selected = agreement,
                     onClick = { outcome = MilestoneState.VISIT_AGREEMENT },
                 )
-                Spacer(modifier = Modifier.height(14.dp))
+                if (agreement) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(CardShape)
+                            .background(Color.White)
+                            .border(1.dp, MuyuForest, CardShape)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.visit_new_agreed_price),
+                            style = textStyle(UrbanistSemiBold, 16, Color.Black),
+                        )
+                        BasicTextField(
+                            value = price,
+                            onValueChange = { value ->
+                                price = value.filter { it.isDigit() || it == '.' }.take(10)
+                            },
+                            singleLine = true,
+                            textStyle = textStyle(UrbanistRegular, 16, Color.Black),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(FieldShape)
+                                .background(MuyuLocateBg)
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                        )
+                        Text(
+                            text = stringResource(R.string.visit_new_agreed_price_hint),
+                            style = textStyle(UrbanistRegular, 14, Muted),
+                        )
+                    }
+                }
                 OutcomeOption(
                     title = stringResource(R.string.visit_no_agreement),
                     body = stringResource(R.string.visit_no_agreement_body),
-                    selected = outcome == MilestoneState.VISIT_NO_AGREEMENT,
+                    selected = !agreement,
                     onClick = { outcome = MilestoneState.VISIT_NO_AGREEMENT },
                 )
-                Spacer(modifier = Modifier.height(28.dp))
-                Box(
+                error?.let { Text(text = it, style = textStyle(UrbanistRegular, 14, ErrorText)) }
+
+                Text(
+                    text = stringResource(
+                        when {
+                            saving -> R.string.visit_saving
+                            agreement -> R.string.visit_confirm_agreement
+                            else -> R.string.visit_save
+                        },
+                    ),
+                    style = textStyle(UrbanistBold, 18, Color.White).copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center),
                     modifier = Modifier
+                        .padding(top = 14.dp)
                         .fillMaxWidth()
-                        .height(60.dp)
+                        .height(56.dp)
                         .clip(CardShape)
                         .background(MuyuAction)
-                        .clickable {
-                            val id = plot?.id ?: return@clickable
-                            container.fakeStore.saveVisit(id, outcome, PlotFinance.publishedToday())
-                            container.refreshSelectedPlot()
-                            if (outcome == MilestoneState.VISIT_NO_AGREEMENT) {
-                                onReleased()
-                            } else {
-                                onSaved()
+                        .clickable(enabled = !saving) {
+                            saving = true
+                            error = null
+                            scope.launch {
+                                container.plotVisits
+                                    .recordOutcome(visit.id, outcome, if (agreement) price.trim() else "")
+                                    .onSuccess { updated ->
+                                        container.selectedVisit = updated
+                                        container.selectedPlot
+                                            ?.takeIf { it.id == updated.plotId }
+                                            ?.let { current ->
+                                                container.selectedPlot = current.copy(
+                                                    visitOutcome = updated.outcome,
+                                                    visitDate = updated.date,
+                                                    agreedPrice = updated.agreedPrice,
+                                                )
+                                            }
+                                        onSaved()
+                                    }
+                                    .onFailure { error = it.message.orEmpty() }
+                                saving = false
                             }
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.visit_save),
-                        style = TextStyle(
-                            fontFamily = UrbanistBold,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = Color.White,
-                        ),
-                    )
-                }
+                        }
+                        .padding(vertical = 16.dp),
+                )
             }
         }
         MuyuBottomBar(
-            selectedTab = MuyuTab.Home,
+            selectedTab = selectedTab,
             onTabSelected = onTabSelected,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
@@ -182,42 +234,19 @@ private fun OutcomeOption(
         modifier = Modifier
             .fillMaxWidth()
             .clip(CardShape)
-            .background(if (selected) SelectedBg else Color.White)
-            .border(
-                width = 1.dp,
-                color = if (selected) MuyuForest else Color.Black.copy(alpha = 0.12f),
-                shape = CardShape,
-            )
+            .background(if (selected) MuyuSkip else Color.White)
+            .border(if (selected) 2.dp else 1.dp, MuyuForest, CardShape)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
-            text = title,
-            style = TextStyle(
-                fontFamily = UrbanistSemiBold,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-                color = Color.Black,
-            ),
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = body,
-            style = TextStyle(
-                fontFamily = UrbanistRegular,
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp,
-                color = if (selected) MuyuOlive else Color.Black.copy(alpha = 0.5f),
-                lineHeight = 22.sp,
-            ),
-        )
+        Text(text = title, style = textStyle(UrbanistSemiBold, 16, Color.Black))
+        Text(text = body, style = textStyle(UrbanistRegular, 16, Muted))
     }
 }
 
-private fun formatVisitWhen(raw: String): String {
-    val parsed = PlotFinance.parseDate(raw)
-    if (parsed != null) {
-        return SimpleDateFormat("d MMM, hh:mm a", Locale.ENGLISH).format(parsed)
-    }
-    return SimpleDateFormat("d MMM, hh:mm a", Locale.ENGLISH).format(Date())
-}
+private fun textStyle(family: FontFamily, size: Int, color: Color) = TextStyle(
+    fontFamily = family,
+    fontSize = size.sp,
+    color = color,
+)

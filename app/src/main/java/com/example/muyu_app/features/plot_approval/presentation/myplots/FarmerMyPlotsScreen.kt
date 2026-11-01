@@ -22,12 +22,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +66,7 @@ import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
+import kotlinx.coroutines.launch
 
 private val CardShape = RoundedCornerShape(20.dp)
 private val ChipShape = RoundedCornerShape(20.dp)
@@ -80,10 +86,15 @@ fun FarmerMyPlotsScreen(
     onViewPlot: (Plot) -> Unit,
     onWeatherAlert: () -> Unit,
     onTabSelected: (MuyuTab) -> Unit,
+    onEditPlot: (Plot) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val container = LocalAppContainer.current
+    val scope = rememberCoroutineScope()
     var plots by remember { mutableStateOf<List<Plot>>(emptyList()) }
+    var plotToDelete by remember { mutableStateOf<Plot?>(null) }
+    var deleting by remember { mutableStateOf(false) }
+    var deleteError by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(FarmerPlotFilter.All) }
     val lifecycleState = LocalLifecycleOwner.current.lifecycle.currentStateAsState()
@@ -202,6 +213,11 @@ fun FarmerMyPlotsScreen(
                             plot = plot,
                             onViewPlot = { onViewPlot(plot) },
                             onWeatherAlert = onWeatherAlert,
+                            onEdit = { onEditPlot(plot) },
+                            onDelete = {
+                                deleteError = null
+                                plotToDelete = plot
+                            },
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                     }
@@ -212,6 +228,44 @@ fun FarmerMyPlotsScreen(
             selectedTab = MuyuTab.Plot,
             onTabSelected = onTabSelected,
             modifier = Modifier.align(Alignment.BottomCenter),
+        )
+    }
+
+    plotToDelete?.let { target ->
+        AlertDialog(
+            onDismissRequest = { if (!deleting) plotToDelete = null },
+            title = { Text(stringResource(R.string.farmer_delete_plot_title, target.name)) },
+            text = {
+                Text(
+                    deleteError?.let { stringResource(R.string.farmer_delete_plot_error, it) }
+                        ?: stringResource(R.string.farmer_delete_plot_body),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !deleting,
+                    onClick = {
+                        deleting = true
+                        scope.launch {
+                            container.deletePlotUseCase(target.id)
+                                .onSuccess {
+                                    plots = plots.filterNot { it.id == target.id }
+                                    if (container.selectedPlot?.id == target.id) container.selectedPlot = null
+                                    plotToDelete = null
+                                }
+                                .onFailure { deleteError = it.message.orEmpty() }
+                            deleting = false
+                        }
+                    },
+                ) {
+                    Text(stringResource(R.string.farmer_delete_plot_confirm), color = Color(0xFF9E2F2F))
+                }
+            },
+            dismissButton = {
+                TextButton(enabled = !deleting, onClick = { plotToDelete = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
         )
     }
 }
@@ -325,7 +379,10 @@ private fun FarmerPlotCard(
     plot: Plot,
     onViewPlot: () -> Unit,
     onWeatherAlert: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
     val funded = plot.isFundedPlot()
     val approved = plot.approvedMilestoneCount()
     val total = 4
@@ -473,16 +530,49 @@ private fun FarmerPlotCard(
                     ),
                 )
             }
-            Box(
-                modifier = Modifier
-                    .width(36.dp)
-                    .height(32.dp)
-                    .clip(ButtonShape)
-                    .background(Color(0xFFD9D9D9))
-                    .clickable(onClick = onViewPlot),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(text = "⋮", fontSize = 18.sp, color = Color.Black)
+            Box {
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(32.dp)
+                        .clip(ButtonShape)
+                        .background(Color(0xFFD9D9D9))
+                        .clickable { menuOpen = true },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(text = "⋮", fontSize = 18.sp, color = Color.Black)
+                }
+                // Una parcela financiada ya tiene acuerdo y fondos: no se edita ni se elimina.
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.publish_edit_plot)) },
+                        enabled = !funded,
+                        onClick = {
+                            menuOpen = false
+                            onEdit()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                stringResource(R.string.farmer_delete_plot),
+                                color = if (funded) Color.Unspecified else Color(0xFF9E2F2F),
+                            )
+                        },
+                        enabled = !funded,
+                        onClick = {
+                            menuOpen = false
+                            onDelete()
+                        },
+                    )
+                    if (funded) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.farmer_plot_locked_funded), fontSize = 12.sp) },
+                            enabled = false,
+                            onClick = {},
+                        )
+                    }
+                }
             }
         }
     }
