@@ -39,6 +39,16 @@
     <string name="register_confirm_password">Confirmar contraseña</string>
     <string name="register_button">Registrarse</string>
     <string name="register_have_account">¿Ya tienes una cuenta?</string>
+    <string name="register_accept_terms">He leído y acepto los términos y condiciones</string>
+    <string name="register_name_invalid">Ingresa un nombre válido de 2 a 60 letras.</string>
+    <string name="register_email_invalid">Ingresa un correo electrónico válido.</string>
+    <string name="register_phone_invalid">Ingresa un número válido.</string>
+    <string name="register_birthdate_required">Selecciona tu fecha de nacimiento.</string>
+    <string name="register_birthdate_invalid">Debes tener entre 18 y 90 años.</string>
+    <string name="register_password_requirements">Usa 8+ caracteres con mayúscula, minúscula, número y carácter especial.</string>
+    <string name="register_password_invalid">La contraseña debe tener 8+ caracteres, mayúscula, minúscula, número y carácter especial.</string>
+    <string name="register_password_mismatch">Las contraseñas no coinciden.</string>
+    <string name="register_terms_required">Acepta los términos y condiciones para continuar.</string>
     <string name="reset_title">Recuperar contraseña</string>
     <string name="reset_heading">¿Restablecer contraseña?</string>
     <string name="reset_body">Ingresa el correo con el que te registraste y te enviaremos las instrucciones para recuperar tu contraseña.</string>

@@ -60,6 +60,26 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+private const val MINIMUM_AGE = 18L
+private const val MAXIMUM_AGE = 90L
+private val EMAIL_PATTERN = Regex(
+    "^[A-Za-z0-9](?:[A-Za-z0-9._%+-]{0,62}[A-Za-z0-9])?@" +
+        "[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z]{2,})+$",
+)
+private val NAME_PATTERN = Regex("^[\\p{L}][\\p{L} .'-]{1,59}$")
+private val PHONE_PATTERN = Regex("^9\\d{8}$")
+
+private enum class RegistrationValidationError {
+    NAME,
+    EMAIL,
+    PHONE,
+    BIRTHDATE_REQUIRED,
+    BIRTHDATE_INVALID,
+    PASSWORD,
+    PASSWORD_MISMATCH,
+    TERMS,
+}
+
 @Composable
 fun RegisterScreen(
     onRegister: () -> Unit,
@@ -86,7 +106,15 @@ fun RegisterScreen(
     var acceptedTerms by rememberSaveable { mutableStateOf(false) }
     var passwordHidden by rememberSaveable { mutableStateOf(true) }
     var confirmHidden by rememberSaveable { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var validationError by rememberSaveable {
+        mutableStateOf<RegistrationValidationError?>(null)
+    }
+    var registrationFailed by rememberSaveable { mutableStateOf(false) }
+
+    fun clearError() {
+        validationError = null
+        registrationFailed = false
+    }
 
     Column(
         modifier = modifier
@@ -114,14 +142,27 @@ fun RegisterScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState()),
         ) {
-            AuthFieldBlock(stringResource(R.string.register_name), name) { name = it }
-            AuthFieldBlock(stringResource(R.string.login_email), email, KeyboardType.Email) { email = it }
-            AuthFieldBlock(stringResource(R.string.register_phone), phone, KeyboardType.Phone) { phone = it }
+            AuthFieldBlock(stringResource(R.string.register_name), name) {
+                name = it
+                clearError()
+            }
+            AuthFieldBlock(stringResource(R.string.login_email), email, KeyboardType.Email) {
+                email = it
+                clearError()
+            }
+            AuthFieldBlock(stringResource(R.string.register_phone), phone, KeyboardType.Phone) {
+                phone = it.filter(Char::isDigit).take(9)
+                clearError()
+            }
             MuyuDatePickerField(
                 label = stringResource(R.string.register_birthdate),
                 selectedDate = birthDate,
-                onDateSelected = { birthDate = it },
-                maxDate = LocalDate.now(),
+                onDateSelected = {
+                    birthDate = it
+                    clearError()
+                },
+                minDate = LocalDate.now().minusYears(MAXIMUM_AGE),
+                maxDate = LocalDate.now().minusYears(MINIMUM_AGE),
                 authStyle = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -129,21 +170,33 @@ fun RegisterScreen(
             AuthFieldBlock(
                 label = stringResource(R.string.login_password),
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    clearError()
+                },
                 keyboardType = KeyboardType.Password,
                 hidden = passwordHidden,
                 onToggleVisibility = { passwordHidden = !passwordHidden },
             )
+            Text(
+                text = stringResource(R.string.register_password_requirements),
+                color = Color.White.copy(alpha = 0.75f),
+                fontSize = 12.sp,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = if (acceptedTerms) "☑" else "☐",
                     color = MuyuField,
                     fontSize = 25.sp,
-                    modifier = Modifier.clickable { acceptedTerms = !acceptedTerms },
+                    modifier = Modifier.clickable {
+                        acceptedTerms = !acceptedTerms
+                        clearError()
+                    },
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "He leído y acepto los términos y condiciones",
+                    text = stringResource(R.string.register_accept_terms),
                     color = Color.White,
                     fontSize = 14.sp,
                     modifier = Modifier.clickable { onTerms() },
@@ -152,14 +205,20 @@ fun RegisterScreen(
             AuthFieldBlock(
                 label = stringResource(R.string.register_confirm_password),
                 value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                onValueChange = {
+                    confirmPassword = it
+                    clearError()
+                },
                 keyboardType = KeyboardType.Password,
                 hidden = confirmHidden,
                 onToggleVisibility = { confirmHidden = !confirmHidden },
             )
-            if (error != null) {
+            val validationMessage = validationError?.let { error ->
+                stringResource(error.messageResource())
+            }
+            if (validationMessage != null || registrationFailed) {
                 Text(
-                    text = stringResource(R.string.register_error),
+                    text = validationMessage ?: stringResource(R.string.register_error),
                     style = TextStyle(
                         fontFamily = UrbanistSemiBold,
                         fontWeight = FontWeight.SemiBold,
@@ -174,21 +233,38 @@ fun RegisterScreen(
                 text = stringResource(R.string.register_button),
                 onClick = {
                     scope.launch {
-                        if (!acceptedTerms || password != confirmPassword || email.isBlank() || password.isBlank()) {
-                            error = "invalid"
+                        val normalizedName = name.trim()
+                        val normalizedEmail = email.trim()
+                        val normalizedPhone = phone.trim()
+                        val error = validateRegistration(
+                            name = normalizedName,
+                            email = normalizedEmail,
+                            phone = normalizedPhone,
+                            birthDate = birthDate,
+                            password = password,
+                            confirmPassword = confirmPassword,
+                            acceptedTerms = acceptedTerms,
+                        )
+                        if (error != null) {
+                            validationError = error
+                            registrationFailed = false
                             return@launch
                         }
-                        val selectedBirthDate = birthDate
-                        if (selectedBirthDate?.isAfter(LocalDate.now()) == true) {
-                            error = "invalid"
-                            return@launch
-                        }
-                        val formattedBirthDate = selectedBirthDate?.let {
+                        val formattedBirthDate = checkNotNull(birthDate).let {
                             it.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH))
-                        }.orEmpty()
-                        container.registerUseCase(name, email, phone, formattedBirthDate, password)
+                        }
+                        container.registerUseCase(
+                            normalizedName,
+                            normalizedEmail,
+                            normalizedPhone,
+                            formattedBirthDate,
+                            password,
+                        )
                             .onSuccess { onRegister() }
-                            .onFailure { error = "invalid" }
+                            .onFailure {
+                                validationError = null
+                                registrationFailed = true
+                            }
                     }
                 },
             )
@@ -221,6 +297,51 @@ fun RegisterScreen(
             }
         }
     }
+}
+
+private fun validateRegistration(
+    name: String,
+    email: String,
+    phone: String,
+    birthDate: LocalDate?,
+    password: String,
+    confirmPassword: String,
+    acceptedTerms: Boolean,
+): RegistrationValidationError? {
+    if (!NAME_PATTERN.matches(name)) return RegistrationValidationError.NAME
+    if (!EMAIL_PATTERN.matches(email)) return RegistrationValidationError.EMAIL
+    if (!PHONE_PATTERN.matches(phone)) return RegistrationValidationError.PHONE
+    if (birthDate == null) return RegistrationValidationError.BIRTHDATE_REQUIRED
+
+    val today = LocalDate.now()
+    if (
+        birthDate.isBefore(today.minusYears(MAXIMUM_AGE)) ||
+        birthDate.isAfter(today.minusYears(MINIMUM_AGE))
+    ) {
+        return RegistrationValidationError.BIRTHDATE_INVALID
+    }
+
+    val hasValidPassword = password.length >= 8 &&
+        password.any(Char::isUpperCase) &&
+        password.any(Char::isLowerCase) &&
+        password.any(Char::isDigit) &&
+        password.none(Char::isWhitespace) &&
+        password.any { !it.isLetterOrDigit() && !it.isWhitespace() }
+    if (!hasValidPassword) return RegistrationValidationError.PASSWORD
+    if (password != confirmPassword) return RegistrationValidationError.PASSWORD_MISMATCH
+    if (!acceptedTerms) return RegistrationValidationError.TERMS
+    return null
+}
+
+private fun RegistrationValidationError.messageResource(): Int = when (this) {
+    RegistrationValidationError.NAME -> R.string.register_name_invalid
+    RegistrationValidationError.EMAIL -> R.string.register_email_invalid
+    RegistrationValidationError.PHONE -> R.string.register_phone_invalid
+    RegistrationValidationError.BIRTHDATE_REQUIRED -> R.string.register_birthdate_required
+    RegistrationValidationError.BIRTHDATE_INVALID -> R.string.register_birthdate_invalid
+    RegistrationValidationError.PASSWORD -> R.string.register_password_invalid
+    RegistrationValidationError.PASSWORD_MISMATCH -> R.string.register_password_mismatch
+    RegistrationValidationError.TERMS -> R.string.register_terms_required
 }
 
 @Composable

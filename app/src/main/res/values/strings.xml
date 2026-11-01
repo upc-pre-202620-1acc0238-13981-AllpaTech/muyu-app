@@ -39,6 +39,16 @@
     <string name="register_confirm_password">Confirm Password</string>
     <string name="register_button">Register</string>
     <string name="register_have_account">Do you have an account?</string>
+    <string name="register_accept_terms">I have read and accept the terms and conditions</string>
+    <string name="register_name_invalid">Enter a valid name using 2 to 60 letters.</string>
+    <string name="register_email_invalid">Enter a valid email address.</string>
+    <string name="register_phone_invalid">Enter a valid number.</string>
+    <string name="register_birthdate_required">Select your date of birth.</string>
+    <string name="register_birthdate_invalid">You must be between 18 and 90 years old.</string>
+    <string name="register_password_requirements">Use 8+ characters with uppercase, lowercase, a number, and a special character.</string>
+    <string name="register_password_invalid">Password must contain 8+ characters, uppercase, lowercase, a number, and a special character.</string>
+    <string name="register_password_mismatch">Passwords do not match.</string>
+    <string name="register_terms_required">Accept the terms and conditions to continue.</string>
     <string name="reset_title">Reset password</string>
     <string name="reset_heading">Reset password?</string>
     <string name="reset_body">Enter the email address you used to register, and instructions for recovering your password will be sent to you.</string>
