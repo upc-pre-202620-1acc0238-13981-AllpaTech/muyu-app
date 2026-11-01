@@ -112,6 +112,21 @@ class PlotRepositoryImpl(
         }
     }
 
+    override suspend fun deletePlot(id: Int): Result<Unit> {
+        return try {
+            val response = service.deletePlot(id)
+            if (response.isSuccessful) {
+                store.plots.removeAll { it.id == id }
+                store.persist()
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun PlotDto.toPlot() = Plot(
         id = id,
         name = name,
@@ -136,17 +151,19 @@ class PlotRepositoryImpl(
         milestoneStates = milestoneStates,
         visitOutcome = visitOutcome,
         visitDate = visitDate,
+        agreedPrice = agreedPrice.orEmpty(),
     )
 
     private fun Plot.toDto() = PlotDto(
         id, name, crop, area, harvestDate, place, stage, progress, status, amount,
         cycle, milestones, imageUri, ownerEmail, ownerName, fundedByEmail, latitude,
-        longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate,
+        longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate, agreedPrice,
     )
 
     private fun PlotDto.toRecord() = PlotRecord(
         id, name, crop, area, harvestDate, place, stage, progress, status, amount,
         cycle, milestones, imageUri, ownerEmail, ownerName, fundedByEmail, latitude,
         longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate,
+        agreedPrice.orEmpty(),
     )
 }

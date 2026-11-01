@@ -2,6 +2,7 @@ package com.example.muyu_app.features.plot_approval.infrastructure.remote
 
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.POST
@@ -26,4 +27,7 @@ interface PlotService {
 
     @POST("plots/{id}/fund")
     suspend fun fundPlot(@Path("id") id: Int): Response<PlotDto>
+
+    @DELETE("plots/{id}")
+    suspend fun deletePlot(@Path("id") id: Int): Response<Unit>
 }

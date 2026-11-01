@@ -46,6 +46,7 @@ data class PlotRecord(
     val milestoneStates: List<MilestoneState> = emptyList(),
     val visitOutcome: String = "",
     val visitDate: String = "",
+    val agreedPrice: String = "",
 )
 
 data class PlotUpdatePayload(
@@ -450,6 +451,7 @@ class FakeApiStore(
         milestoneStates = record.milestoneStates,
         visitOutcome = record.visitOutcome,
         visitDate = record.visitDate,
+        agreedPrice = record.agreedPrice,
     )
 
     private fun UserRecord.normalized(): UserRecord = UserRecord(
@@ -517,6 +519,7 @@ class FakeApiStore(
         milestoneStates = (milestoneStates ?: emptyList()).map { it.normalized() },
         visitOutcome = visitOutcome.orEmpty(),
         visitDate = visitDate.orEmpty(),
+        agreedPrice = agreedPrice.orEmpty(),
     )
 
     private fun stageTitle(key: String): String = when (key) {
