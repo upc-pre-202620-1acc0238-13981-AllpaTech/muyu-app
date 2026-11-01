@@ -71,6 +71,7 @@ import com.example.muyu_app.features.user_management.presentation.loading.Loadin
 import com.example.muyu_app.features.user_management.presentation.login.LoginScreen
 import com.example.muyu_app.features.user_management.presentation.pin.SafetyPinScreen
 import com.example.muyu_app.features.user_management.presentation.profile.MerchantProfileScreen
+import com.example.muyu_app.features.user_management.presentation.profile.BankAccountScreen
 import com.example.muyu_app.features.user_management.presentation.profile.ProfileScreen
 import com.example.muyu_app.features.user_management.presentation.register.RegisterScreen
 import com.example.muyu_app.features.user_management.presentation.resetpassword.ResetPasswordScreen
@@ -113,6 +114,7 @@ private enum class WalkthroughStep {
     Sync,
     SyncConnected,
     Profile,
+    BankAccount,
     PaymentHistory,
     PaymentDetails,
     MerchantCatalog,
@@ -226,6 +228,7 @@ fun AppNavHost() {
         WalkthroughStep.NewPassword -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.SafetyPin
         WalkthroughStep.PasswordFlowComplete -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
         WalkthroughStep.ChangePin, WalkthroughStep.PinFlowComplete -> WalkthroughStep.Profile
+        WalkthroughStep.BankAccount -> WalkthroughStep.Profile
         WalkthroughStep.Terms -> termsReturnStep
         WalkthroughStep.MerchantApproveReject -> WalkthroughStep.MerchantMilestoneEvidence
         WalkthroughStep.MerchantConfirmApproval -> WalkthroughStep.MerchantApproveReject
@@ -264,6 +267,7 @@ fun AppNavHost() {
         WalkthroughStep.Sync,
         WalkthroughStep.SyncConnected,
         WalkthroughStep.Profile,
+        WalkthroughStep.BankAccount,
         WalkthroughStep.PaymentHistory,
         WalkthroughStep.PaymentDetails,
         WalkthroughStep.MerchantCatalog,
@@ -595,6 +599,10 @@ fun AppNavHost() {
                         tab = null
                         step = WalkthroughStep.ChangePin
                     },
+                    onBankAccount = {
+                        tab = null
+                        step = WalkthroughStep.BankAccount
+                    },
                     onLogout = goToLogin,
                     onTerms = {
                         termsReturnStep = WalkthroughStep.Profile
@@ -603,6 +611,9 @@ fun AppNavHost() {
                 )
             }
         }
+        WalkthroughStep.BankAccount -> BankAccountScreen(
+            onBack = { step = WalkthroughStep.Profile },
+        )
         WalkthroughStep.PaymentHistory -> TabOrContent(currentTab, selectTab) {
             if (isMerchant) {
                 MerchantPaymentHistoryScreen(

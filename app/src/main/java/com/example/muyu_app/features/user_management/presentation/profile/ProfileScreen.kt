@@ -74,6 +74,7 @@ fun ProfileScreen(
     onRateContract: () -> Unit = {},
     onTerms: () -> Unit = {},
     onLogout: () -> Unit = {},
+    onBankAccount: () -> Unit = {},
     bottomBar: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     val container = LocalAppContainer.current
@@ -317,6 +318,7 @@ fun ProfileScreen(
                         .clip(CardShape)
                         .background(Color.White)
                         .border(1.dp, DarkGreenText.copy(alpha = 0.6f), CardShape)
+                        .clickable(onClick = onBankAccount)
                         .padding(16.dp),
                 ) {
                     Column {
