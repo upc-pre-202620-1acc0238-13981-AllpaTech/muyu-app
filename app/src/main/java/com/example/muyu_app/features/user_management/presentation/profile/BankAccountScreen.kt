@@ -24,13 +24,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -39,7 +46,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import com.example.muyu_app.R
+import com.example.muyu_app.core.di.AppContainer
+import com.example.muyu_app.core.di.LocalAppContainer
+import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
+import com.example.muyu_app.features.plot_approval.domain.Plot
+import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuOlive
 import com.example.muyu_app.ui.theme.MuyuPageGray
@@ -54,11 +69,34 @@ fun BankAccountScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     onAddCard: () -> Unit = {},
-    onCardOptions: () -> Unit = {},
     onYapeClick: () -> Unit = {},
     onPlinClick: () -> Unit = {},
     onSave: () -> Unit = {},
 ) {
+    val container = LocalAppContainer.current
+    val lifecycleState = LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+    var balance by remember { mutableDoubleStateOf(0.0) }
+
+    LaunchedEffect(lifecycleState.value) {
+        if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
+        val farmerEmail = container.fakeStore.currentUser?.email.orEmpty()
+        balance = if (farmerEmail.isBlank()) {
+            0.0
+        } else {
+            container.getPlotsUseCase().getOrNull()
+                .orEmpty()
+                .filter { plot ->
+                    plot.ownerEmail.equals(farmerEmail, ignoreCase = true) && plot.status == "funded"
+                }
+                .map { plot ->
+                    container.fakeStore.ensureMilestones(plot.id)
+                        ?.let(container.fakeStore::toDomain)
+                        ?: plot
+                }
+                .sumOf(Plot::releasedBalance)
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -95,13 +133,16 @@ fun BankAccountScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp, vertical = 18.dp),
         ) {
-            BankSectionTitle(text = stringResource(R.string.bank_account_cards))
-            Spacer(modifier = Modifier.height(10.dp))
-            SavedCardRow(onOptionsClick = onCardOptions)
+            DebitCard(balance = balance)
             Spacer(modifier = Modifier.height(12.dp))
             AddCardButton(onClick = onAddCard)
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            BankSectionTitle(text = stringResource(R.string.bank_account_details))
+            Spacer(modifier = Modifier.height(10.dp))
+            AccountDetailsCard()
+
+            Spacer(modifier = Modifier.height(24.dp))
             BankSectionTitle(text = stringResource(R.string.bank_account_digital_wallets))
             Spacer(modifier = Modifier.height(10.dp))
             DigitalWalletRow(
@@ -150,38 +191,116 @@ private fun BankSectionTitle(text: String) {
 }
 
 @Composable
-private fun SavedCardRow(onOptionsClick: () -> Unit) {
-    Row(
+private fun DebitCard(balance: Double) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(172.dp)
+            .shadow(4.dp, BankCardShape)
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(Color(0xFF263B6D), Color(0xFF5756AE)),
+                ),
+                shape = BankCardShape,
+            )
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(R.string.bank_account_debit_label),
+                color = Color.White,
+                fontSize = 18.sp,
+            )
+            Image(
+                painter = painterResource(R.drawable.visa_logo),
+                contentDescription = stringResource(R.string.bank_account_visa_logo),
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(width = 58.dp, height = 22.dp),
+            )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.bank_account_card_number),
+            color = Color.White,
+            fontSize = 18.sp,
+            letterSpacing = 1.sp,
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(R.string.bank_account_expiration),
+                color = Color.White,
+                fontSize = 16.sp,
+            )
+            Text(
+                text = stringResource(R.string.bank_account_cvv_masked),
+                color = Color.White,
+                fontSize = 16.sp,
+            )
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = stringResource(
+                R.string.bank_account_balance,
+                PlotFinance.formatAmount(balance),
+            ),
+            color = Color.White,
+            fontSize = 17.sp,
+        )
+    }
+}
+
+private fun Plot.releasedBalance(): Double {
+    val disbursements = PlotFinance.disbursement(PlotFinance.parseAmount(amount))
+    return milestoneStates.sumOf { milestone ->
+        if (!milestone.isApproved) return@sumOf 0.0
+        val index = MilestoneCatalog.all.indexOfFirst { definition ->
+            definition.key == milestone.key
+        }
+        disbursements.getOrNull(index)?.amount ?: 0.0
+    }
+}
+
+@Composable
+private fun AccountDetailsCard() {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White, BankCardShape)
             .border(1.dp, BankBorder, BankCardShape)
-            .padding(horizontal = 14.dp, vertical = 13.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
-        BrandBadge(text = "VISA", color = Color(0xFF2148B5))
-        Spacer(modifier = Modifier.width(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.bank_account_debit_ending),
-                color = Color(0xFF181818),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = stringResource(R.string.bank_account_primary_card),
-                color = SecondaryText,
-                fontSize = 13.sp,
-            )
-        }
-        Icon(
-            imageVector = Icons.Default.MoreVert,
-            contentDescription = stringResource(R.string.bank_account_card_options),
-            tint = Color(0xFF3F3F3F),
-            modifier = Modifier
-                .size(25.dp)
-                .clickable(onClick = onOptionsClick),
+        AccountDetailRow(
+            label = stringResource(R.string.bank_account_account_label),
+            value = stringResource(R.string.bank_account_account_number),
+        )
+        AccountDetailRow(
+            label = stringResource(R.string.bank_account_cci_label),
+            value = stringResource(R.string.bank_account_cci_number),
+        )
+    }
+}
+
+@Composable
+private fun AccountDetailRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            modifier = Modifier.width(72.dp),
+            color = Color(0xFF557052),
+            fontSize = 13.sp,
+        )
+        Text(
+            text = value,
+            color = Color(0xFF557052),
+            fontSize = 13.sp,
         )
     }
 }
@@ -258,27 +377,12 @@ private fun DigitalWalletRow(
     }
 }
 
-@Composable
-private fun BrandBadge(text: String, color: Color) {
-    Box(
-        modifier = Modifier
-            .size(width = 46.dp, height = 40.dp)
-            .background(color, RoundedCornerShape(7.dp)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            color = Color.White,
-            fontSize = if (text == "VISA") 14.sp else 12.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
 @Preview(showBackground = true, widthDp = 402, heightDp = 874)
 @Composable
 private fun BankAccountScreenPreview() {
-    MuyuappTheme {
-        BankAccountScreen(onBack = {})
+    CompositionLocalProvider(LocalAppContainer provides AppContainer()) {
+        MuyuappTheme {
+            BankAccountScreen(onBack = {})
+        }
     }
 }
