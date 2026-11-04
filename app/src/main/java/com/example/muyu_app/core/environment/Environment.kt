@@ -23,5 +23,5 @@ object Environment {
     }
 
     /** Bump to wipe persisted plots/notifications once (users unchanged). */
-    const val PLOT_RESET_GENERATION = 1
+    const val PLOT_RESET_GENERATION = 2
 }

@@ -1,12 +1,13 @@
 package com.example.muyu_app.features.plot_approval.infrastructure.repositories
 
+import com.example.muyu_app.core.environment.Environment
+import com.example.muyu_app.core.network.FakeApiStore
+import com.example.muyu_app.core.network.PlotRecord
 import com.example.muyu_app.features.plot_approval.domain.NewPlot
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotRepository
 import com.example.muyu_app.features.plot_approval.infrastructure.remote.PlotDto
 import com.example.muyu_app.features.plot_approval.infrastructure.remote.PlotService
-import com.example.muyu_app.core.network.FakeApiStore
-import com.example.muyu_app.core.network.PlotRecord
 
 class PlotRepositoryImpl(
     private val service: PlotService,
@@ -16,26 +17,30 @@ class PlotRepositoryImpl(
     suspend fun syncPlot(plot: Plot): Result<Plot> = try {
         val response = service.syncPlot(plot.id, plot.toDto())
         val dto = response.body()
-        if (response.isSuccessful && dto != null) Result.success(dto.toPlot())
-        else Result.failure(Exception(response.message()))
+        if (response.isSuccessful && dto != null) {
+            store.upsertPlot(dto.toRecord())
+            Result.success(dto.toPlot())
+        } else {
+            Result.failure(Exception(response.message()))
+        }
     } catch (e: Exception) {
         Result.failure(e)
     }
 
     override suspend fun getPlots(): Result<List<Plot>> {
+        if (!Environment.USE_FAKE_API) {
+            return Result.success(store.plots.map { store.toDomain(it) })
+        }
         return try {
             val response = service.getPlots()
             val body = response.body()
             if (response.isSuccessful && body != null) {
-                store.plots.clear()
-                store.plots.addAll(body.plots.map { it.toRecord() })
-                store.persist()
                 Result.success(body.plots.map { it.toPlot() })
             } else {
-                Result.failure(Exception(response.message()))
+                Result.success(store.plots.map { store.toDomain(it) })
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.success(store.plots.map { store.toDomain(it) })
         }
     }
 
@@ -59,6 +64,7 @@ class PlotRepositoryImpl(
             )
             val dto = response.body()
             if (response.isSuccessful && dto != null) {
+                store.upsertPlot(dto.toRecord())
                 Result.success(dto.toPlot())
             } else {
                 Result.failure(Exception(response.message()))
@@ -89,6 +95,7 @@ class PlotRepositoryImpl(
             )
             val dto = response.body()
             if (response.isSuccessful && dto != null) {
+                store.upsertPlot(dto.toRecord())
                 Result.success(dto.toPlot())
             } else {
                 Result.failure(Exception(response.message()))
@@ -103,6 +110,7 @@ class PlotRepositoryImpl(
             val response = service.fundPlot(id)
             val dto = response.body()
             if (response.isSuccessful && dto != null) {
+                store.upsertPlot(dto.toRecord())
                 Result.success(dto.toPlot())
             } else {
                 Result.failure(Exception(response.message()))

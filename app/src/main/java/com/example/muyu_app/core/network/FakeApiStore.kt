@@ -17,6 +17,12 @@ data class UserRecord(
     val role: String,
     val phone: String = "",
     val birthdate: String = "",
+    val avatarUri: String = "",
+    val companyName: String = "",
+    val companyActivity: String = "",
+    val ruc: String = "",
+    val location: String = "",
+    val companyEmail: String = "",
 ) {
     val displayName: String
         get() = listOf(firstName, lastName).filter { it.isNotBlank() }.joinToString(" ")
@@ -91,6 +97,7 @@ class FakeApiStore(
                 merchantNotifications.clear()
                 persistence.markPlotResetApplied()
             }
+            stripSeedPlots()
             if (plots.isNotEmpty()) {
                 realignSeedOwners()
                 syncMerchantNotificationsFromPlots()
@@ -460,6 +467,12 @@ class FakeApiStore(
         role = role.orEmpty().ifBlank { "farmer" },
         phone = phone.orEmpty(),
         birthdate = birthdate.orEmpty(),
+        avatarUri = avatarUri.orEmpty(),
+        companyName = companyName.orEmpty(),
+        companyActivity = companyActivity.orEmpty(),
+        ruc = ruc.orEmpty(),
+        location = location.orEmpty(),
+        companyEmail = companyEmail.orEmpty(),
     )
 
     private fun MilestoneState.normalized(): MilestoneState {
@@ -532,8 +545,65 @@ class FakeApiStore(
         persist()
     }
 
+    fun updateAvatar(uri: String) {
+        val user = currentUser ?: return
+        replaceUser(user.copy(avatarUri = uri))
+    }
+
+    fun updateContact(
+        phone: String? = null,
+        email: String? = null,
+        companyName: String? = null,
+        companyActivity: String? = null,
+        ruc: String? = null,
+        location: String? = null,
+        companyEmail: String? = null,
+    ) {
+        val user = currentUser ?: return
+        val nextEmail = email?.trim()?.ifBlank { user.email } ?: user.email
+        if (!nextEmail.equals(user.email, ignoreCase = true)) {
+            plots.replaceAll { plot ->
+                if (plot.ownerEmail.equals(user.email, ignoreCase = true)) {
+                    plot.copy(ownerEmail = nextEmail)
+                } else {
+                    plot
+                }
+            }
+        }
+        replaceUser(
+            user.copy(
+                phone = phone ?: user.phone,
+                email = nextEmail,
+                companyName = companyName ?: user.companyName,
+                companyActivity = companyActivity ?: user.companyActivity,
+                ruc = ruc ?: user.ruc,
+                location = location ?: user.location,
+                companyEmail = companyEmail ?: user.companyEmail,
+            ),
+        )
+    }
+
+    private fun replaceUser(updated: UserRecord) {
+        val index = users.indexOfFirst { it.email.equals(currentUser?.email, ignoreCase = true) }
+        if (index >= 0) {
+            users[index] = updated
+        }
+        currentUser = updated
+        persist()
+    }
+
     fun addPlot(plot: PlotRecord) {
         plots.add(0, plot)
+        persist()
+    }
+
+    fun upsertPlot(plot: PlotRecord) {
+        val index = plots.indexOfFirst { it.id == plot.id }
+        if (index >= 0) {
+            plots[index] = plot
+        } else {
+            plots.add(0, plot)
+        }
         persist()
     }
 
@@ -588,6 +658,15 @@ class FakeApiStore(
 
     fun newToken(): String = UUID.randomUUID().toString()
 
+    private fun stripSeedPlots() {
+        val seedNames = seedPlots().map { it.name.lowercase() }.toSet()
+        val plotsToRemove = plots.filter { it.name.lowercase() in seedNames }
+        val alertsToRemove = merchantNotifications.filter { it.plotName.lowercase() in seedNames }
+        val removedPlots = plotsToRemove.isNotEmpty() && plots.removeAll(plotsToRemove.toSet())
+        val removedAlerts = alertsToRemove.isNotEmpty() && merchantNotifications.removeAll(alertsToRemove.toSet())
+        if (removedPlots || removedAlerts) persist()
+    }
+
     private fun realignSeedOwners() {
         val index = plots.indexOfFirst {
             it.name.contains("Álamos", ignoreCase = true) ||
@@ -629,6 +708,11 @@ class FakeApiStore(
             role = "merchant",
             phone = "912345678",
             birthdate = "04 Jul 1990",
+            companyName = "Distribuidora La Cosecha SAC",
+            companyActivity = "",
+            ruc = "20123456789",
+            location = "Lima",
+            companyEmail = "contacto@lacosecha.pe",
         ),
         UserRecord(
             email = "carlos.mamani@muyu.pe",

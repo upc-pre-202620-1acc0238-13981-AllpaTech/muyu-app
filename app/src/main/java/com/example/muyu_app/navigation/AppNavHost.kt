@@ -72,10 +72,13 @@ import com.example.muyu_app.features.user_management.presentation.login.LoginScr
 import com.example.muyu_app.features.user_management.presentation.pin.SafetyPinScreen
 import com.example.muyu_app.features.user_management.presentation.profile.MerchantProfileScreen
 import com.example.muyu_app.features.user_management.presentation.profile.BankAccountScreen
+import com.example.muyu_app.features.user_management.presentation.incident.ReportIncidentPhotoScreen
+import com.example.muyu_app.features.user_management.presentation.incident.ReportIncidentScreen
 import com.example.muyu_app.features.user_management.presentation.profile.ProfileScreen
 import com.example.muyu_app.features.user_management.presentation.register.RegisterScreen
 import com.example.muyu_app.features.user_management.presentation.resetpassword.ResetPasswordScreen
 import com.example.muyu_app.features.user_management.presentation.role.RoleSelectionScreen
+import com.example.muyu_app.features.user_management.presentation.legal.PrivacyPolicyScreen
 import com.example.muyu_app.features.user_management.presentation.legal.TermsAndConditionsScreen
 import com.example.muyu_app.features.user_management.presentation.rating.RateBuyerScreen
 import com.example.muyu_app.features.user_management.presentation.rating.RatingSubmittedScreen
@@ -138,6 +141,9 @@ private enum class WalkthroughStep {
     MerchantRejectionReason,
     MerchantReviewOutcome,
     Terms,
+    Privacy,
+    ReportIncident,
+    ReportIncidentPhoto,
 }
 
 // Keeps the prototype routes explicit while preserving each merchant flow return destination.
@@ -239,7 +245,9 @@ fun AppNavHost() {
         WalkthroughStep.PasswordFlowComplete -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
         WalkthroughStep.ChangePin, WalkthroughStep.PinFlowComplete -> WalkthroughStep.Profile
         WalkthroughStep.BankAccount -> WalkthroughStep.Profile
-        WalkthroughStep.Terms -> termsReturnStep
+        WalkthroughStep.ReportIncident -> WalkthroughStep.Profile
+        WalkthroughStep.ReportIncidentPhoto -> WalkthroughStep.ReportIncident
+        WalkthroughStep.Terms, WalkthroughStep.Privacy -> termsReturnStep
         WalkthroughStep.MerchantApproveReject -> WalkthroughStep.MerchantMilestoneEvidence
         WalkthroughStep.MerchantConfirmApproval -> WalkthroughStep.MerchantApproveReject
         WalkthroughStep.MerchantRejectionReason -> WalkthroughStep.MerchantApproveReject
@@ -261,6 +269,9 @@ fun AppNavHost() {
     val greenHeader = step in setOf(
         WalkthroughStep.RateBuyer, WalkthroughStep.RatingSubmitted,
         WalkthroughStep.Terms,
+        WalkthroughStep.Privacy,
+        WalkthroughStep.ReportIncident,
+        WalkthroughStep.ReportIncidentPhoto,
         WalkthroughStep.PlotDetail,
         WalkthroughStep.FarmerHome,
         WalkthroughStep.FarmerMyPlots,
@@ -366,6 +377,7 @@ fun AppNavHost() {
             },
         )
         WalkthroughStep.Terms -> TermsAndConditionsScreen(onBack = { step = termsReturnStep })
+        WalkthroughStep.Privacy -> PrivacyPolicyScreen(onBack = { step = termsReturnStep })
         WalkthroughStep.ResetPassword -> ResetPasswordScreen(
             onNext = { step = WalkthroughStep.PasswordInstructions },
             onEmailEntered = { recoveryEmail = it },
@@ -590,10 +602,19 @@ fun AppNavHost() {
             if (isMerchant) {
                 MerchantProfileScreen(
                     onTabSelected = selectMerchantTab,
+                    onChangePassword = {
+                        tab = null
+                        passwordFromProfile = true
+                        step = WalkthroughStep.NewPassword
+                    },
                     onLogout = goToLogin,
                     onTerms = {
                         termsReturnStep = WalkthroughStep.Profile
                         step = WalkthroughStep.Terms
+                    },
+                    onPrivacy = {
+                        termsReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.Privacy
                     },
                 )
             } else {
@@ -621,14 +642,32 @@ fun AppNavHost() {
                         tab = null
                         step = WalkthroughStep.BankAccount
                     },
+                    onReportIncidence = {
+                        tab = null
+                        container.incidentDraft.clear()
+                        step = WalkthroughStep.ReportIncident
+                    },
                     onLogout = goToLogin,
                     onTerms = {
                         termsReturnStep = WalkthroughStep.Profile
                         step = WalkthroughStep.Terms
                     },
+                    onPrivacy = {
+                        termsReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.Privacy
+                    },
                 )
             }
         }
+        WalkthroughStep.ReportIncident -> ReportIncidentScreen(
+            onBack = { step = WalkthroughStep.Profile },
+            onAttachPhoto = { step = WalkthroughStep.ReportIncidentPhoto },
+            onSubmitted = { step = WalkthroughStep.Profile },
+        )
+        WalkthroughStep.ReportIncidentPhoto -> ReportIncidentPhotoScreen(
+            onBack = { step = WalkthroughStep.ReportIncident },
+            onContinue = { step = WalkthroughStep.ReportIncident },
+        )
         WalkthroughStep.RateBuyer -> RateBuyerScreen(
             rating = buyerRating, comment = buyerRatingComment,
             onRatingChange = { buyerRating = it }, onCommentChange = { buyerRatingComment = it },

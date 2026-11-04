@@ -1,7 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.profile
 
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,27 +14,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +41,8 @@ import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
+import com.example.muyu_app.core.di.AppContainer
+import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.ui.theme.MuyuBackground
@@ -90,10 +90,33 @@ fun MerchantProfileScreen(
     onChangePassword: () -> Unit = {},
     onLogout: () -> Unit = {},
     onTerms: () -> Unit = {},
+    onPrivacy: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val container = LocalAppContainer.current
+    val currentUser = container.fakeStore.currentUser
+    val defaultCompany = stringResource(R.string.profile_company_legal_name)
+    val defaultActivity = stringResource(R.string.profile_wholesale)
+    val defaultLocation = stringResource(R.string.profile_merchant_place)
+    val defaultCompanyEmail = "contacto@lacosecha.pe"
     var notificationPref by remember { mutableStateOf(MerchantAlertChannel.Call) }
-    val companyName = stringResource(R.string.merchant_company_name)
+    var editingContact by rememberSaveable { mutableStateOf(false) }
+    var companyName by rememberSaveable {
+        mutableStateOf(currentUser?.companyName?.ifBlank { null } ?: defaultCompany)
+    }
+    var companyActivity by rememberSaveable {
+        mutableStateOf(currentUser?.companyActivity?.ifBlank { null } ?: defaultActivity)
+    }
+    var ruc by rememberSaveable {
+        mutableStateOf(currentUser?.ruc?.ifBlank { null } ?: "20123456789")
+    }
+    var location by rememberSaveable {
+        mutableStateOf(currentUser?.location?.ifBlank { null } ?: defaultLocation)
+    }
+    var companyEmail by rememberSaveable {
+        mutableStateOf(currentUser?.companyEmail?.ifBlank { null } ?: defaultCompanyEmail)
+    }
+    val headerName = companyName.ifBlank { stringResource(R.string.merchant_company_name) }
 
     Box(
         modifier = modifier
@@ -115,24 +138,11 @@ fun MerchantProfileScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (avatarRes != null) {
-                        Image(
-                            painter = painterResource(id = avatarRes),
-                            contentDescription = companyName,
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFD9D9D9)),
-                            contentScale = ContentScale.Crop,
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFD9D9D9)),
-                        )
-                    }
+                    EditableProfileAvatar(
+                        contentDescription = headerName,
+                        size = 64.dp,
+                        fallbackRes = avatarRes,
+                    )
                     Box(
                         modifier = Modifier
                             .height(23.dp)
@@ -156,7 +166,7 @@ fun MerchantProfileScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = companyName,
+                        text = headerName,
                         style = TextStyle(
                             fontFamily = UrbanistBlack,
                             fontWeight = FontWeight.Black,
@@ -189,37 +199,85 @@ fun MerchantProfileScreen(
             ) {
                 SectionTitle(stringResource(R.string.profile_contact_details))
                 ProfileCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.profile_company_legal_name),
-                                style = TitleStyle,
+                    if (editingContact) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            ContactEditField(
+                                value = companyName,
+                                onValueChange = { companyName = it },
+                                hint = stringResource(R.string.profile_company_name_label),
                             )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(
-                                text = stringResource(
-                                    R.string.profile_ruc_line,
-                                    stringResource(R.string.profile_wholesale),
-                                    "20123456789",
-                                ),
-                                style = BodyStyle,
+                            ContactEditField(
+                                value = companyActivity,
+                                onValueChange = { companyActivity = it },
+                                hint = stringResource(R.string.profile_activity_label),
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(R.string.profile_company_location_email),
-                                style = BodyStyle,
+                            ContactEditField(
+                                value = ruc,
+                                onValueChange = { ruc = it.filter(Char::isDigit).take(11) },
+                                hint = stringResource(R.string.profile_ruc_label),
+                                keyboardType = KeyboardType.Number,
+                            )
+                            ContactEditField(
+                                value = location,
+                                onValueChange = { location = it },
+                                hint = stringResource(R.string.profile_location_label),
+                            )
+                            ContactEditField(
+                                value = companyEmail,
+                                onValueChange = { companyEmail = it },
+                                hint = stringResource(R.string.profile_email_label),
+                                keyboardType = KeyboardType.Email,
+                            )
+                            ContactEditActions(
+                                onSave = {
+                                    container.fakeStore.updateContact(
+                                        companyName = companyName.trim(),
+                                        companyActivity = companyActivity.trim(),
+                                        ruc = ruc.trim(),
+                                        location = location.trim(),
+                                        companyEmail = companyEmail.trim(),
+                                    )
+                                    editingContact = false
+                                },
+                                onCancel = {
+                                    val user = container.fakeStore.currentUser
+                                    companyName = user?.companyName?.ifBlank { null } ?: defaultCompany
+                                    companyActivity = user?.companyActivity?.ifBlank { null } ?: defaultActivity
+                                    ruc = user?.ruc?.ifBlank { null } ?: "20123456789"
+                                    location = user?.location?.ifBlank { null } ?: defaultLocation
+                                    companyEmail = user?.companyEmail?.ifBlank { null } ?: defaultCompanyEmail
+                                    editingContact = false
+                                },
                             )
                         }
-                        MuyuAsset(
-                            fileName = "publish/edit.svg",
-                            contentDescription = stringResource(R.string.profile_edit_contact),
-                            width = 20.dp,
-                            height = 20.dp,
-                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = companyName,
+                                    style = TitleStyle,
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                    text = stringResource(
+                                        R.string.profile_ruc_line,
+                                        companyActivity.ifBlank { defaultActivity },
+                                        ruc,
+                                    ),
+                                    style = BodyStyle,
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "$location · $companyEmail",
+                                    style = BodyStyle,
+                                )
+                            }
+                            ContactEditIcon(onClick = { editingContact = true })
+                        }
                     }
                 }
 
@@ -318,22 +376,21 @@ fun MerchantProfileScreen(
                     borderColor = MuyuForest,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            text = stringResource(R.string.profile_terms),
-                            modifier = Modifier.clickable { onTerms() },
-                            style = TextStyle(
-                                fontFamily = UrbanistRegular,
-                                fontSize = 16.sp,
-                                color = MuyuForest,
-                            ),
+                        val legalStyle = TextStyle(
+                            fontFamily = UrbanistRegular,
+                            fontSize = 16.sp,
                         )
-                        Text(
+                        LegalTextLink(
+                            text = stringResource(R.string.profile_terms),
+                            onClick = onTerms,
+                            style = legalStyle,
+                            color = MuyuForest,
+                        )
+                        LegalTextLink(
                             text = stringResource(R.string.profile_privacy),
-                            style = TextStyle(
-                                fontFamily = UrbanistRegular,
-                                fontSize = 16.sp,
-                                color = MuyuForest,
-                            ),
+                            onClick = onPrivacy,
+                            style = legalStyle,
+                            color = MuyuForest,
                         )
                     }
                 }
@@ -433,7 +490,9 @@ private fun OptionChip(
 @Composable
 private fun MerchantProfileScreenPreview() {
     InstallMuyuImageLoader()
-    MuyuappTheme {
-        MerchantProfileScreen(onTabSelected = {})
+    CompositionLocalProvider(LocalAppContainer provides AppContainer()) {
+        MuyuappTheme {
+            MerchantProfileScreen(onTabSelected = {})
+        }
     }
 }
