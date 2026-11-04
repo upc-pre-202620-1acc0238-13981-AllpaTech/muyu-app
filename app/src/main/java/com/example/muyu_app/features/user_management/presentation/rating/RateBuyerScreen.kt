@@ -47,7 +47,6 @@ fun RateBuyerScreen(rating: Int, comment: String, onRatingChange: (Int) -> Unit,
                     unfocusedContainerColor = MuyuPageGray, focusedBorderColor = MuyuAction,
                     unfocusedBorderColor = MuyuMutedChip, cursorColor = MuyuForest))
             RatingButton(stringResource(R.string.rating_submit), onSubmit, enabled = rating in 1..5)
-            RatingText(stringResource(R.string.rating_preview_notice), size = 12, color = Color.Gray)
         }
     }
 }
