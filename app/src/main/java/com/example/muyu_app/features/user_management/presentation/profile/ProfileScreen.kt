@@ -29,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -84,12 +86,15 @@ fun ProfileScreen(
 
     val farmerName = currentUser?.displayName.orEmpty()
     val farmerEmail = currentUser?.email.orEmpty()
+    var editingContact by rememberSaveable { mutableStateOf(false) }
+    var phoneDraft by rememberSaveable { mutableStateOf(localPhoneDigits(currentUser?.phone.orEmpty())) }
+    var emailDraft by rememberSaveable { mutableStateOf(farmerEmail) }
 
     var plots by remember { mutableStateOf<List<Plot>>(emptyList()) }
     var notificationPref by remember { mutableStateOf(FarmerAlertChannel.Call) }
     var syncWifiOnly by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(farmerEmail) {
         container.getPlotsUseCase().onSuccess { all ->
             plots = all.filter { it.ownerEmail.equals(farmerEmail, ignoreCase = true) }
         }
@@ -187,31 +192,58 @@ fun ProfileScreen(
                         .border(1.dp, DarkGreenText.copy(alpha = 0.6f), CardShape)
                         .padding(16.dp),
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Text(
-                                text = "+51 987 654 321",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black,
+                    if (editingContact) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            ContactEditField(
+                                value = phoneDraft,
+                                onValueChange = { phoneDraft = it.filter(Char::isDigit).take(9) },
+                                hint = stringResource(R.string.profile_phone_label),
+                                keyboardType = KeyboardType.Phone,
+                                prefix = "+51 ",
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = farmerEmail,
-                                fontSize = 14.sp,
-                                color = Color.Gray,
+                            ContactEditField(
+                                value = emailDraft,
+                                onValueChange = { emailDraft = it },
+                                hint = stringResource(R.string.profile_email_label),
+                                keyboardType = KeyboardType.Email,
+                            )
+                            ContactEditActions(
+                                onSave = {
+                                    container.fakeStore.updateContact(
+                                        phone = phoneDraft,
+                                        email = emailDraft,
+                                    )
+                                    editingContact = false
+                                },
+                                onCancel = {
+                                    phoneDraft = localPhoneDigits(container.fakeStore.currentUser?.phone.orEmpty())
+                                    emailDraft = container.fakeStore.currentUser?.email.orEmpty()
+                                    editingContact = false
+                                },
                             )
                         }
-                        MuyuAsset(
-                            fileName = "publish/edit.svg",
-                            contentDescription = stringResource(R.string.profile_edit_contact),
-                            width = 20.dp,
-                            height = 20.dp,
-                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = formatProfilePhone(phoneDraft).ifBlank { formatProfilePhone(currentUser?.phone.orEmpty()) },
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black,
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = emailDraft.ifBlank { farmerEmail },
+                                    fontSize = 14.sp,
+                                    color = Color.Gray,
+                                )
+                            }
+                            ContactEditIcon(onClick = { editingContact = true })
+                        }
                     }
                 }
 

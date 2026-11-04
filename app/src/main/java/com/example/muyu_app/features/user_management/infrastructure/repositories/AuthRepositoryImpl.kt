@@ -81,6 +81,11 @@ class AuthRepositoryImpl(
             phone = phone.ifBlank { existing?.phone.orEmpty() },
             birthdate = birthdate.ifBlank { existing?.birthdate.orEmpty() },
             avatarUri = existing?.avatarUri.orEmpty(),
+            companyName = existing?.companyName.orEmpty(),
+            companyActivity = existing?.companyActivity.orEmpty(),
+            ruc = existing?.ruc.orEmpty(),
+            location = existing?.location.orEmpty(),
+            companyEmail = existing?.companyEmail.orEmpty(),
         )
         val existingIndex = store.users.indexOfFirst {
             it.email.equals(dto.email, ignoreCase = true)

@@ -405,6 +405,13 @@
     <string name="profile_choose_gallery">Choose from gallery</string>
     <string name="profile_contact_details">CONTACT DETAILS</string>
     <string name="profile_edit_contact">Edit contact</string>
+    <string name="profile_save_contact">Save</string>
+    <string name="profile_phone_label">Phone</string>
+    <string name="profile_email_label">Email</string>
+    <string name="profile_company_name_label">Company name</string>
+    <string name="profile_activity_label">Activity</string>
+    <string name="profile_ruc_label">RUC</string>
+    <string name="profile_location_label">City</string>
     <string name="profile_notification_prefs">NOTIFICATION PREFERENCES</string>
     <string name="profile_weather_alerts_question">How should we send you weather alerts?</string>
     <string name="profile_channel_call">Call</string>

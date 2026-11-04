@@ -405,6 +405,13 @@
     <string name="profile_choose_gallery">Elegir de la galería</string>
     <string name="profile_contact_details">DATOS DE CONTACTO</string>
     <string name="profile_edit_contact">Editar contacto</string>
+    <string name="profile_save_contact">Guardar</string>
+    <string name="profile_phone_label">Teléfono</string>
+    <string name="profile_email_label">Correo</string>
+    <string name="profile_company_name_label">Razón social</string>
+    <string name="profile_activity_label">Actividad</string>
+    <string name="profile_ruc_label">RUC</string>
+    <string name="profile_location_label">Ciudad</string>
     <string name="profile_notification_prefs">PREFERENCIAS DE NOTIFICACIÓN</string>
     <string name="profile_weather_alerts_question">¿Cómo te enviamos las alertas climáticas?</string>
     <string name="profile_channel_call">Llamada</string>
