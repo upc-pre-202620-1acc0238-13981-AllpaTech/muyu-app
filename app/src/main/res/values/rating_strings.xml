@@ -1,0 +1,30 @@
+<resources>
+    <string name="rating_title">Rate the buyer</string>
+    <string name="rating_section">Rate</string>
+    <string name="rating_cycle_date">15 Feb 2027</string>
+    <string name="rating_contract_ended">Contract ended · %1$s</string>
+    <string name="rating_buyer">Buyer: %1$s</string>
+    <string name="rating_question">How would you rate the experience?</string>
+    <string name="rating_selected">Your rating: %1$d of 5</string>
+    <string name="rating_comment_title">Comment (optional)</string>
+    <string name="rating_comment_hint">Write a comment about your experience...</string>
+    <string name="rating_submit">Submit rating</string>
+    <string name="rating_star_description">%1$d out of 5 stars</string>
+    <string name="rating_preview_notice">Preview only. This rating is not sent to the server.</string>
+    <string name="rating_submitted_title">Rating submitted</string>
+    <string name="rating_later_stage">Later stage · %1$s · Cycle ended</string>
+    <string name="rating_thanks">Thank you for your rating</string>
+    <string name="rating_thanks_body">Your rating of %1$s was submitted.</string>
+    <string name="rating_submitted_value">Rating submitted: %1$d of 5</string>
+    <string name="rating_completed">Contract completed</string>
+    <string name="rating_plot_label">Plot</string>
+    <string name="rating_closure_label">Cycle closure</string>
+    <string name="rating_milestones">4/4 milestones · Cycle completed</string>
+    <string name="rating_submitted_by">Submitted by %1$s to %2$s of %3$s.</string>
+    <string name="rating_no_comment">No additional comment.</string>
+    <string name="rating_view_contract">View contract</string>
+    <string name="rating_back_profile">Back to profile</string>
+    <string name="rating_contract_title">Completed contract</string>
+    <string name="rating_close">Close</string>
+    <string name="rating_farmer_preview">Miguel Quispe</string>
+</resources>
