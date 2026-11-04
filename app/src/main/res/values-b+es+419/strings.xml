@@ -438,6 +438,7 @@
     <string name="profile_change_password">Cambiar contraseña</string>
     <string name="profile_change_pin">Cambiar PIN</string>
     <string name="profile_call_support">Llamar a soporte técnico</string>
+    <string name="profile_support_phone">010120293</string>
     <string name="profile_report_issue">Reportar una incidencia</string>
     <string name="profile_rate_contract">Calificar contrato finalizado</string>
     <string name="profile_terms">Términos y condiciones</string>

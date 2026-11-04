@@ -438,6 +438,7 @@
     <string name="profile_change_password">Change password</string>
     <string name="profile_change_pin">Change PIN</string>
     <string name="profile_call_support">Call technical support</string>
+    <string name="profile_support_phone">010120293</string>
     <string name="profile_report_issue">Report an issue</string>
     <string name="profile_rate_contract">Rate a completed contract</string>
     <string name="profile_terms">Terms and Conditions</string>

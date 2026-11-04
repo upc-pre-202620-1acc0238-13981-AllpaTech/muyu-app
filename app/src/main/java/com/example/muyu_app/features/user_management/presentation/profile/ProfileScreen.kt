@@ -1,5 +1,7 @@
 package com.example.muyu_app.features.user_management.presentation.profile
 
+import android.content.Intent
+import android.net.Uri
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -74,8 +77,10 @@ fun ProfileScreen(
     onBankAccount: () -> Unit = {},
     bottomBar: (@Composable BoxScope.() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     val container = LocalAppContainer.current
     val currentUser = container.fakeStore.currentUser
+    val supportPhone = stringResource(R.string.profile_support_phone)
 
     val farmerName = currentUser?.displayName.orEmpty()
     val farmerEmail = currentUser?.email.orEmpty()
@@ -349,7 +354,13 @@ fun ProfileScreen(
 
                 OutlinedActionButton(
                     text = stringResource(R.string.profile_call_support),
-                    onClick = onCallSupport,
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_DIAL).apply {
+                            data = Uri.fromParts("tel", supportPhone, null)
+                        }
+                        runCatching { context.startActivity(intent) }
+                        onCallSupport()
+                    },
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
