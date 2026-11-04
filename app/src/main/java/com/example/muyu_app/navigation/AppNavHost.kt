@@ -77,10 +77,16 @@ import com.example.muyu_app.features.user_management.presentation.register.Regis
 import com.example.muyu_app.features.user_management.presentation.resetpassword.ResetPasswordScreen
 import com.example.muyu_app.features.user_management.presentation.role.RoleSelectionScreen
 import com.example.muyu_app.features.user_management.presentation.legal.TermsAndConditionsScreen
+import com.example.muyu_app.features.user_management.presentation.rating.RateBuyerScreen
+import com.example.muyu_app.features.user_management.presentation.rating.RatingSubmittedScreen
+import androidx.compose.ui.res.stringResource
+import com.example.muyu_app.R
 import com.example.muyu_app.ui.splash.SplashScreen
 import kotlinx.coroutines.delay
 
 private enum class WalkthroughStep {
+    RateBuyer,
+    RatingSubmitted,
     Splash,
     Login,
     Register,
@@ -155,6 +161,9 @@ fun AppNavHost() {
     var isMerchant by rememberSaveable { mutableStateOf(false) }
     var termsReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.Register) }
     var passwordFromProfile by rememberSaveable { mutableStateOf(false) }
+    // Conserva las estrellas y el comentario al girar el dispositivo durante la valoración.
+    var buyerRating by rememberSaveable { mutableStateOf(0) }
+    var buyerRatingComment by rememberSaveable { mutableStateOf("") }
     var recoveryEmail by rememberSaveable { mutableStateOf("") }
     val container = LocalAppContainer.current
     val languages = container.languages
@@ -222,6 +231,7 @@ fun AppNavHost() {
 
     // Hace que el botón Volver del sistema siga el recorrido de estas pantallas.
     val reviewBackStep = when (step) {
+        WalkthroughStep.RateBuyer, WalkthroughStep.RatingSubmitted -> WalkthroughStep.Profile
         WalkthroughStep.Register, WalkthroughStep.ResetPassword -> WalkthroughStep.Login
         WalkthroughStep.PasswordInstructions -> WalkthroughStep.ResetPassword
         WalkthroughStep.SafetyPin -> WalkthroughStep.PasswordInstructions
@@ -249,6 +259,7 @@ fun AppNavHost() {
     }
 
     val greenHeader = step in setOf(
+        WalkthroughStep.RateBuyer, WalkthroughStep.RatingSubmitted,
         WalkthroughStep.Terms,
         WalkthroughStep.PlotDetail,
         WalkthroughStep.FarmerHome,
@@ -599,6 +610,13 @@ fun AppNavHost() {
                         tab = null
                         step = WalkthroughStep.ChangePin
                     },
+                    // Abre la valoración desde el perfil del agricultor con un formulario nuevo.
+                    onRateContract = {
+                        tab = null
+                        buyerRating = 0
+                        buyerRatingComment = ""
+                        step = WalkthroughStep.RateBuyer
+                    },
                     onBankAccount = {
                         tab = null
                         step = WalkthroughStep.BankAccount
@@ -611,6 +629,19 @@ fun AppNavHost() {
                 )
             }
         }
+        WalkthroughStep.RateBuyer -> RateBuyerScreen(
+            rating = buyerRating, comment = buyerRatingComment,
+            onRatingChange = { buyerRating = it }, onCommentChange = { buyerRatingComment = it },
+            onBack = { step = WalkthroughStep.Profile },
+            // Envía únicamente a la confirmación visual; la integración remota queda pendiente.
+            onSubmit = { if (buyerRating in 1..5) step = WalkthroughStep.RatingSubmitted },
+        )
+        WalkthroughStep.RatingSubmitted -> RatingSubmittedScreen(
+            rating = buyerRating, comment = buyerRatingComment.trim(),
+            farmerName = container.fakeStore.currentUser?.displayName?.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.rating_farmer_preview),
+            onBackToProfile = { step = WalkthroughStep.Profile },
+        )
         WalkthroughStep.BankAccount -> BankAccountScreen(
             onBack = { step = WalkthroughStep.Profile },
         )
