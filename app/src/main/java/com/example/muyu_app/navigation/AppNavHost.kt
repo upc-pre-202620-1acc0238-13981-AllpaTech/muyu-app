@@ -602,6 +602,11 @@ fun AppNavHost() {
             if (isMerchant) {
                 MerchantProfileScreen(
                     onTabSelected = selectMerchantTab,
+                    onChangePassword = {
+                        tab = null
+                        passwordFromProfile = true
+                        step = WalkthroughStep.NewPassword
+                    },
                     onLogout = goToLogin,
                     onTerms = {
                         termsReturnStep = WalkthroughStep.Profile

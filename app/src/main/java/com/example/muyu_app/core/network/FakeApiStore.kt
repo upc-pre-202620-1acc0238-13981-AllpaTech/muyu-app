@@ -97,6 +97,7 @@ class FakeApiStore(
                 merchantNotifications.clear()
                 persistence.markPlotResetApplied()
             }
+            stripSeedPlots()
             if (plots.isNotEmpty()) {
                 realignSeedOwners()
                 syncMerchantNotificationsFromPlots()
@@ -596,6 +597,16 @@ class FakeApiStore(
         persist()
     }
 
+    fun upsertPlot(plot: PlotRecord) {
+        val index = plots.indexOfFirst { it.id == plot.id }
+        if (index >= 0) {
+            plots[index] = plot
+        } else {
+            plots.add(0, plot)
+        }
+        persist()
+    }
+
     fun updatePlot(id: Int, update: PlotUpdatePayload, requesterEmail: String): PlotRecord? {
         val index = plots.indexOfFirst { it.id == id }
         if (index < 0) return null
@@ -646,6 +657,15 @@ class FakeApiStore(
     fun nextPlotId(): Int = (plots.maxOfOrNull { it.id } ?: 0) + 1
 
     fun newToken(): String = UUID.randomUUID().toString()
+
+    private fun stripSeedPlots() {
+        val seedNames = seedPlots().map { it.name.lowercase() }.toSet()
+        val plotsToRemove = plots.filter { it.name.lowercase() in seedNames }
+        val alertsToRemove = merchantNotifications.filter { it.plotName.lowercase() in seedNames }
+        val removedPlots = plotsToRemove.isNotEmpty() && plots.removeAll(plotsToRemove.toSet())
+        val removedAlerts = alertsToRemove.isNotEmpty() && merchantNotifications.removeAll(alertsToRemove.toSet())
+        if (removedPlots || removedAlerts) persist()
+    }
 
     private fun realignSeedOwners() {
         val index = plots.indexOfFirst {
