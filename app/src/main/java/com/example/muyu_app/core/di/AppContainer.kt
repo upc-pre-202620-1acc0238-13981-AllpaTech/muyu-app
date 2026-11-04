@@ -15,6 +15,7 @@ import com.example.muyu_app.features.plot_approval.infrastructure.remote.PlotSer
 import com.example.muyu_app.features.plot_approval.infrastructure.repositories.PlotRepositoryImpl
 import com.example.muyu_app.features.user_management.application.LoginUseCase
 import com.example.muyu_app.features.user_management.application.RegisterUseCase
+import com.example.muyu_app.features.user_management.presentation.incident.IncidentDraft
 import com.example.muyu_app.features.user_management.infrastructure.remote.AuthService
 import com.example.muyu_app.features.user_management.infrastructure.repositories.AuthRepositoryImpl
 import com.example.muyu_app.core.designsystem.components.MerchantTab
@@ -55,6 +56,7 @@ class AppContainer(
 ) {
     val fakeStore = FakeApiStore(context?.let { FakeApiPersistence(it) })
     val plotDraft = PlotDraft()
+    val incidentDraft = IncidentDraft()
     val languages = LanguagePreferences()
     var selectedPlot: Plot? = null
     var selectedMilestoneKey: String = "fertilization"
@@ -107,6 +109,7 @@ class AppContainer(
         reviewCompletedAt = 0L
         // Visit requests model server-owned data and must survive account switching in the demo flow.
         plotDraft.clear()
+        incidentDraft.clear()
     }
 }
 
