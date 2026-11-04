@@ -1,7 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.profile
 
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,14 +14,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,8 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +39,8 @@ import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
+import com.example.muyu_app.core.di.AppContainer
+import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.ui.theme.MuyuBackground
@@ -115,24 +113,11 @@ fun MerchantProfileScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (avatarRes != null) {
-                        Image(
-                            painter = painterResource(id = avatarRes),
-                            contentDescription = companyName,
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFD9D9D9)),
-                            contentScale = ContentScale.Crop,
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFD9D9D9)),
-                        )
-                    }
+                    EditableProfileAvatar(
+                        contentDescription = companyName,
+                        size = 64.dp,
+                        fallbackRes = avatarRes,
+                    )
                     Box(
                         modifier = Modifier
                             .height(23.dp)
@@ -433,7 +418,9 @@ private fun OptionChip(
 @Composable
 private fun MerchantProfileScreenPreview() {
     InstallMuyuImageLoader()
-    MuyuappTheme {
-        MerchantProfileScreen(onTabSelected = {})
+    CompositionLocalProvider(LocalAppContainer provides AppContainer()) {
+        MuyuappTheme {
+            MerchantProfileScreen(onTabSelected = {})
+        }
     }
 }

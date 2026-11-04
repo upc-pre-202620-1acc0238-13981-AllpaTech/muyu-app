@@ -401,6 +401,8 @@
     <string name="profile_farmer_place">Cieneguilla, Lima</string>
     <string name="profile_merchant_place">Lima</string>
     <string name="profile_verified">Verificado</string>
+    <string name="profile_change_photo">Cambiar foto</string>
+    <string name="profile_choose_gallery">Elegir de la galería</string>
     <string name="profile_contact_details">DATOS DE CONTACTO</string>
     <string name="profile_edit_contact">Editar contacto</string>
     <string name="profile_notification_prefs">PREFERENCIAS DE NOTIFICACIÓN</string>

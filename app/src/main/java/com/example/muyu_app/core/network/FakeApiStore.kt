@@ -17,6 +17,7 @@ data class UserRecord(
     val role: String,
     val phone: String = "",
     val birthdate: String = "",
+    val avatarUri: String = "",
 ) {
     val displayName: String
         get() = listOf(firstName, lastName).filter { it.isNotBlank() }.joinToString(" ")
@@ -460,6 +461,7 @@ class FakeApiStore(
         role = role.orEmpty().ifBlank { "farmer" },
         phone = phone.orEmpty(),
         birthdate = birthdate.orEmpty(),
+        avatarUri = avatarUri.orEmpty(),
     )
 
     private fun MilestoneState.normalized(): MilestoneState {
@@ -529,6 +531,17 @@ class FakeApiStore(
 
     fun addUser(user: UserRecord) {
         users.add(user)
+        persist()
+    }
+
+    fun updateAvatar(uri: String) {
+        val user = currentUser ?: return
+        val updated = user.copy(avatarUri = uri)
+        val index = users.indexOfFirst { it.email.equals(user.email, ignoreCase = true) }
+        if (index >= 0) {
+            users[index] = updated
+        }
+        currentUser = updated
         persist()
     }
 

@@ -1,7 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.profile
 
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,11 +14,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
@@ -35,8 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -117,23 +112,11 @@ fun ProfileScreen(
                     .padding(top = 16.dp, bottom = 24.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (avatarRes != null) {
-                        Image(
-                            painter = painterResource(id = avatarRes),
-                            contentDescription = farmerName,
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop,
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE0E0E0)),
-                        )
-                    }
+                    EditableProfileAvatar(
+                        contentDescription = farmerName,
+                        size = 72.dp,
+                        fallbackRes = avatarRes,
+                    )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(

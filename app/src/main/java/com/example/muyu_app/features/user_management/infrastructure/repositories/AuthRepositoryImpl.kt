@@ -71,14 +71,16 @@ class AuthRepositoryImpl(
         phone: String = "",
         birthdate: String = "",
     ) {
+        val existing = store.users.find { it.email.equals(dto.email, ignoreCase = true) }
         val record = UserRecord(
             email = dto.email,
             password = password,
             firstName = dto.firstName,
             lastName = dto.lastName,
             role = dto.role,
-            phone = phone,
-            birthdate = birthdate,
+            phone = phone.ifBlank { existing?.phone.orEmpty() },
+            birthdate = birthdate.ifBlank { existing?.birthdate.orEmpty() },
+            avatarUri = existing?.avatarUri.orEmpty(),
         )
         val existingIndex = store.users.indexOfFirst {
             it.email.equals(dto.email, ignoreCase = true)
