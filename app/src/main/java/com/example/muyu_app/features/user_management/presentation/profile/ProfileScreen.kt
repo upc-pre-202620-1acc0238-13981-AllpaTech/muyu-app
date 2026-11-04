@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -68,6 +69,7 @@ fun ProfileScreen(
     onReportIncidence: () -> Unit = {},
     onRateContract: () -> Unit = {},
     onTerms: () -> Unit = {},
+    onPrivacy: () -> Unit = {},
     onLogout: () -> Unit = {},
     onBankAccount: () -> Unit = {},
     bottomBar: (@Composable BoxScope.() -> Unit)? = null,
@@ -385,18 +387,23 @@ fun ProfileScreen(
                         .padding(16.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            text = stringResource(R.string.profile_terms),
-                            modifier = Modifier.clickable { onTerms() },
+                        val legalStyle = TextStyle(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color.Black,
                         )
-                        Text(
-                            text = stringResource(R.string.profile_privacy),
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
+                        LegalTextLink(
+                            text = stringResource(R.string.profile_terms),
+                            onClick = onTerms,
+                            style = legalStyle,
                             color = Color.Black,
+                            pressedColor = DarkGreenText,
+                        )
+                        LegalTextLink(
+                            text = stringResource(R.string.profile_privacy),
+                            onClick = onPrivacy,
+                            style = legalStyle,
+                            color = Color.Black,
+                            pressedColor = DarkGreenText,
                         )
                     }
                 }

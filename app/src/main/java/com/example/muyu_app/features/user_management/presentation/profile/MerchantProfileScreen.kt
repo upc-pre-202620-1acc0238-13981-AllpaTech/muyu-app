@@ -88,6 +88,7 @@ fun MerchantProfileScreen(
     onChangePassword: () -> Unit = {},
     onLogout: () -> Unit = {},
     onTerms: () -> Unit = {},
+    onPrivacy: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var notificationPref by remember { mutableStateOf(MerchantAlertChannel.Call) }
@@ -303,22 +304,21 @@ fun MerchantProfileScreen(
                     borderColor = MuyuForest,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            text = stringResource(R.string.profile_terms),
-                            modifier = Modifier.clickable { onTerms() },
-                            style = TextStyle(
-                                fontFamily = UrbanistRegular,
-                                fontSize = 16.sp,
-                                color = MuyuForest,
-                            ),
+                        val legalStyle = TextStyle(
+                            fontFamily = UrbanistRegular,
+                            fontSize = 16.sp,
                         )
-                        Text(
+                        LegalTextLink(
+                            text = stringResource(R.string.profile_terms),
+                            onClick = onTerms,
+                            style = legalStyle,
+                            color = MuyuForest,
+                        )
+                        LegalTextLink(
                             text = stringResource(R.string.profile_privacy),
-                            style = TextStyle(
-                                fontFamily = UrbanistRegular,
-                                fontSize = 16.sp,
-                                color = MuyuForest,
-                            ),
+                            onClick = onPrivacy,
+                            style = legalStyle,
+                            color = MuyuForest,
                         )
                     }
                 }

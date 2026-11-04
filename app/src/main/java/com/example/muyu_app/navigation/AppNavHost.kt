@@ -76,6 +76,7 @@ import com.example.muyu_app.features.user_management.presentation.profile.Profil
 import com.example.muyu_app.features.user_management.presentation.register.RegisterScreen
 import com.example.muyu_app.features.user_management.presentation.resetpassword.ResetPasswordScreen
 import com.example.muyu_app.features.user_management.presentation.role.RoleSelectionScreen
+import com.example.muyu_app.features.user_management.presentation.legal.PrivacyPolicyScreen
 import com.example.muyu_app.features.user_management.presentation.legal.TermsAndConditionsScreen
 import com.example.muyu_app.features.user_management.presentation.rating.RateBuyerScreen
 import com.example.muyu_app.features.user_management.presentation.rating.RatingSubmittedScreen
@@ -138,6 +139,7 @@ private enum class WalkthroughStep {
     MerchantRejectionReason,
     MerchantReviewOutcome,
     Terms,
+    Privacy,
 }
 
 // Keeps the prototype routes explicit while preserving each merchant flow return destination.
@@ -239,7 +241,7 @@ fun AppNavHost() {
         WalkthroughStep.PasswordFlowComplete -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
         WalkthroughStep.ChangePin, WalkthroughStep.PinFlowComplete -> WalkthroughStep.Profile
         WalkthroughStep.BankAccount -> WalkthroughStep.Profile
-        WalkthroughStep.Terms -> termsReturnStep
+        WalkthroughStep.Terms, WalkthroughStep.Privacy -> termsReturnStep
         WalkthroughStep.MerchantApproveReject -> WalkthroughStep.MerchantMilestoneEvidence
         WalkthroughStep.MerchantConfirmApproval -> WalkthroughStep.MerchantApproveReject
         WalkthroughStep.MerchantRejectionReason -> WalkthroughStep.MerchantApproveReject
@@ -261,6 +263,7 @@ fun AppNavHost() {
     val greenHeader = step in setOf(
         WalkthroughStep.RateBuyer, WalkthroughStep.RatingSubmitted,
         WalkthroughStep.Terms,
+        WalkthroughStep.Privacy,
         WalkthroughStep.PlotDetail,
         WalkthroughStep.FarmerHome,
         WalkthroughStep.FarmerMyPlots,
@@ -366,6 +369,7 @@ fun AppNavHost() {
             },
         )
         WalkthroughStep.Terms -> TermsAndConditionsScreen(onBack = { step = termsReturnStep })
+        WalkthroughStep.Privacy -> PrivacyPolicyScreen(onBack = { step = termsReturnStep })
         WalkthroughStep.ResetPassword -> ResetPasswordScreen(
             onNext = { step = WalkthroughStep.PasswordInstructions },
             onEmailEntered = { recoveryEmail = it },
@@ -595,6 +599,10 @@ fun AppNavHost() {
                         termsReturnStep = WalkthroughStep.Profile
                         step = WalkthroughStep.Terms
                     },
+                    onPrivacy = {
+                        termsReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.Privacy
+                    },
                 )
             } else {
                 ProfileScreen(
@@ -625,6 +633,10 @@ fun AppNavHost() {
                     onTerms = {
                         termsReturnStep = WalkthroughStep.Profile
                         step = WalkthroughStep.Terms
+                    },
+                    onPrivacy = {
+                        termsReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.Privacy
                     },
                 )
             }
