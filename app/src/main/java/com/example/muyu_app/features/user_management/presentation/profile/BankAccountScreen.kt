@@ -217,8 +217,8 @@ private fun DebitCard(balance: Double) {
             Image(
                 painter = painterResource(R.drawable.visa_logo),
                 contentDescription = stringResource(R.string.bank_account_visa_logo),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(width = 58.dp, height = 22.dp),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(width = 64.dp, height = 24.dp),
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
