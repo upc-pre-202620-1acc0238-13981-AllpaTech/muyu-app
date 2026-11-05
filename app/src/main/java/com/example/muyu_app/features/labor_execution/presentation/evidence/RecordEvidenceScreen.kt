@@ -25,6 +25,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,7 +65,6 @@ import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
 import com.example.muyu_app.core.di.LocalAppContainer
-import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.core.image.imageUriToPortableDataUrl
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
@@ -430,11 +433,11 @@ fun RecordEvidenceScreen(
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        MuyuAsset(
-                            fileName = "publish/location.svg",
+                        Icon(
+                            imageVector = Icons.Outlined.LocationOn,
                             contentDescription = null,
-                            width = 20.dp,
-                            height = 20.dp,
+                            tint = Color(0xFF2B5876),
+                            modifier = Modifier.size(20.dp),
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
@@ -691,11 +694,11 @@ private fun PhotoBox(
             )
             Spacer(modifier = Modifier.height(12.dp))
         } else {
-            MuyuAsset(
-                fileName = "publish/camera.svg",
+            Icon(
+                imageVector = Icons.Outlined.PhotoCamera,
                 contentDescription = null,
-                width = 48.dp,
-                height = 48.dp,
+                tint = MuyuForest,
+                modifier = Modifier.size(48.dp),
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(

@@ -20,7 +20,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,7 +46,6 @@ import com.example.muyu_app.core.designsystem.components.MuyuTab
 import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
-import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.features.plot_financing.presentation.evidence.mockTransactionId
@@ -257,11 +259,11 @@ fun PaymentDetailsScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        MuyuAsset(
-                            fileName = "publish/pdf.svg",
+                        Icon(
+                            imageVector = Icons.Outlined.PictureAsPdf,
                             contentDescription = null,
-                            width = 24.dp,
-                            height = 24.dp,
+                            tint = DarkGreenText,
+                            modifier = Modifier.size(24.dp),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(

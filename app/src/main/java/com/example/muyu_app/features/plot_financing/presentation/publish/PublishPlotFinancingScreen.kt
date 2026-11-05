@@ -18,10 +18,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -393,11 +396,11 @@ fun PublishPlotFinancingScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        MuyuAsset(
-                            fileName = "publish/shield_check.svg",
+                        Icon(
+                            imageVector = Icons.Outlined.VerifiedUser,
                             contentDescription = null,
-                            width = 24.dp,
-                            height = 24.dp
+                            tint = DarkBlueText,
+                            modifier = Modifier.size(24.dp),
                         )
                         Text(
                             text = stringResource(R.string.publish_funds_held),
