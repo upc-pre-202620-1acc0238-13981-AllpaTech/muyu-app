@@ -133,7 +133,10 @@ fun BankAccountScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp, vertical = 18.dp),
         ) {
-            DebitCard(balance = balance)
+            DebitCard(
+                balance = balance,
+                card = container.savedBankCard,
+            )
             Spacer(modifier = Modifier.height(12.dp))
             AddCardButton(onClick = onAddCard)
 
@@ -191,7 +194,10 @@ private fun BankSectionTitle(text: String) {
 }
 
 @Composable
-private fun DebitCard(balance: Double) {
+private fun DebitCard(
+    balance: Double,
+    card: SavedBankCard,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -210,20 +216,24 @@ private fun DebitCard(balance: Double) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(R.string.bank_account_debit_label),
+                text = stringResource(
+                    if (card.type == BankCardType.Debit) {
+                        R.string.bank_account_debit_label
+                    } else {
+                        R.string.bank_account_credit_label
+                    },
+                ),
                 color = Color.White,
                 fontSize = 18.sp,
             )
-            Image(
-                painter = painterResource(R.drawable.visa_logo),
-                contentDescription = stringResource(R.string.bank_account_visa_logo),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(width = 58.dp, height = 22.dp),
+            CardBrandMark(
+                brand = card.brand,
+                unknownTint = Color.White,
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = stringResource(R.string.bank_account_card_number),
+            text = maskedCardNumber(card.lastFour),
             color = Color.White,
             fontSize = 18.sp,
             letterSpacing = 1.sp,
@@ -234,7 +244,7 @@ private fun DebitCard(balance: Double) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(R.string.bank_account_expiration),
+                text = stringResource(R.string.bank_account_expiration_value, card.expiration),
                 color = Color.White,
                 fontSize = 16.sp,
             )
