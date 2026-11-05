@@ -1,11 +1,7 @@
 package com.example.muyu_app.core.network
 
-import android.content.ContentUris
 import android.content.Context
-import android.os.Build
-import android.os.Environment
 import com.example.muyu_app.core.environment.Environment as MuyuEnvironment
-import android.provider.MediaStore
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import java.io.File
@@ -86,7 +82,6 @@ class FakeApiPersistence(
             runtimeFile.parentFile?.mkdirs()
             runtimeFile.writeText(json)
         }
-        runCatching { savePublicCopy(json) }
     }
 
     private fun readAssets(): FakeApiSnapshot? = runCatching {
@@ -100,33 +95,6 @@ class FakeApiPersistence(
         return runCatching {
             gson.fromJson(file.readText(), FakeApiSnapshot::class.java)
         }.getOrNull()
-    }
-
-    private fun savePublicCopy(json: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val resolver = context.contentResolver
-            val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-            val existingUri = resolver.query(
-                collection,
-                arrayOf(MediaStore.Downloads._ID),
-                "${MediaStore.Downloads.DISPLAY_NAME}=?",
-                arrayOf(FILE_NAME),
-                null,
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    ContentUris.withAppendedId(collection, cursor.getLong(0))
-                } else {
-                    null
-                }
-            } ?: return
-            resolver.openOutputStream(existingUri, "wt")?.use { stream ->
-                stream.write(json.toByteArray(Charsets.UTF_8))
-            }
-        } else {
-            val downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            downloads.mkdirs()
-            File(downloads, FILE_NAME).writeText(json)
-        }
     }
 
     companion object {
