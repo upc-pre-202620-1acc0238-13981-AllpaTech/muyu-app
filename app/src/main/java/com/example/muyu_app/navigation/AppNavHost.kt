@@ -72,6 +72,7 @@ import com.example.muyu_app.features.user_management.presentation.login.LoginScr
 import com.example.muyu_app.features.user_management.presentation.pin.SafetyPinScreen
 import com.example.muyu_app.features.user_management.presentation.profile.MerchantProfileScreen
 import com.example.muyu_app.features.user_management.presentation.profile.BankAccountScreen
+import com.example.muyu_app.features.user_management.presentation.profile.AddBankCardScreen
 import com.example.muyu_app.features.user_management.presentation.incident.ReportIncidentPhotoScreen
 import com.example.muyu_app.features.user_management.presentation.incident.ReportIncidentScreen
 import com.example.muyu_app.features.user_management.presentation.profile.ProfileScreen
@@ -124,6 +125,7 @@ private enum class WalkthroughStep {
     SyncConnected,
     Profile,
     BankAccount,
+    AddBankCard,
     PaymentHistory,
     PaymentDetails,
     MerchantCatalog,
@@ -245,6 +247,7 @@ fun AppNavHost() {
         WalkthroughStep.PasswordFlowComplete -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
         WalkthroughStep.ChangePin, WalkthroughStep.PinFlowComplete -> WalkthroughStep.Profile
         WalkthroughStep.BankAccount -> WalkthroughStep.Profile
+        WalkthroughStep.AddBankCard -> WalkthroughStep.BankAccount
         WalkthroughStep.ReportIncident -> WalkthroughStep.Profile
         WalkthroughStep.ReportIncidentPhoto -> WalkthroughStep.ReportIncident
         WalkthroughStep.Terms, WalkthroughStep.Privacy -> termsReturnStep
@@ -290,6 +293,7 @@ fun AppNavHost() {
         WalkthroughStep.SyncConnected,
         WalkthroughStep.Profile,
         WalkthroughStep.BankAccount,
+        WalkthroughStep.AddBankCard,
         WalkthroughStep.PaymentHistory,
         WalkthroughStep.PaymentDetails,
         WalkthroughStep.MerchantCatalog,
@@ -683,6 +687,14 @@ fun AppNavHost() {
         )
         WalkthroughStep.BankAccount -> BankAccountScreen(
             onBack = { step = WalkthroughStep.Profile },
+            onAddCard = { step = WalkthroughStep.AddBankCard },
+        )
+        WalkthroughStep.AddBankCard -> AddBankCardScreen(
+            onBack = { step = WalkthroughStep.BankAccount },
+            onSave = { card ->
+                container.savedBankCard = card
+                step = WalkthroughStep.BankAccount
+            },
         )
         WalkthroughStep.PaymentHistory -> TabOrContent(currentTab, selectTab) {
             if (isMerchant) {

@@ -16,6 +16,10 @@ import com.example.muyu_app.features.plot_approval.infrastructure.repositories.P
 import com.example.muyu_app.features.user_management.application.LoginUseCase
 import com.example.muyu_app.features.user_management.application.RegisterUseCase
 import com.example.muyu_app.features.user_management.presentation.incident.IncidentDraft
+import com.example.muyu_app.features.user_management.presentation.profile.SavedBankCard
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.example.muyu_app.features.user_management.infrastructure.remote.AuthService
 import com.example.muyu_app.features.user_management.infrastructure.repositories.AuthRepositoryImpl
 import com.example.muyu_app.core.designsystem.components.MerchantTab
@@ -57,6 +61,7 @@ class AppContainer(
     val fakeStore = FakeApiStore(context?.let { FakeApiPersistence(it) })
     val plotDraft = PlotDraft()
     val incidentDraft = IncidentDraft()
+    var savedBankCard by mutableStateOf(SavedBankCard())
     val languages = LanguagePreferences()
     var selectedPlot: Plot? = null
     var selectedMilestoneKey: String = "fertilization"
