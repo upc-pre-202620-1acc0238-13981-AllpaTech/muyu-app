@@ -1,7 +1,6 @@
 package com.example.muyu_app.core.network
 
 import android.content.ContentUris
-import android.content.ContentValues
 import android.content.Context
 import android.os.Build
 import android.os.Environment
@@ -119,16 +118,8 @@ class FakeApiPersistence(
                 } else {
                     null
                 }
-            }
-            val uri = existingUri ?: resolver.insert(
-                collection,
-                ContentValues().apply {
-                    put(MediaStore.Downloads.DISPLAY_NAME, FILE_NAME)
-                    put(MediaStore.Downloads.MIME_TYPE, "application/json")
-                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                },
-            ) ?: return
-            resolver.openOutputStream(uri, "wt")?.use { stream ->
+            } ?: return
+            resolver.openOutputStream(existingUri, "wt")?.use { stream ->
                 stream.write(json.toByteArray(Charsets.UTF_8))
             }
         } else {
