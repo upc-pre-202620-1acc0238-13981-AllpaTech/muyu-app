@@ -51,6 +51,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.example.muyu_app.R
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.Icons
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
@@ -540,7 +543,12 @@ private fun FarmerPlotCard(
                         .clickable { menuOpen = true },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(text = "⋮", fontSize = 18.sp, color = Color.Black)
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.farmer_plot_actions),
+                        tint = Color.Black,
+                        modifier = Modifier.size(20.dp),
+                    )
                 }
                 // Una parcela financiada ya tiene acuerdo y fondos: no se edita ni se elimina.
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {

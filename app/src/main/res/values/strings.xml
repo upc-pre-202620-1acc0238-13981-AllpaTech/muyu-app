@@ -1050,4 +1050,5 @@
     <string name="funding_rejected_body">The provider confirmed the payment was not made. No money was held. Retry or choose another method.</string>
     <string name="funding_rejected_status">Payment rejected</string>
     <string name="funding_in_verification_cta">Payment in verification</string>
+    <string name="farmer_plot_actions">Plot actions</string>
 </resources>

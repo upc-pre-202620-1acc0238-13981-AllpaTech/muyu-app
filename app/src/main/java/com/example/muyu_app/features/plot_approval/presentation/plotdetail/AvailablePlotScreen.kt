@@ -37,6 +37,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.example.muyu_app.R
+import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
@@ -57,7 +58,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 // Frame "iPhone 17 - 249" (Mockups - Mobile): parcela publicada sin financiamiento.
-private val PageBg = Color(0xFFE9F3EA)
 private val CardShape = RoundedCornerShape(20.dp)
 private val Muted = Color(0xFF4F5A50)
 
@@ -108,7 +108,7 @@ fun AvailablePlotScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(PageBg),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
