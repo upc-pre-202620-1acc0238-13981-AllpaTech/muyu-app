@@ -64,6 +64,7 @@
     <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_skip">Omitir</string>
     <string name="onboarding_start">Empezar</string>
+    <string name="onboarding_back">Página anterior</string>
     <string name="onboarding_plot_title">Publica tu parcela</string>
     <string name="onboarding_plot_body">Registra tu terreno y cultivos para acceder a financiamiento directo de comerciantes verificados.</string>
     <string name="onboarding_plot_image">Plántula en tierra</string>

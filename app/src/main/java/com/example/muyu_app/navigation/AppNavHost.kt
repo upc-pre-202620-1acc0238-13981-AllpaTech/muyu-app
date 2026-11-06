@@ -241,6 +241,8 @@ fun AppNavHost() {
     val reviewBackStep = when (step) {
         WalkthroughStep.RateBuyer, WalkthroughStep.RatingSubmitted -> WalkthroughStep.Profile
         WalkthroughStep.Register, WalkthroughStep.ResetPassword -> WalkthroughStep.Login
+        WalkthroughStep.OnboardingEscrow -> WalkthroughStep.OnboardingPlot
+        WalkthroughStep.OnboardingWeather -> WalkthroughStep.OnboardingEscrow
         WalkthroughStep.PasswordInstructions -> WalkthroughStep.ResetPassword
         WalkthroughStep.SafetyPin -> WalkthroughStep.PasswordInstructions
         WalkthroughStep.NewPassword -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.SafetyPin
@@ -427,9 +429,11 @@ fun AppNavHost() {
         WalkthroughStep.OnboardingEscrow -> EscrowOnboardingScreen(
             onNext = { step = WalkthroughStep.OnboardingWeather },
             onSkip = { step = WalkthroughStep.Role },
+            onBack = { step = WalkthroughStep.OnboardingPlot },
         )
         WalkthroughStep.OnboardingWeather -> WeatherOnboardingScreen(
             onStart = { step = WalkthroughStep.Role },
+            onBack = { step = WalkthroughStep.OnboardingEscrow },
         )
         WalkthroughStep.Role -> RoleSelectionScreen(
             onNext = { step = WalkthroughStep.PlotDetail },

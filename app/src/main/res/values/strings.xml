@@ -64,6 +64,7 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_start">Start</string>
+    <string name="onboarding_back">Previous page</string>
     <string name="onboarding_plot_title">List your plot</string>
     <string name="onboarding_plot_body">Register your land and crops to access direct financing from verified traders.</string>
     <string name="onboarding_plot_image">Seedling in soil</string>
