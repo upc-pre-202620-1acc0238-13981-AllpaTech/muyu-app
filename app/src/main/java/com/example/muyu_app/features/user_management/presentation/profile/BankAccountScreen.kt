@@ -165,7 +165,10 @@ fun BankAccountScreen(
                 title = stringResource(R.string.bank_account_plin),
                 subtitle = container.plinAccount?.let { account ->
                     if (account.isPrimary) {
-                        stringResource(R.string.bank_account_default_wallet)
+                        stringResource(
+                            R.string.bank_account_plin_linked_default_value,
+                            maskWalletPhone(account.phone),
+                        )
                     } else {
                         stringResource(
                             R.string.bank_account_plin_linked_value,

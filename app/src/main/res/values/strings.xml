@@ -444,6 +444,7 @@
     <string name="bank_account_plin">Plin</string>
     <string name="bank_account_default_wallet">Default account</string>
     <string name="bank_account_plin_linked_value">Linked to %1$s</string>
+    <string name="bank_account_plin_linked_default_value">Linked to %1$s · Default account</string>
     <string name="bank_account_save_changes">Save account</string>
     <string name="add_card_title">Add card</string>
     <string name="add_card_data_title">Card details</string>

@@ -444,6 +444,7 @@
     <string name="bank_account_plin">Plin</string>
     <string name="bank_account_default_wallet">Cuenta predeterminada</string>
     <string name="bank_account_plin_linked_value">Vinculado a %1$s</string>
+    <string name="bank_account_plin_linked_default_value">Vinculado a %1$s · Cuenta predeterminada</string>
     <string name="bank_account_save_changes">Guardar cuenta</string>
     <string name="add_card_title">Agregar tarjeta</string>
     <string name="add_card_data_title">Datos de la tarjeta</string>
