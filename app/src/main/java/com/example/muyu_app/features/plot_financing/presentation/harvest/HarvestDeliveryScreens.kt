@@ -255,22 +255,25 @@ fun HarvestIncidentScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 120.dp)
                 .clip(CardShape)
                 .background(Color.White)
-                .border(1.dp, if (invalid) ErrorRed else MuyuForest, CardShape)
-                .padding(14.dp),
+                .border(1.dp, if (invalid) ErrorRed else MuyuForest, CardShape),
         ) {
             if (details.isEmpty()) {
                 Text(
                     text = stringResource(R.string.harvest_incident_details_hint),
+                    modifier = Modifier.padding(14.dp),
                     style = TextStyle(fontFamily = UrbanistRegular, fontSize = 14.sp, color = Muted),
                 )
             }
+            // Todo el cuadro recibe el toque para abrir el teclado.
             BasicTextField(
                 value = details,
                 onValueChange = { details = it.take(400) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 120.dp)
+                    .padding(14.dp),
                 textStyle = TextStyle(fontFamily = UrbanistRegular, fontSize = 14.sp, lineHeight = 20.sp, color = Color.Black),
                 cursorBrush = SolidColor(Color.Black),
             )
