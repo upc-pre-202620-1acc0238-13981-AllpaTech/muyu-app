@@ -1060,4 +1060,12 @@
     <string name="merchant_reference_code">Referencia: %1$s</string>
     <string name="merchant_method_with_code">%1$s · %2$s</string>
     <string name="merchant_wallet_payment_info">Muyu cobrará el financiamiento a este número. Confirmarás el pago en tu app.</string>
+    <string name="merchant_wallet_limit">Yape y Plin permiten hasta S/ 2,000 al día, así que %1$s no se puede pagar con billetera. Usa transferencia bancaria o tarjeta.</string>
+    <string name="merchant_choose_other_method">Elige otro método</string>
+    <string name="merchant_yape_code_title">Confirma con tu código de aprobación Yape</string>
+    <string name="merchant_yape_code_body">Abre Yape, entra a la opción de código de aprobación y copia el código de 6 dígitos. Vence en unos minutos.</string>
+    <string name="merchant_yape_code_hint">Código de aprobación de 6 dígitos</string>
+    <string name="merchant_enter_approval_code">Ingresa el código de aprobación</string>
+    <string name="merchant_plin_confirm_note">Recibirás una solicitud en la app de tu banco para confirmar el pago con Plin.</string>
+    <string name="bank_account_wallet_limit_note">Yape y Plin mueven hasta S/ 500 por transferencia. Los desembolsos mayores se envían a la cuenta de tu tarjeta.</string>
 </resources>
