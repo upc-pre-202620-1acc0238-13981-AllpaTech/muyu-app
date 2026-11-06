@@ -151,7 +151,12 @@ fun BankAccountScreen(
             DigitalWalletRow(
                 logoRes = R.drawable.yape_logo,
                 title = stringResource(R.string.bank_account_yape),
-                subtitle = stringResource(R.string.bank_account_yape_linked),
+                subtitle = container.yapeAccount?.let { account ->
+                    stringResource(
+                        R.string.bank_account_yape_linked_value,
+                        maskYapePhone(account.phone),
+                    )
+                } ?: stringResource(R.string.yape_not_linked),
                 onClick = onYapeClick,
             )
             Spacer(modifier = Modifier.height(10.dp))

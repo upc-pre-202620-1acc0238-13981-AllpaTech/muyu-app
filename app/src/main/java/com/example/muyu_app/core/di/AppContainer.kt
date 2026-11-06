@@ -17,6 +17,7 @@ import com.example.muyu_app.features.user_management.application.LoginUseCase
 import com.example.muyu_app.features.user_management.application.RegisterUseCase
 import com.example.muyu_app.features.user_management.presentation.incident.IncidentDraft
 import com.example.muyu_app.features.user_management.presentation.profile.SavedBankCard
+import com.example.muyu_app.features.user_management.presentation.profile.YapeAccount
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -62,6 +63,7 @@ class AppContainer(
     val plotDraft = PlotDraft()
     val incidentDraft = IncidentDraft()
     var savedBankCard by mutableStateOf(SavedBankCard())
+    var yapeAccount by mutableStateOf<YapeAccount?>(YapeAccount())
     val languages = LanguagePreferences()
     var selectedPlot: Plot? = null
     var selectedMilestoneKey: String = "fertilization"
