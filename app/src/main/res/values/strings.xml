@@ -441,6 +441,7 @@
     <string name="bank_account_yape">Yape</string>
     <string name="bank_account_yape_linked">Linked to 987 *** 721</string>
     <string name="bank_account_yape_linked_value">Linked to %1$s</string>
+    <string name="bank_account_yape_linked_default_value">Linked to %1$s · Default account</string>
     <string name="bank_account_plin">Plin</string>
     <string name="bank_account_default_wallet">Default account</string>
     <string name="bank_account_plin_linked_value">Linked to %1$s</string>

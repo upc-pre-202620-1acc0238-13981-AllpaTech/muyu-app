@@ -152,10 +152,17 @@ fun BankAccountScreen(
                 logoRes = R.drawable.yape_logo,
                 title = stringResource(R.string.bank_account_yape),
                 subtitle = container.yapeAccount?.let { account ->
-                    stringResource(
-                        R.string.bank_account_yape_linked_value,
-                        maskWalletPhone(account.phone),
-                    )
+                    if (account.isPrimary) {
+                        stringResource(
+                            R.string.bank_account_yape_linked_default_value,
+                            maskWalletPhone(account.phone),
+                        )
+                    } else {
+                        stringResource(
+                            R.string.bank_account_yape_linked_value,
+                            maskWalletPhone(account.phone),
+                        )
+                    }
                 } ?: stringResource(R.string.yape_not_linked),
                 onClick = onYapeClick,
             )
