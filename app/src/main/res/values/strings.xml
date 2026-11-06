@@ -937,4 +937,10 @@
     <string name="farmer_no_plots_body">Your plots will appear here once you create your first one.</string>
     <string name="farmer_go_to_my_plots">Go to My Plots</string>
     <string name="farmer_flag_peru">Peru flag</string>
+    <string name="profile_register_card">Register card</string>
+    <string name="profile_change_card">Change card</string>
+    <string name="merchant_card_required">Register a credit or debit card to pay with Card.</string>
+    <string name="merchant_register_card">Register card</string>
+    <string name="merchant_card_in_use">You will pay with %1$s</string>
+    <string name="merchant_change_card">Change</string>
 </resources>

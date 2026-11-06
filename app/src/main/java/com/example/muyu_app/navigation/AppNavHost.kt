@@ -181,6 +181,8 @@ fun AppNavHost() {
     var buyerRating by rememberSaveable { mutableStateOf(0) }
     var buyerRatingComment by rememberSaveable { mutableStateOf("") }
     var recoveryEmail by rememberSaveable { mutableStateOf("") }
+    // Pantalla a la que vuelve el registro de tarjeta: cuenta bancaria, perfil o financiamiento.
+    var cardReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.BankAccount) }
     val container = LocalAppContainer.current
     val languages = container.languages
     val appLanguage = languages.current(isMerchant)
@@ -257,7 +259,7 @@ fun AppNavHost() {
         WalkthroughStep.PasswordFlowComplete -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
         WalkthroughStep.ChangePin, WalkthroughStep.PinFlowComplete -> WalkthroughStep.Profile
         WalkthroughStep.BankAccount -> WalkthroughStep.Profile
-        WalkthroughStep.AddBankCard -> WalkthroughStep.BankAccount
+        WalkthroughStep.AddBankCard -> cardReturnStep
         WalkthroughStep.EditYape -> WalkthroughStep.BankAccount
         WalkthroughStep.EditPlin -> WalkthroughStep.BankAccount
         WalkthroughStep.ReportIncident -> WalkthroughStep.Profile
@@ -641,6 +643,11 @@ fun AppNavHost() {
                         passwordFromProfile = true
                         step = WalkthroughStep.NewPassword
                     },
+                    onManageCard = {
+                        tab = null
+                        cardReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.AddBankCard
+                    },
                     onLogout = goToLogin,
                     onTerms = {
                         termsReturnStep = WalkthroughStep.Profile
@@ -717,15 +724,22 @@ fun AppNavHost() {
         )
         WalkthroughStep.BankAccount -> BankAccountScreen(
             onBack = { step = WalkthroughStep.Profile },
-            onAddCard = { step = WalkthroughStep.AddBankCard },
+            onAddCard = {
+                cardReturnStep = WalkthroughStep.BankAccount
+                step = WalkthroughStep.AddBankCard
+            },
             onYapeClick = { step = WalkthroughStep.EditYape },
             onPlinClick = { step = WalkthroughStep.EditPlin },
         )
         WalkthroughStep.AddBankCard -> AddBankCardScreen(
-            onBack = { step = WalkthroughStep.BankAccount },
+            onBack = {
+                container.resumeFundingAtPayment = cardReturnStep == WalkthroughStep.FundPlot
+                step = cardReturnStep
+            },
             onSave = { card ->
                 container.savedBankCard = card
-                step = WalkthroughStep.BankAccount
+                container.resumeFundingAtPayment = cardReturnStep == WalkthroughStep.FundPlot
+                step = cardReturnStep
             },
         )
         WalkthroughStep.EditYape -> EditDigitalWalletScreen(
@@ -834,6 +848,10 @@ fun AppNavHost() {
             onBackToCatalog = { step = WalkthroughStep.MerchantCatalog },
             onCheckTransactions = { step = WalkthroughStep.PaymentHistory },
             onAcceptTerms = { step = WalkthroughStep.FundSuccess },
+            onAddCard = {
+                cardReturnStep = WalkthroughStep.FundPlot
+                step = WalkthroughStep.AddBankCard
+            },
         )
         WalkthroughStep.FundSuccess -> FundSuccessScreen(
             onBack = { step = WalkthroughStep.FundPlot },

@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,6 +67,7 @@ import com.example.muyu_app.ui.theme.MuyuOlive
 import com.example.muyu_app.ui.theme.MuyuSkip
 import com.example.muyu_app.ui.theme.MuyuTermsBg
 import com.example.muyu_app.ui.theme.MuyuappTheme
+import com.example.muyu_app.features.user_management.presentation.profile.bankCardSummary
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistExtraBold
 import com.example.muyu_app.ui.theme.UrbanistMedium
@@ -90,6 +92,7 @@ fun FundPlotScreen(
     onBackToCatalog: () -> Unit,
     onCheckTransactions: () -> Unit,
     onAcceptTerms: () -> Unit,
+    onAddCard: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val container = LocalAppContainer.current
@@ -102,9 +105,20 @@ fun FundPlotScreen(
     // Conserva el método elegido al rotar y separa el estado de cada parcela.
     var method by rememberSaveable(plot?.id) { mutableStateOf(PayMethod.Card) }
     var accepted by rememberSaveable(plot?.id) { mutableStateOf(false) }
-    var stage by rememberSaveable(plot?.id) { mutableStateOf(FundingStage.Summary) }
+    var stage by rememberSaveable(plot?.id) {
+        mutableStateOf(
+            if (container.resumeFundingAtPayment) FundingStage.Payment else FundingStage.Summary,
+        )
+    }
+    LaunchedEffect(Unit) { container.resumeFundingAtPayment = false }
     // Bloquea nuevas solicitudes mientras el financiamiento está en curso.
     var funding by remember(plot?.id) { mutableStateOf(false) }
+    // Pagar con tarjeta exige una tarjeta registrada por el comerciante.
+    val savedCard = container.savedBankCard
+    val cardLabel = savedCard?.let(::bankCardSummary).orEmpty()
+    val methodReady = method != PayMethod.Card || savedCard != null
+    val canContinue = accepted && methodReady
+    val methodLabel = payMethodLabel(method, cardLabel)
 
     val stageBack: () -> Unit = {
         when (stage) {
@@ -237,6 +251,10 @@ fun FundPlotScreen(
                 }
                 if (stage == FundingStage.Payment) {
                     PaymentMethodCard(method = method, onMethod = { method = it })
+                    if (method == PayMethod.Card) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        SavedCardRow(cardLabel = cardLabel, onAddCard = onAddCard)
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
                 if (stage == FundingStage.Review) {
@@ -248,7 +266,7 @@ fun FundPlotScreen(
                         farmerName = plot?.ownerName.orEmpty(),
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    SelectedPaymentCard(method)
+                    SelectedPaymentCard(method, cardLabel)
                     Spacer(modifier = Modifier.height(12.dp))
                     DisbursementCard(total = PlotFinance.parseAmount(amount))
                     Spacer(modifier = Modifier.height(12.dp))
@@ -289,15 +307,16 @@ fun FundPlotScreen(
                         .fillMaxWidth()
                         .height(60.dp)
                         .clip(CardShape)
-                        .background(if (stage == FundingStage.Payment && !accepted) MuyuTermsBg else MuyuOlive)
+                        .background(if (stage == FundingStage.Payment && !canContinue) MuyuTermsBg else MuyuOlive)
                         .border(1.dp, Color.Black, CardShape)
-                        .clickable(enabled = stage != FundingStage.Payment || accepted) {
+                        .clickable(enabled = stage != FundingStage.Payment || canContinue) {
                             when (stage) {
                                 FundingStage.Summary -> stage = FundingStage.Payment
                                 FundingStage.Payment -> stage = FundingStage.Review
                                 FundingStage.Review -> {
                                     if (funding) return@clickable
                                     funding = true
+                                    container.fundingMethodLabel = methodLabel
                                     scope.launch {
                                         try {
                                             val id = plot?.id ?: return@launch
@@ -327,6 +346,7 @@ fun FundPlotScreen(
                             funding -> stringResource(R.string.muyu_funding_processing)
                             stage == FundingStage.Summary -> stringResource(R.string.merchant_continue)
                             stage == FundingStage.Review -> stringResource(R.string.merchant_confirm_and_pay, amount)
+                            !methodReady -> stringResource(R.string.merchant_register_card)
                             accepted -> stringResource(R.string.merchant_continue)
                             else -> stringResource(R.string.merchant_accept_first)
                         },
@@ -334,7 +354,7 @@ fun FundPlotScreen(
                             fontFamily = UrbanistExtraBold,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 20.sp,
-                            color = if (stage == FundingStage.Payment && !accepted) Muted else Color.White,
+                            color = if (stage == FundingStage.Payment && !canContinue) Muted else Color.White,
                         ),
                     )
                 }
@@ -560,6 +580,37 @@ private fun PaymentMethodCard(
 }
 
 @Composable
+private fun SavedCardRow(cardLabel: String, onAddCard: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(Color.White)
+            .border(1.dp, MuyuForest, CardShape)
+            .clickable(onClick = onAddCard)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (cardLabel.isBlank()) {
+                stringResource(R.string.merchant_card_required)
+            } else {
+                stringResource(R.string.merchant_card_in_use, cardLabel)
+            },
+            modifier = Modifier.weight(1f),
+            style = TextStyle(fontFamily = UrbanistMedium, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Black),
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = stringResource(
+                if (cardLabel.isBlank()) R.string.merchant_register_card else R.string.merchant_change_card,
+            ),
+            style = TextStyle(fontFamily = UrbanistBold, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MuyuOlive),
+        )
+    }
+}
+
+@Composable
 private fun MethodChip(text: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
@@ -632,13 +683,16 @@ private fun ReviewLine(label: String, value: String) {
 }
 
 @Composable
-private fun SelectedPaymentCard(method: PayMethod) {
-    val label = when (method) {
-        PayMethod.Card -> stringResource(R.string.merchant_card_masked)
-        PayMethod.Wallet -> stringResource(R.string.merchant_wallet)
-        PayMethod.Agent -> stringResource(R.string.merchant_agent)
-        PayMethod.Bank -> stringResource(R.string.merchant_bank)
-    }
+private fun payMethodLabel(method: PayMethod, cardLabel: String): String = when (method) {
+    PayMethod.Card -> cardLabel.ifBlank { stringResource(R.string.merchant_card) }
+    PayMethod.Wallet -> stringResource(R.string.merchant_wallet)
+    PayMethod.Agent -> stringResource(R.string.merchant_agent)
+    PayMethod.Bank -> stringResource(R.string.merchant_bank)
+}
+
+@Composable
+private fun SelectedPaymentCard(method: PayMethod, cardLabel: String) {
+    val label = payMethodLabel(method, cardLabel)
     Column(
         modifier = Modifier
             .fillMaxWidth()

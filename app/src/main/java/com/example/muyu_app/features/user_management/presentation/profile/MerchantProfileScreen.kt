@@ -90,6 +90,7 @@ fun MerchantProfileScreen(
     onTabSelected: (MerchantTab) -> Unit,
     @DrawableRes avatarRes: Int? = null,
     onChangePassword: () -> Unit = {},
+    onManageCard: () -> Unit = {},
     onLogout: () -> Unit = {},
     onTerms: () -> Unit = {},
     onPrivacy: () -> Unit = {},
@@ -352,17 +353,39 @@ fun MerchantProfileScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 SectionTitle(stringResource(R.string.profile_payment))
-                ProfileCard {
+                // El comerciante paga los financiamientos con tarjeta: puede registrarla o cambiarla aquí.
+                val savedCard = container.savedBankCard
+                ProfileCard(
+                    modifier = Modifier.clickable { onManageCard() },
+                ) {
                     Text(
                         text = stringResource(R.string.profile_saved_methods),
                         style = TitleStyle,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = container.savedBankCard?.let(::bankCardSummary)
-                            ?: stringResource(R.string.payment_no_card),
-                        style = BodyStyle,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = savedCard?.let(::bankCardSummary)
+                                ?: stringResource(R.string.payment_no_card),
+                            style = BodyStyle,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            text = stringResource(
+                                if (savedCard == null) R.string.profile_register_card else R.string.profile_change_card,
+                            ),
+                            style = TextStyle(
+                                fontFamily = UrbanistSemiBold,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp,
+                                color = MuyuHeader,
+                            ),
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))

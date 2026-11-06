@@ -99,6 +99,10 @@ class AppContainer(
     var rejectionCorrection: String = ""
     var reviewCompletedAt: Long = 0L
     var merchantVisitRequest: MerchantVisitRequest? = null
+    // Método con el que el comerciante confirmó el último financiamiento.
+    var fundingMethodLabel: String = ""
+    // Vuelve al paso de pago después de registrar una tarjeta desde el financiamiento.
+    var resumeFundingAtPayment: Boolean = false
 
     // Mantiene la pestaña desde la que se abrió el detalle de la parcela.
     fun merchantEvidenceBottomTab(): MerchantTab = when (merchantEvidenceOrigin) {
