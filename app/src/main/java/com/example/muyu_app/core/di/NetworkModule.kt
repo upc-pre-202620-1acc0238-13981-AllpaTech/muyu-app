@@ -13,14 +13,17 @@ object NetworkModule {
         val client = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val token = store.token
-                val request = if (token.isNullOrBlank()) {
-                    chain.request()
-                } else {
-                    chain.request().newBuilder()
-                        .header("Authorization", "Bearer $token")
-                        .build()
+                val email = store.currentUser?.email
+                val builder = chain.request().newBuilder()
+                if (!token.isNullOrBlank()) {
+                    builder.header("Authorization", "Bearer $token")
                 }
-                chain.proceed(request)
+                // El fake-api pierde los tokens al reiniciarse en Render; el correo
+                // identifica al usuario sin recurrir a una cuenta de demostración.
+                if (!email.isNullOrBlank()) {
+                    builder.header("X-User-Email", email)
+                }
+                chain.proceed(builder.build())
             }
             .addInterceptor(FakeApiInterceptor(store))
             .connectTimeout(90, TimeUnit.SECONDS)

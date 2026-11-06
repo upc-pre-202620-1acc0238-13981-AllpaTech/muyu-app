@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.evidence
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.features.labor_execution.presentation.evidence.isEvidenceLocationValid
 import com.example.muyu_app.core.contact.openFarmerContact
 import androidx.compose.foundation.layout.heightIn
@@ -57,7 +58,6 @@ import com.example.muyu_app.ui.theme.MuyuAction
 import com.example.muyu_app.ui.theme.MuyuApprovedBg
 import com.example.muyu_app.ui.theme.MuyuCoverText
 import com.example.muyu_app.ui.theme.MuyuNavBar
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuPendingBg
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistExtraBold
@@ -142,7 +142,7 @@ fun MerchantMilestoneEvidenceScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(

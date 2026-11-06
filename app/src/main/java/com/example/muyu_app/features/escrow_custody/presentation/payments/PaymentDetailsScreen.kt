@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.escrow_custody.presentation.payments
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -60,7 +61,6 @@ import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.features.plot_financing.presentation.evidence.mockTransactionId
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
 
 private val CardShape = RoundedCornerShape(20.dp)
@@ -146,7 +146,7 @@ fun PaymentDetailsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(

@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_approval.presentation.publish
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuNavBar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -47,7 +48,6 @@ import com.example.muyu_app.ui.theme.MuyuApprovedBg
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuHeader
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuPlanBadgeText
 import com.example.muyu_app.ui.theme.MuyuSoftGreen
 import com.example.muyu_app.ui.theme.MuyuappTheme
@@ -88,7 +88,7 @@ fun PublishSuccessScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             FarmerContextHeader(

@@ -20,9 +20,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,6 +52,7 @@ import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
 
 private val VisitCardShape = RoundedCornerShape(16.dp)
 private val VisitFieldShape = RoundedCornerShape(12.dp)
@@ -67,6 +70,9 @@ fun MerchantVisitRequestScreen(
     var date by remember(plot?.id) { mutableStateOf(LocalDate.now().plusDays(7)) }
     var time by rememberSaveable(plot?.id) { mutableStateOf("10:00") }
     var message by rememberSaveable(plot?.id) { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    var sendError by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = modifier
@@ -122,23 +128,43 @@ fun MerchantVisitRequestScreen(
                 text = stringResource(R.string.merchant_visit_disclaimer),
                 style = visitTextStyle(13.sp, FontWeight.Normal, Color.Black.copy(alpha = .65f)),
             )
+            sendError?.let { error ->
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.merchant_visit_send_error, error),
+                    style = visitTextStyle(13.sp, FontWeight.Normal, Color(0xFF9E2F2F)),
+                )
+            }
             Spacer(Modifier.height(18.dp))
             VisitPrimaryButton(
-                label = stringResource(R.string.merchant_visit_send),
+                label = stringResource(if (sending) R.string.merchant_visit_sending else R.string.merchant_visit_send),
                 onClick = {
-                    if (time.isBlank() || plot == null) return@VisitPrimaryButton
-                    container.merchantVisitRequest = MerchantVisitRequest(
-                        plotId = plot.id,
-                        plotName = plot.name,
-                        plotPlace = plot.place,
-                        farmerEmail = plot.ownerEmail,
-                        farmerName = plot.ownerName,
-                        merchantName = container.fakeStore.currentUser?.displayName.orEmpty(),
-                        date = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                        time = time.trim(),
-                        message = message.trim(),
-                    )
-                    onRequestSent()
+                    if (sending || time.isBlank() || plot == null) return@VisitPrimaryButton
+                    val visitDate = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    sending = true
+                    sendError = null
+                    // La visita se guarda en el fake-api para que el agricultor la vea en su teléfono.
+                    scope.launch {
+                        container.plotVisits
+                            .requestVisit(plot.id, visitDate, time.trim(), message.trim())
+                            .onSuccess { visit ->
+                                container.merchantVisitRequest = MerchantVisitRequest(
+                                    id = visit.id,
+                                    plotId = plot.id,
+                                    plotName = plot.name,
+                                    plotPlace = plot.place,
+                                    farmerEmail = plot.ownerEmail,
+                                    farmerName = plot.ownerName,
+                                    merchantName = visit.merchantName,
+                                    date = visit.date,
+                                    time = visit.time,
+                                    message = visit.message,
+                                )
+                                onRequestSent()
+                            }
+                            .onFailure { sendError = it.message.orEmpty() }
+                        sending = false
+                    }
                 },
             )
         }
@@ -153,8 +179,21 @@ fun MerchantVisitSentScreen(
 ) {
     val container = LocalAppContainer.current
     val plot = container.selectedPlot
-    val request = container.merchantVisitRequest
+    var request by remember { mutableStateOf(container.merchantVisitRequest) }
     val confirmed = request?.confirmed == true
+
+    // Refresca la confirmación desde el fake-api: el agricultor responde desde su teléfono.
+    LaunchedEffect(request?.id) {
+        val current = request ?: return@LaunchedEffect
+        if (current.id == 0) return@LaunchedEffect
+        container.plotVisits.getVisits(current.plotId).onSuccess { visits ->
+            visits.firstOrNull { it.id == current.id }?.let { visit ->
+                val updated = current.copy(confirmed = visit.isConfirmed || visit.isCompleted)
+                container.merchantVisitRequest = updated
+                request = updated
+            }
+        }
+    }
 
     Column(
         modifier = modifier

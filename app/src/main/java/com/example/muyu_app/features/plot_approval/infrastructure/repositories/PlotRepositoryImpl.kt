@@ -27,6 +27,22 @@ class PlotRepositoryImpl(
         Result.failure(e)
     }
 
+    /** Consulta el estado real de una parcela en el servidor y lo guarda en el dispositivo. */
+    suspend fun fetchRemotePlot(id: Int): Result<Plot?> = try {
+        val response = service.getPlots()
+        val body = response.body()
+        if (response.isSuccessful && body != null) {
+            val dto = body.plots.find { it.id == id }
+            dto?.let { store.upsertPlot(it.toRecord()) }
+            Result.success(dto?.toPlot())
+        } else {
+            Result.failure(Exception(response.message()))
+        }
+    } catch (e: Exception) {
+        android.util.Log.w("PlotRepository", "Could not fetch plot $id", e)
+        Result.failure(e)
+    }
+
     override suspend fun getPlots(): Result<List<Plot>> {
         if (!Environment.USE_FAKE_API) {
             return Result.success(store.plots.map { store.toDomain(it) })
@@ -120,6 +136,21 @@ class PlotRepositoryImpl(
         }
     }
 
+    override suspend fun deletePlot(id: Int): Result<Unit> {
+        return try {
+            val response = service.deletePlot(id)
+            if (response.isSuccessful) {
+                store.plots.removeAll { it.id == id }
+                store.persist()
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun PlotDto.toPlot() = Plot(
         id = id,
         name = name,
@@ -144,17 +175,26 @@ class PlotRepositoryImpl(
         milestoneStates = milestoneStates,
         visitOutcome = visitOutcome,
         visitDate = visitDate,
+        agreedPrice = agreedPrice.orEmpty(),
+        harvestReceivedAt = harvestReceivedAt.orEmpty(),
+        harvestReceivedBy = harvestReceivedBy.orEmpty(),
+        harvestIncidents = harvestIncidents.orEmpty(),
+        weatherMeasures = weatherMeasures.orEmpty(),
     )
 
     private fun Plot.toDto() = PlotDto(
         id, name, crop, area, harvestDate, place, stage, progress, status, amount,
         cycle, milestones, imageUri, ownerEmail, ownerName, fundedByEmail, latitude,
-        longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate,
+        longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate, agreedPrice,
+        harvestReceivedAt, harvestReceivedBy, harvestIncidents, weatherMeasures,
     )
 
     private fun PlotDto.toRecord() = PlotRecord(
         id, name, crop, area, harvestDate, place, stage, progress, status, amount,
         cycle, milestones, imageUri, ownerEmail, ownerName, fundedByEmail, latitude,
         longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate,
+        agreedPrice.orEmpty(),
+        harvestReceivedAt.orEmpty(), harvestReceivedBy.orEmpty(),
+        harvestIncidents.orEmpty(), weatherMeasures.orEmpty(),
     )
 }

@@ -24,6 +24,11 @@ data class Plot(
     val milestoneStates: List<MilestoneState> = emptyList(),
     val visitOutcome: String = "",
     val visitDate: String = "",
+    val agreedPrice: String = "",
+    val harvestReceivedAt: String = "",
+    val harvestReceivedBy: String = "",
+    val harvestIncidents: List<HarvestIncident> = emptyList(),
+    val weatherMeasures: List<WeatherMeasure> = emptyList(),
 )
 
 data class NewPlot(

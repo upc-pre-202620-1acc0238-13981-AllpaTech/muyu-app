@@ -42,13 +42,12 @@ import com.example.muyu_app.features.labor_execution.presentation.evidence.Selec
 import com.example.muyu_app.features.plot_financing.presentation.visit.VisitOutcomeScreen
 import com.example.muyu_app.features.plot_financing.presentation.visit.MerchantVisitRequestScreen
 import com.example.muyu_app.features.plot_financing.presentation.visit.MerchantVisitSentScreen
-import com.example.muyu_app.features.labor_execution.presentation.sync.SyncConnectedScreen
 import com.example.muyu_app.features.labor_execution.presentation.sync.SyncScreen
 import com.example.muyu_app.features.plot_approval.presentation.home.FarmerHomeScreen
 import com.example.muyu_app.features.plot_approval.presentation.myplots.FarmerMyPlotsScreen
 import com.example.muyu_app.features.plot_approval.presentation.onboarding.ListPlotOnboardingScreen
+import com.example.muyu_app.features.plot_approval.presentation.plotdetail.AvailablePlotScreen
 import com.example.muyu_app.features.plot_approval.presentation.plotdetail.MyPlotScreen
-import com.example.muyu_app.features.plot_approval.presentation.plotdetail.PlotDetailScreen
 import com.example.muyu_app.features.plot_approval.presentation.visits.VisitRequestsScreen
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishSuccessScreen
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishPlotInfoScreen
@@ -63,6 +62,8 @@ import com.example.muyu_app.features.plot_financing.presentation.evidence.Mercha
 import com.example.muyu_app.features.plot_financing.presentation.catalog.MerchantCatalogScreen
 import com.example.muyu_app.features.plot_financing.presentation.fund.FundPlotScreen
 import com.example.muyu_app.features.plot_financing.presentation.fund.FundSuccessScreen
+import com.example.muyu_app.features.plot_financing.presentation.harvest.HarvestIncidentScreen
+import com.example.muyu_app.features.plot_financing.presentation.harvest.HarvestReceiptScreen
 import com.example.muyu_app.features.escrow_custody.presentation.payments.MerchantPaymentHistoryScreen
 import com.example.muyu_app.features.plot_financing.presentation.myplots.MerchantMyPlotsScreen
 import com.example.muyu_app.features.plot_financing.presentation.plotdetail.MerchantPlotDetailScreen
@@ -87,6 +88,10 @@ import com.example.muyu_app.features.user_management.presentation.rating.RateBuy
 import com.example.muyu_app.features.user_management.presentation.rating.RatingSubmittedScreen
 import androidx.compose.ui.res.stringResource
 import com.example.muyu_app.R
+import com.example.muyu_app.features.user_management.presentation.profile.saveMerchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.merchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.MerchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.DigitalWalletAccount
 import com.example.muyu_app.core.storage.UserPreferences
 import com.example.muyu_app.ui.splash.SplashScreen
 import kotlinx.coroutines.delay
@@ -109,7 +114,6 @@ private enum class WalkthroughStep {
     OnboardingEscrow,
     OnboardingWeather,
     Role,
-    PlotDetail,
     FarmerHome,
     FarmerMyPlots,
     PublishInfo,
@@ -117,6 +121,7 @@ private enum class WalkthroughStep {
     PublishFinancing,
     PublishSuccess,
     MyPlot,
+    AvailablePlot,
     VisitRequests,
     FundedPlot,
     VisitOutcome,
@@ -125,12 +130,12 @@ private enum class WalkthroughStep {
     RecordEvidence,
     WeatherAlert,
     Sync,
-    SyncConnected,
     Profile,
     BankAccount,
     AddBankCard,
     EditYape,
     EditPlin,
+    MerchantWallet,
     PaymentHistory,
     PaymentDetails,
     MerchantCatalog,
@@ -147,6 +152,8 @@ private enum class WalkthroughStep {
     MerchantMilestoneApproved,
     MerchantRejectionReason,
     MerchantReviewOutcome,
+    HarvestReceipt,
+    HarvestIncident,
     Terms,
     Privacy,
     ReportIncident,
@@ -176,11 +183,17 @@ fun AppNavHost() {
     var tab by rememberSaveable { mutableStateOf<String?>(null) }
     var isMerchant by rememberSaveable { mutableStateOf(false) }
     var termsReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.Register) }
+    // Pantallas a las que vuelven la lista de visitas y el resultado de la visita.
+    var visitsReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.AvailablePlot) }
+    var outcomeReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.AvailablePlot) }
     var passwordFromProfile by rememberSaveable { mutableStateOf(false) }
     // Conserva las estrellas y el comentario al girar el dispositivo durante la valoración.
     var buyerRating by rememberSaveable { mutableStateOf(0) }
     var buyerRatingComment by rememberSaveable { mutableStateOf("") }
     var recoveryEmail by rememberSaveable { mutableStateOf("") }
+    // Pantalla a la que vuelve el registro de tarjeta: cuenta bancaria, perfil o financiamiento.
+    var cardReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.BankAccount) }
+    var merchantWalletProvider by rememberSaveable { mutableStateOf(DigitalWalletProvider.Yape) }
     val container = LocalAppContainer.current
     val languages = container.languages
     val appLanguage = languages.current(isMerchant)
@@ -257,7 +270,7 @@ fun AppNavHost() {
         WalkthroughStep.PasswordFlowComplete -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
         WalkthroughStep.ChangePin, WalkthroughStep.PinFlowComplete -> WalkthroughStep.Profile
         WalkthroughStep.BankAccount -> WalkthroughStep.Profile
-        WalkthroughStep.AddBankCard -> WalkthroughStep.BankAccount
+        WalkthroughStep.AddBankCard, WalkthroughStep.MerchantWallet -> cardReturnStep
         WalkthroughStep.EditYape -> WalkthroughStep.BankAccount
         WalkthroughStep.EditPlin -> WalkthroughStep.BankAccount
         WalkthroughStep.ReportIncident -> WalkthroughStep.Profile
@@ -268,6 +281,7 @@ fun AppNavHost() {
         WalkthroughStep.MerchantRejectionReason -> WalkthroughStep.MerchantApproveReject
         WalkthroughStep.MerchantVisitRequest -> WalkthroughStep.MerchantPlotDetail
         WalkthroughStep.MerchantVisitSent -> WalkthroughStep.MerchantVisitRequest
+        WalkthroughStep.HarvestReceipt, WalkthroughStep.HarvestIncident -> WalkthroughStep.MerchantPlotDetail
         WalkthroughStep.MerchantMilestoneEvidence,
         WalkthroughStep.MerchantMilestoneApproved,
         WalkthroughStep.MerchantReviewOutcome -> when (container.merchantEvidenceOrigin) {
@@ -287,7 +301,6 @@ fun AppNavHost() {
         WalkthroughStep.Privacy,
         WalkthroughStep.ReportIncident,
         WalkthroughStep.ReportIncidentPhoto,
-        WalkthroughStep.PlotDetail,
         WalkthroughStep.FarmerHome,
         WalkthroughStep.FarmerMyPlots,
         WalkthroughStep.PublishInfo,
@@ -295,6 +308,7 @@ fun AppNavHost() {
         WalkthroughStep.PublishFinancing,
         WalkthroughStep.PublishSuccess,
         WalkthroughStep.MyPlot,
+        WalkthroughStep.AvailablePlot,
         WalkthroughStep.FundedPlot,
         WalkthroughStep.VisitOutcome,
         WalkthroughStep.RequestExtension,
@@ -302,12 +316,12 @@ fun AppNavHost() {
         WalkthroughStep.RecordEvidence,
         WalkthroughStep.WeatherAlert,
         WalkthroughStep.Sync,
-        WalkthroughStep.SyncConnected,
         WalkthroughStep.Profile,
         WalkthroughStep.BankAccount,
         WalkthroughStep.AddBankCard,
         WalkthroughStep.EditYape,
         WalkthroughStep.EditPlin,
+        WalkthroughStep.MerchantWallet,
         WalkthroughStep.PaymentHistory,
         WalkthroughStep.PaymentDetails,
         WalkthroughStep.MerchantCatalog,
@@ -324,6 +338,8 @@ fun AppNavHost() {
         WalkthroughStep.MerchantMilestoneApproved,
         WalkthroughStep.MerchantRejectionReason,
         WalkthroughStep.MerchantReviewOutcome,
+        WalkthroughStep.HarvestReceipt,
+        WalkthroughStep.HarvestIncident,
     )
 
     val darkSheet = (
@@ -472,16 +488,17 @@ fun AppNavHost() {
                 step = WalkthroughStep.MerchantCatalog
             },
         )
-        WalkthroughStep.PlotDetail -> TabOrContent(currentTab, selectTab) {
-            PlotDetailScreen(onTabSelected = selectTab)
-        }
         WalkthroughStep.FarmerHome -> TabOrContent(currentTab, selectTab) {
             FarmerHomeScreen(
                 onWeather = { step = WalkthroughStep.WeatherAlert },
                 onTabSelected = selectTab,
                 onPlotSelected = {
                     container.farmerPlotReturn = FarmerPlotReturn.Home
-                    step = WalkthroughStep.FundedPlot
+                    step = if (container.selectedPlot?.status == "funded") {
+                        WalkthroughStep.FundedPlot
+                    } else {
+                        WalkthroughStep.AvailablePlot
+                    }
                 },
             )
         }
@@ -501,6 +518,13 @@ fun AppNavHost() {
                     } else {
                         WalkthroughStep.MyPlot
                     }
+                },
+                onEditPlot = { plot ->
+                    container.selectedPlot = plot
+                    container.farmerPlotReturn = FarmerPlotReturn.MyPlots
+                    container.plotDraft.clear()
+                    container.plotDraft.loadFrom(plot)
+                    step = WalkthroughStep.PublishInfo
                 },
             )
         }
@@ -555,13 +579,40 @@ fun AppNavHost() {
                     }
                 },
                 onTabSelected = selectTab,
-                onViewVisitRequests = { step = WalkthroughStep.VisitRequests },
+                onViewVisitRequests = {
+                    visitsReturnStep = WalkthroughStep.MyPlot
+                    step = WalkthroughStep.VisitRequests
+                },
                 fromHome = container.farmerPlotReturn == FarmerPlotReturn.Home,
             )
         }
         WalkthroughStep.VisitRequests -> TabOrContent(currentTab, selectTab) {
             VisitRequestsScreen(
-                onBack = { step = WalkthroughStep.MyPlot },
+                onBack = { step = visitsReturnStep },
+                onTabSelected = selectTab,
+                onRecordOutcome = {
+                    outcomeReturnStep = WalkthroughStep.VisitRequests
+                    step = WalkthroughStep.VisitOutcome
+                },
+                selectedTab = if (visitsReturnStep == WalkthroughStep.MyPlot) MuyuTab.Plot else MuyuTab.Home,
+            )
+        }
+        WalkthroughStep.AvailablePlot -> TabOrContent(currentTab, selectTab) {
+            AvailablePlotScreen(
+                onBack = {
+                    step = when (container.farmerPlotReturn) {
+                        FarmerPlotReturn.Home -> WalkthroughStep.FarmerHome
+                        FarmerPlotReturn.MyPlots -> WalkthroughStep.FarmerMyPlots
+                    }
+                },
+                onViewVisitOutcome = {
+                    outcomeReturnStep = WalkthroughStep.AvailablePlot
+                    step = WalkthroughStep.VisitOutcome
+                },
+                onManageVisits = {
+                    visitsReturnStep = WalkthroughStep.AvailablePlot
+                    step = WalkthroughStep.VisitRequests
+                },
                 onTabSelected = selectTab,
             )
         }
@@ -584,10 +635,10 @@ fun AppNavHost() {
         }
         WalkthroughStep.VisitOutcome -> TabOrContent(currentTab, selectTab) {
             VisitOutcomeScreen(
-                onBack = { step = WalkthroughStep.FundedPlot },
-                onSaved = { step = WalkthroughStep.FundedPlot },
-                onReleased = { step = WalkthroughStep.FarmerHome },
+                onBack = { step = outcomeReturnStep },
+                onSaved = { step = outcomeReturnStep },
                 onTabSelected = selectTab,
+                selectedTab = if (visitsReturnStep == WalkthroughStep.MyPlot) MuyuTab.Plot else MuyuTab.Home,
             )
         }
         WalkthroughStep.RequestExtension -> TabOrContent(currentTab, selectTab) {
@@ -626,12 +677,6 @@ fun AppNavHost() {
                 onTabSelected = selectTab,
             )
         }
-        WalkthroughStep.SyncConnected -> TabOrContent(currentTab, selectTab) {
-            SyncScreen(
-                onBack = { step = WalkthroughStep.FarmerHome },
-                onTabSelected = selectTab,
-            )
-        }
         WalkthroughStep.Profile -> TabOrContent(currentTab, selectTab) {
             if (isMerchant) {
                 MerchantProfileScreen(
@@ -640,6 +685,17 @@ fun AppNavHost() {
                         tab = null
                         passwordFromProfile = true
                         step = WalkthroughStep.NewPassword
+                    },
+                    onManageCard = {
+                        tab = null
+                        cardReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.AddBankCard
+                    },
+                    onManageWallet = { provider ->
+                        tab = null
+                        merchantWalletProvider = provider
+                        cardReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.MerchantWallet
                     },
                     onLogout = goToLogin,
                     onTerms = {
@@ -717,15 +773,22 @@ fun AppNavHost() {
         )
         WalkthroughStep.BankAccount -> BankAccountScreen(
             onBack = { step = WalkthroughStep.Profile },
-            onAddCard = { step = WalkthroughStep.AddBankCard },
+            onAddCard = {
+                cardReturnStep = WalkthroughStep.BankAccount
+                step = WalkthroughStep.AddBankCard
+            },
             onYapeClick = { step = WalkthroughStep.EditYape },
             onPlinClick = { step = WalkthroughStep.EditPlin },
         )
         WalkthroughStep.AddBankCard -> AddBankCardScreen(
-            onBack = { step = WalkthroughStep.BankAccount },
+            onBack = {
+                container.resumeFundingAtPayment = cardReturnStep == WalkthroughStep.FundPlot
+                step = cardReturnStep
+            },
             onSave = { card ->
                 container.savedBankCard = card
-                step = WalkthroughStep.BankAccount
+                container.resumeFundingAtPayment = cardReturnStep == WalkthroughStep.FundPlot
+                step = cardReturnStep
             },
         )
         WalkthroughStep.EditYape -> EditDigitalWalletScreen(
@@ -827,14 +890,61 @@ fun AppNavHost() {
                 }
             },
             onViewEvidence = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onConfirmHarvest = { step = WalkthroughStep.HarvestReceipt },
+            onReportHarvestIncident = { step = WalkthroughStep.HarvestIncident },
             onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.HarvestReceipt -> HarvestReceiptScreen(
+            onBack = { step = WalkthroughStep.MerchantPlotDetail },
+            onBackToPlot = { step = WalkthroughStep.MerchantPlotDetail },
+        )
+        WalkthroughStep.HarvestIncident -> HarvestIncidentScreen(
+            onBack = { step = WalkthroughStep.MerchantPlotDetail },
+            onBackToPlot = { step = WalkthroughStep.MerchantPlotDetail },
         )
         WalkthroughStep.FundPlot -> FundPlotScreen(
             onBack = { step = WalkthroughStep.MerchantPlotDetail },
             onBackToCatalog = { step = WalkthroughStep.MerchantCatalog },
             onCheckTransactions = { step = WalkthroughStep.PaymentHistory },
             onAcceptTerms = { step = WalkthroughStep.FundSuccess },
+            onAddCard = {
+                cardReturnStep = WalkthroughStep.FundPlot
+                step = WalkthroughStep.AddBankCard
+            },
+            onAddWallet = { provider ->
+                merchantWalletProvider = provider
+                cardReturnStep = WalkthroughStep.FundPlot
+                step = WalkthroughStep.MerchantWallet
+            },
         )
+        WalkthroughStep.MerchantWallet -> {
+            // Billetera propia del comerciante para pagar; no comparte datos con la del agricultor.
+            val saved = container.merchantWallet()?.takeIf { it.provider == merchantWalletProvider }
+            val leave = {
+                container.resumeFundingAtPayment = cardReturnStep == WalkthroughStep.FundPlot
+                step = cardReturnStep
+            }
+            EditDigitalWalletScreen(
+                provider = merchantWalletProvider,
+                account = saved?.let { DigitalWalletAccount(phone = it.phone, holderName = it.holderName) },
+                holderName = saved?.holderName?.takeIf(String::isNotBlank)
+                    ?: container.fakeStore.currentUser?.displayName.orEmpty(),
+                initialPhone = container.fakeStore.currentUser?.phone.orEmpty(),
+                onBack = leave,
+                onSave = { account ->
+                    container.saveMerchantWallet(
+                        MerchantWallet(merchantWalletProvider, account.phone, account.holderName),
+                    )
+                    leave()
+                },
+                onUnlink = {
+                    container.saveMerchantWallet(null)
+                    leave()
+                },
+                showPrimaryOption = false,
+                infoText = stringResource(R.string.merchant_wallet_payment_info),
+            )
+        }
         WalkthroughStep.FundSuccess -> FundSuccessScreen(
             onBack = { step = WalkthroughStep.FundPlot },
             onViewPlot = { step = WalkthroughStep.MerchantPlotDetail },

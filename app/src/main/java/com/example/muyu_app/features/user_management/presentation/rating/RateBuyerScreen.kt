@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.rating
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,7 +22,7 @@ import com.example.muyu_app.ui.theme.*
 @Composable
 fun RateBuyerScreen(rating: Int, comment: String, onRatingChange: (Int) -> Unit,
                     onCommentChange: (String) -> Unit, onBack: () -> Unit, onSubmit: () -> Unit) {
-    Column(Modifier.fillMaxSize().background(MuyuSurface).navigationBarsPadding().imePadding()) {
+    Column(Modifier.fillMaxSize().background(MuyuBackground).navigationBarsPadding().imePadding()) {
         GreenTitleHeader(stringResource(R.string.rating_title), onBack)
         // Permite completar el formulario con teclado abierto y en pantallas pequeñas.
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp),

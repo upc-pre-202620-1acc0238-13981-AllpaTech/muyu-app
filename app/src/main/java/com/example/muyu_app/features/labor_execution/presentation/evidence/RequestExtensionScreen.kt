@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.labor_execution.presentation.evidence
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,7 +42,6 @@ import com.example.muyu_app.core.plot.refreshSelectedPlot
 import com.example.muyu_app.features.plot_approval.domain.currentMilestone
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import java.time.LocalDate
@@ -78,7 +78,7 @@ fun RequestExtensionScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(

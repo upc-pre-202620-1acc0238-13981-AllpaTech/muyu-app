@@ -42,6 +42,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
+import com.example.muyu_app.core.designsystem.components.FarmerAvatar
+import com.example.muyu_app.core.designsystem.components.PlotPhoto
 import coil3.compose.AsyncImage
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
@@ -60,6 +62,8 @@ import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.features.plot_approval.presentation.myplots.formatPlotArea
 import com.example.muyu_app.features.plot_financing.presentation.evidence.formatEvidenceTime
+import com.example.muyu_app.features.plot_financing.presentation.fund.pendingFunding
+import com.example.muyu_app.features.plot_financing.presentation.harvest.HarvestDeliveryCard
 import com.example.muyu_app.features.plot_financing.presentation.myplots.evidenceMilestoneKey
 import com.example.muyu_app.features.plot_financing.presentation.myplots.milestoneStatesOrSeed
 import com.example.muyu_app.ui.theme.MuyuAction
@@ -92,6 +96,8 @@ fun MerchantPlotDetailScreen(
     onFundPlot: () -> Unit,
     onRequestVisit: () -> Unit = {},
     onViewEvidence: () -> Unit = {},
+    onConfirmHarvest: () -> Unit = {},
+    onReportHarvestIncident: () -> Unit = {},
     onTabSelected: (MerchantTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -122,25 +128,14 @@ fun MerchantPlotDetailScreen(
                 onBack = onBack,
                 backgroundColor = MuyuNavBar,
             )
-            if (!plot?.imageUri.isNullOrBlank()) {
-                AsyncImage(
-                    model = plot?.imageUri,
-                    contentDescription = plotName,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(239.dp),
-                    contentScale = ContentScale.Crop,
-                )
-            } else {
-                Image(
-                    painter = painterResource(R.drawable.merchant_plot_hero),
-                    contentDescription = plotName,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(239.dp),
-                    contentScale = ContentScale.Crop,
-                )
-            }
+            // Foto que el agricultor tomó o eligió al publicar; sin foto se ve un marcador neutro.
+            PlotPhoto(
+                imageUri = plot?.imageUri,
+                description = plotName,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(239.dp),
+            )
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -158,7 +153,12 @@ fun MerchantPlotDetailScreen(
                         companyName = stringResource(R.string.merchant_company_name),
                         showHarvestReceipt = isFunded,
                         ctaLabel = stringResource(
-                            if (isFunded) R.string.merchant_view_evidence else R.string.merchant_fund_plot,
+                            when {
+                                isFunded -> R.string.merchant_view_evidence
+                                // El pago sigue en verificación: se abre su estado, no un nuevo pago.
+                                container.pendingFunding(current.id) != null -> R.string.funding_in_verification_cta
+                                else -> R.string.merchant_fund_plot
+                            },
                         ),
                         onCtaClick = {
                             if (isFunded) {
@@ -170,6 +170,8 @@ fun MerchantPlotDetailScreen(
                             }
                         },
                         onRequestVisit = onRequestVisit,
+                        onConfirmHarvest = onConfirmHarvest,
+                        onReportHarvestIncident = onReportHarvestIncident,
                     )
                 }
             }
@@ -322,6 +324,8 @@ private fun FundedPlotBody(
     ctaLabel: String,
     onCtaClick: () -> Unit,
     onRequestVisit: () -> Unit,
+    onConfirmHarvest: () -> Unit,
+    onReportHarvestIncident: () -> Unit,
 ) {
     val area = formatPlotArea(plot.area)
     val deposit = PlotFinance.parseAmount(plot.amount)
@@ -483,7 +487,7 @@ private fun FundedPlotBody(
         CropValueRow(stringResource(R.string.merchant_payment_per_milestone), paymentValues)
     }
     Spacer(modifier = Modifier.height(16.dp))
-    FundedFarmerCard(farmerName = plot.ownerName)
+    FundedFarmerCard(farmerName = plot.ownerName, farmerEmail = plot.ownerEmail)
     if (plot.status != "funded") {
         Spacer(modifier = Modifier.height(16.dp))
         DynamicLocationCard(plot)
@@ -506,6 +510,14 @@ private fun FundedPlotBody(
                 fontSize = 16.sp,
                 color = MuyuAction,
             ),
+        )
+    }
+    if (showHarvestReceipt && harvestApproved) {
+        Spacer(modifier = Modifier.height(16.dp))
+        HarvestDeliveryCard(
+            plot = plot,
+            onConfirm = onConfirmHarvest,
+            onReportIncident = onReportHarvestIncident,
         )
     }
     if (showHarvestReceipt && !harvestApproved) {
@@ -732,7 +744,7 @@ private fun CropValueRow(label: String, value: String) {
 }
 
 @Composable
-private fun FundedFarmerCard(farmerName: String) {
+private fun FundedFarmerCard(farmerName: String, farmerEmail: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -743,20 +755,7 @@ private fun FundedFarmerCard(farmerName: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Image(
-            painter = painterResource(
-                if (farmerName.contains("Carlos", ignoreCase = true)) {
-                    R.drawable.merchant_carlos_sm
-                } else {
-                    R.drawable.merchant_maria
-                },
-            ),
-            contentDescription = farmerName,
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop,
-        )
+        FarmerAvatar(name = farmerName, email = farmerEmail, size = 60.dp)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = farmerName,
@@ -828,14 +827,7 @@ private fun FarmerCard(farmerName: String) {
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(
-            painter = painterResource(R.drawable.merchant_maria),
-            contentDescription = farmerName,
-            modifier = Modifier
-                .size(70.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop,
-        )
+        FarmerAvatar(name = farmerName, email = null, size = 70.dp)
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(

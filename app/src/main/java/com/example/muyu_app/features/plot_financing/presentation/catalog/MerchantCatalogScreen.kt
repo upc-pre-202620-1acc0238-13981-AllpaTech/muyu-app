@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.muyu_app.R
+import com.example.muyu_app.core.designsystem.components.FarmerAvatar
+import com.example.muyu_app.core.designsystem.components.PlotPhoto
 import com.example.muyu_app.core.designsystem.components.LanguageToggleButton
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
@@ -170,11 +172,10 @@ fun MerchantCatalogScreen(
                 }
                 filteredPlots.forEach { plot ->
                     PlotOfferCard(
-                        photo = catalogPhoto(plot),
                         imageUri = plot.imageUri,
                         name = plot.name,
                         price = plot.amount,
-                        farmerPhoto = farmerPhoto(plot),
+                        farmerEmail = plot.ownerEmail,
                         farmer = plot.ownerName,
                         crop = plot.crop,
                         area = formatPlotArea(plot.area),
@@ -196,23 +197,6 @@ fun MerchantCatalogScreen(
     }
 }
 
-internal fun catalogPhoto(plot: Plot): Int {
-    return if (plot.name.contains("Álamos", ignoreCase = true) ||
-        plot.name.contains("Alamos", ignoreCase = true)
-    ) {
-        R.drawable.merchant_alamos
-    } else {
-        R.drawable.merchant_esperanza
-    }
-}
-
-internal fun farmerPhoto(plot: Plot): Int {
-    return if (plot.ownerName.contains("Carlos", ignoreCase = true)) {
-        R.drawable.merchant_carlos_sm
-    } else {
-        R.drawable.merchant_maria_sm
-    }
-}
 
 @Composable
 private fun CatalogHeader(
@@ -354,11 +338,10 @@ private fun FilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
 
 @Composable
 internal fun PlotOfferCard(
-    @DrawableRes photo: Int,
     imageUri: String? = null,
     name: String,
     price: String,
-    @DrawableRes farmerPhoto: Int,
+    farmerEmail: String? = null,
     farmer: String,
     crop: String,
     area: String,
@@ -372,25 +355,14 @@ internal fun PlotOfferCard(
             .background(Color.White)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
     ) {
-        if (!imageUri.isNullOrBlank()) {
-            AsyncImage(
-                model = imageUri,
-                contentDescription = name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(168.dp),
-                contentScale = ContentScale.Crop,
-            )
-        } else {
-            Image(
-                painter = painterResource(photo),
-                contentDescription = name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(168.dp),
-                contentScale = ContentScale.Crop,
-            )
-        }
+        // Solo se muestra la foto que subió el agricultor al publicar la parcela.
+        PlotPhoto(
+            imageUri = imageUri,
+            description = name,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(168.dp),
+        )
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -418,14 +390,7 @@ internal fun PlotOfferCard(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(farmerPhoto),
-                    contentDescription = farmer,
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop,
-                )
+                FarmerAvatar(name = farmer, email = farmerEmail, size = 22.dp)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = farmer,

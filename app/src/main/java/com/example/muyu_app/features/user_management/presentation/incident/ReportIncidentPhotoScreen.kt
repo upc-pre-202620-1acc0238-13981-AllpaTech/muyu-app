@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.incident
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -34,7 +35,6 @@ import coil3.compose.AsyncImage
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
 import com.example.muyu_app.core.di.LocalAppContainer
-import com.example.muyu_app.ui.theme.MuyuPageGray
 
 @Composable
 fun ReportIncidentPhotoScreen(
@@ -65,7 +65,7 @@ fun ReportIncidentPhotoScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         GreenTitleHeader(stringResource(R.string.report_attach_photo), onBack)
         Column(

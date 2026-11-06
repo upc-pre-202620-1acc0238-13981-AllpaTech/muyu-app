@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.fund
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import android.content.Context
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
@@ -52,7 +53,6 @@ import com.example.muyu_app.ui.theme.MuyuEscrowBg
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuInfoBlue
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuReceiptGreen
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBlack
@@ -78,7 +78,7 @@ fun FundSuccessScreen(
     val plot = container.selectedPlot
     val amount = plot?.amount.orEmpty()
     val receiptTitle = stringResource(R.string.merchant_funds_secured)
-    val paymentMethod = stringResource(R.string.merchant_card_masked)
+    val paymentMethod = container.fundingMethodLabel.ifBlank { stringResource(R.string.merchant_card) }
     val heldStatus = stringResource(R.string.merchant_held)
     val receiptLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/pdf"),
@@ -98,7 +98,7 @@ fun FundSuccessScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -160,7 +160,7 @@ fun FundSuccessScreen(
                     MuyuAsset("merchant/receipt_line.svg", null, 340.dp, 1.dp)
                     ReceiptRow(
                         label = stringResource(R.string.merchant_payment_method_label),
-                        value = stringResource(R.string.merchant_card_masked),
+                        value = paymentMethod,
                     )
                     MuyuAsset("merchant/receipt_line2.svg", null, 340.dp, 1.dp)
                     Row(

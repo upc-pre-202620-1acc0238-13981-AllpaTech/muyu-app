@@ -1,10 +1,12 @@
 package com.example.muyu_app.core.network
 
 import com.example.muyu_app.core.environment.Environment
+import com.example.muyu_app.features.plot_approval.domain.HarvestIncident
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
+import com.example.muyu_app.features.plot_approval.domain.WeatherMeasure
 import java.util.Calendar
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
@@ -52,6 +54,11 @@ data class PlotRecord(
     val milestoneStates: List<MilestoneState> = emptyList(),
     val visitOutcome: String = "",
     val visitDate: String = "",
+    val agreedPrice: String = "",
+    val harvestReceivedAt: String = "",
+    val harvestReceivedBy: String = "",
+    val harvestIncidents: List<HarvestIncident> = emptyList(),
+    val weatherMeasures: List<WeatherMeasure> = emptyList(),
 )
 
 data class PlotUpdatePayload(
@@ -76,6 +83,7 @@ class FakeApiStore(
     val plots = CopyOnWriteArrayList<PlotRecord>()
     val merchantNotifications = CopyOnWriteArrayList<MerchantNotificationRecord>()
     val syncHistory = CopyOnWriteArrayList<SyncHistoryRecord>()
+    val farmerNotifications = CopyOnWriteArrayList<FarmerNotificationRecord>()
 
     @Volatile
     var token: String? = null
@@ -90,11 +98,13 @@ class FakeApiStore(
             plots.addAll(snapshot.plots.map { it.normalized() })
             merchantNotifications.addAll(snapshot.merchantNotifications.map { it.normalized() })
             syncHistory.addAll(snapshot.syncHistory)
+            farmerNotifications.addAll(snapshot.farmerNotifications.orEmpty())
             migrateMerchantNotificationIds()
             seedCredentialsIfMissing()
             if (persistence.shouldApplyPlotReset()) {
                 plots.clear()
                 merchantNotifications.clear()
+                farmerNotifications.clear()
                 persistence.markPlotResetApplied()
             }
             stripSeedPlots()
@@ -139,6 +149,7 @@ class FakeApiStore(
             plots.toList(),
             merchantNotifications.toList(),
             syncHistory.toList(),
+            farmerNotifications.toList(),
         )
     }
 
@@ -265,6 +276,72 @@ class FakeApiStore(
         }
         replacePlot(plot.copy(milestoneStates = next))
         notifyExtensionRequested(plot, milestoneKey, date, reason)
+    }
+
+    /**
+     * Confirma la recepción de la cosecha (US30). Si ya estaba confirmada no la vuelve
+     * a registrar y devuelve el cierre existente.
+     */
+    fun confirmHarvestReceived(plotId: Int, merchantEmail: String): PlotRecord? {
+        val plot = plotById(plotId) ?: return null
+        if (plot.harvestReceivedAt.isNotBlank()) return plot
+        val updated = plot.copy(
+            harvestReceivedAt = PlotFinance.timestampNow(),
+            harvestReceivedBy = merchantEmail,
+            stage = "Harvest received",
+        )
+        replacePlot(updated)
+        notifyFarmer(
+            FarmerNotificationRecord(
+                id = "harvest_received_${plot.id}",
+                farmerEmail = plot.ownerEmail,
+                type = FarmerNotificationRecord.TYPE_HARVEST_RECEIVED,
+                plotId = plot.id,
+                plotName = plot.name,
+                createdAtMillis = System.currentTimeMillis(),
+            ),
+        )
+        return updated
+    }
+
+    /** Registra una incidencia en la entrega y deja la recepción pendiente (US31). */
+    fun reportHarvestIncident(plotId: Int, incident: HarvestIncident): PlotRecord? {
+        val plot = plotById(plotId) ?: return null
+        if (plot.harvestReceivedAt.isNotBlank()) return plot
+        val updated = plot.copy(harvestIncidents = plot.harvestIncidents + incident)
+        replacePlot(updated)
+        notifyFarmer(
+            FarmerNotificationRecord(
+                id = "harvest_incident_${plot.id}_${incident.reportedAtMillis}",
+                farmerEmail = plot.ownerEmail,
+                type = FarmerNotificationRecord.TYPE_HARVEST_INCIDENT,
+                plotId = plot.id,
+                plotName = plot.name,
+                body = incident.reason,
+                createdAtMillis = incident.reportedAtMillis,
+            ),
+        )
+        return updated
+    }
+
+    /** Guarda las medidas aplicadas ante una alerta climática (US33). */
+    fun recordWeatherMeasures(plotId: Int, measure: WeatherMeasure): PlotRecord? {
+        val plot = plotById(plotId) ?: return null
+        val others = plot.weatherMeasures.filterNot { it.alertKey == measure.alertKey }
+        val updated = plot.copy(weatherMeasures = others + measure)
+        replacePlot(updated)
+        return updated
+    }
+
+    fun notificationsForFarmer(email: String): List<FarmerNotificationRecord> =
+        farmerNotifications
+            .filter { it.farmerEmail.equals(email, ignoreCase = true) }
+            .sortedByDescending { it.createdAtMillis }
+
+    private fun notifyFarmer(record: FarmerNotificationRecord) {
+        if (farmerNotifications.any { it.id == record.id }) return
+        farmerNotifications.add(record)
+        persist()
     }
 
     private fun notifyEvidenceSubmitted(plot: PlotRecord, milestone: MilestoneState) {
@@ -457,6 +534,11 @@ class FakeApiStore(
         milestoneStates = record.milestoneStates,
         visitOutcome = record.visitOutcome,
         visitDate = record.visitDate,
+        agreedPrice = record.agreedPrice,
+        harvestReceivedAt = record.harvestReceivedAt,
+        harvestReceivedBy = record.harvestReceivedBy,
+        harvestIncidents = record.harvestIncidents,
+        weatherMeasures = record.weatherMeasures,
     )
 
     private fun UserRecord.normalized(): UserRecord = UserRecord(
@@ -530,6 +612,13 @@ class FakeApiStore(
         milestoneStates = (milestoneStates ?: emptyList()).map { it.normalized() },
         visitOutcome = visitOutcome.orEmpty(),
         visitDate = visitDate.orEmpty(),
+        agreedPrice = agreedPrice.orEmpty(),
+        // Gson deja en null los campos que no existen en datos guardados antes.
+        harvestReceivedAt = (harvestReceivedAt as String?).orEmpty(),
+        harvestReceivedBy = (harvestReceivedBy as String?).orEmpty(),
+        harvestIncidents = (harvestIncidents as List<HarvestIncident>?).orEmpty(),
+        weatherMeasures = (weatherMeasures as List<WeatherMeasure>?).orEmpty()
+            .map { it.copy(measures = (it.measures as List<String>?).orEmpty()) },
     )
 
     private fun stageTitle(key: String): String = when (key) {

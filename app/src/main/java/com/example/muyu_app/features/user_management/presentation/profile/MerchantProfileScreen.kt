@@ -90,6 +90,8 @@ fun MerchantProfileScreen(
     onTabSelected: (MerchantTab) -> Unit,
     @DrawableRes avatarRes: Int? = null,
     onChangePassword: () -> Unit = {},
+    onManageCard: () -> Unit = {},
+    onManageWallet: (DigitalWalletProvider) -> Unit = {},
     onLogout: () -> Unit = {},
     onTerms: () -> Unit = {},
     onPrivacy: () -> Unit = {},
@@ -352,16 +354,36 @@ fun MerchantProfileScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 SectionTitle(stringResource(R.string.profile_payment))
+                // El comerciante paga con tarjeta o con Yape/Plin: registra cada método aquí.
+                val savedCard = container.savedBankCard
+                val wallet = container.merchantWallet()
                 ProfileCard {
                     Text(
                         text = stringResource(R.string.profile_saved_methods),
                         style = TitleStyle,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = container.savedBankCard?.let(::bankCardSummary)
+                    PaymentMethodRow(
+                        label = savedCard?.let(::bankCardSummary)
                             ?: stringResource(R.string.payment_no_card),
-                        style = BodyStyle,
+                        actions = listOf(
+                            stringResource(
+                                if (savedCard == null) R.string.profile_register_card else R.string.profile_change_card,
+                            ) to onManageCard,
+                        ),
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    PaymentMethodRow(
+                        label = wallet?.let(::merchantWalletSummary)
+                            ?: stringResource(R.string.profile_no_wallet),
+                        actions = if (wallet != null) {
+                            listOf(stringResource(R.string.profile_change_wallet) to { onManageWallet(wallet.provider) })
+                        } else {
+                            listOf(
+                                stringResource(R.string.bank_account_yape) to { onManageWallet(DigitalWalletProvider.Yape) },
+                                stringResource(R.string.bank_account_plin) to { onManageWallet(DigitalWalletProvider.Plin) },
+                            )
+                        },
                     )
                 }
 
@@ -445,6 +467,31 @@ fun MerchantProfileScreen(
             onTabSelected = onTabSelected,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
+    }
+}
+
+@Composable
+private fun PaymentMethodRow(label: String, actions: List<Pair<String, () -> Unit>>) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = label, style = BodyStyle, modifier = Modifier.weight(1f))
+        actions.forEach { (text, onClick) ->
+            Text(
+                text = text,
+                modifier = Modifier
+                    .clip(ChannelShape)
+                    .clickable(onClick = onClick)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                style = TextStyle(
+                    fontFamily = UrbanistSemiBold,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                    color = MuyuHeader,
+                ),
+            )
+        }
     }
 }
 

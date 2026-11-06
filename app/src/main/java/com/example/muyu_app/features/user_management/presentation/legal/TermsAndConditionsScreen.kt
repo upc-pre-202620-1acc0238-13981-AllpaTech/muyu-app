@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.legal
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
 import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 
 @Composable
 fun TermsAndConditionsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
@@ -83,7 +83,7 @@ private fun LegalDocumentScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier.fillMaxSize().background(MuyuPageGray)) {
+    Column(modifier.fillMaxSize().background(MuyuBackground)) {
         Row(
             Modifier.fillMaxWidth().background(MuyuNavBar).statusBarsPadding().padding(20.dp),
             verticalAlignment = Alignment.CenterVertically,

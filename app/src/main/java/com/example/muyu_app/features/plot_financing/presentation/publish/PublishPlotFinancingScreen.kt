@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.publish
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,7 +63,6 @@ import com.example.muyu_app.features.plot_approval.presentation.publish.draftAmo
 import com.example.muyu_app.features.plot_approval.presentation.publish.publishFlowTitle
 import com.example.muyu_app.ui.theme.MuyuCheckbox
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuPlanBadgeText
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBold
@@ -136,7 +136,7 @@ fun PublishPlotFinancingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(

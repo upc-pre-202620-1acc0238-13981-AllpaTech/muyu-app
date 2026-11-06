@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.fund
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import java.util.Locale
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +47,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
+import com.example.muyu_app.features.user_management.presentation.profile.merchantWalletSummary
+import com.example.muyu_app.features.user_management.presentation.profile.merchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.DigitalWalletProvider
+import com.example.muyu_app.ui.theme.MuyuEscrowText
+import com.example.muyu_app.core.designsystem.components.MascotMood
+import com.example.muyu_app.core.designsystem.components.MascotMessage
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
@@ -62,10 +70,10 @@ import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuFundBanner
 import com.example.muyu_app.ui.theme.MuyuGrayChip
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuSkip
 import com.example.muyu_app.ui.theme.MuyuTermsBg
 import com.example.muyu_app.ui.theme.MuyuappTheme
+import com.example.muyu_app.features.user_management.presentation.profile.bankCardSummary
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistExtraBold
 import com.example.muyu_app.ui.theme.UrbanistMedium
@@ -80,7 +88,7 @@ private val TitleMuted = Color.Black.copy(alpha = 0.6f)
 private val SoftWhite = Color.White.copy(alpha = 0.7f)
 
 private enum class PayMethod { Card, Wallet, Agent, Bank }
-private enum class FundingStage { Summary, Payment, Review, Unconfirmed, Unavailable }
+private enum class FundingStage { Summary, Payment, Review, Verifying, Rejected, Unavailable }
 
 // Coordinates the merchant financing wizard and delays the API mutation until final confirmation.
 
@@ -90,6 +98,8 @@ fun FundPlotScreen(
     onBackToCatalog: () -> Unit,
     onCheckTransactions: () -> Unit,
     onAcceptTerms: () -> Unit,
+    onAddCard: () -> Unit = {},
+    onAddWallet: (DigitalWalletProvider) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val container = LocalAppContainer.current
@@ -102,16 +112,45 @@ fun FundPlotScreen(
     // Conserva el método elegido al rotar y separa el estado de cada parcela.
     var method by rememberSaveable(plot?.id) { mutableStateOf(PayMethod.Card) }
     var accepted by rememberSaveable(plot?.id) { mutableStateOf(false) }
-    var stage by rememberSaveable(plot?.id) { mutableStateOf(FundingStage.Summary) }
+    var pending by remember(plot?.id) { mutableStateOf(plot?.id?.let { container.pendingFunding(it) }) }
+    var stage by rememberSaveable(plot?.id) {
+        mutableStateOf(
+            when {
+                // Una orden en verificación bloquea nuevos intentos sobre la misma parcela.
+                pending != null -> FundingStage.Verifying
+                container.resumeFundingAtPayment -> FundingStage.Payment
+                else -> FundingStage.Summary
+            },
+        )
+    }
+    var checking by remember(plot?.id) { mutableStateOf(false) }
+    var stillUnknown by remember(plot?.id) { mutableStateOf(false) }
+    LaunchedEffect(Unit) { container.resumeFundingAtPayment = false }
     // Bloquea nuevas solicitudes mientras el financiamiento está en curso.
     var funding by remember(plot?.id) { mutableStateOf(false) }
+    // Pagar con tarjeta exige una tarjeta registrada por el comerciante.
+    val savedCard = container.savedBankCard
+    val cardLabel = savedCard?.let(::bankCardSummary).orEmpty()
+    val wallet = container.merchantWallet()
+    val walletLabel = wallet?.let(::merchantWalletSummary).orEmpty()
+    // Depósito en agente y transferencia usan un código de referencia de la orden.
+    val referenceCode = paymentReference(plot?.id ?: 0, container.currentUserEmail().orEmpty())
+    val methodReady = when (method) {
+        PayMethod.Card -> savedCard != null
+        PayMethod.Wallet -> wallet != null
+        else -> true
+    }
+    // Con los términos aceptados el botón avanza o, si falta la tarjeta, abre su registro.
+    val canContinue = accepted
+    val methodLabel = payMethodLabel(method, cardLabel, walletLabel, referenceCode)
 
     val stageBack: () -> Unit = {
         when (stage) {
             FundingStage.Summary -> onBack()
             FundingStage.Payment -> stage = FundingStage.Summary
             FundingStage.Review -> stage = FundingStage.Payment
-            FundingStage.Unconfirmed -> stage = FundingStage.Payment
+            FundingStage.Verifying -> onBack()
+            FundingStage.Rejected -> stage = FundingStage.Payment
             FundingStage.Unavailable -> onBackToCatalog()
         }
     }
@@ -119,12 +158,13 @@ fun FundPlotScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         GreenTitleHeader(
             title = stringResource(
                 if (stage == FundingStage.Review) R.string.merchant_confirm_financing
-                else if (stage == FundingStage.Unconfirmed) R.string.merchant_payment_unconfirmed
+                else if (stage == FundingStage.Verifying) R.string.funding_verifying_title
+                else if (stage == FundingStage.Rejected) R.string.funding_rejected_title
                 else if (stage == FundingStage.Unavailable) R.string.merchant_financing_title
                 else R.string.merchant_fund_title,
             ),
@@ -136,9 +176,34 @@ fun FundPlotScreen(
                 onViewOtherPlots = onBackToCatalog,
                 onBackToCatalog = onBackToCatalog,
             )
-        } else if (stage == FundingStage.Unconfirmed) {
+        } else if (stage == FundingStage.Verifying) {
+            PaymentVerifyingContent(
+                amount = amount,
+                pending = pending,
+                checking = checking,
+                stillUnknown = stillUnknown,
+                onCheckStatus = {
+                    val id = plot?.id
+                    if (id != null && !checking) {
+                        checking = true
+                        scope.launch {
+                            when (container.checkPendingFunding(id)) {
+                                FundingCheck.Funded -> onAcceptTerms()
+                                FundingCheck.TakenByOther -> stage = FundingStage.Unavailable
+                                FundingCheck.NotPaid -> stage = FundingStage.Rejected
+                                FundingCheck.StillUnknown -> stillUnknown = true
+                            }
+                            pending = container.pendingFunding(id)
+                            checking = false
+                        }
+                    }
+                },
+                onCheckTransactions = onCheckTransactions,
+            )
+        } else if (stage == FundingStage.Rejected) {
             PaymentUnconfirmedContent(
                 amount = amount,
+                methodLabel = methodLabel,
                 onCheckTransactions = onCheckTransactions,
                 onChangeMethod = {
                     accepted = false
@@ -237,6 +302,23 @@ fun FundPlotScreen(
                 }
                 if (stage == FundingStage.Payment) {
                     PaymentMethodCard(method = method, onMethod = { method = it })
+                    Spacer(modifier = Modifier.height(12.dp))
+                    when (method) {
+                        PayMethod.Card -> SavedCardRow(cardLabel = cardLabel, onAddCard = onAddCard)
+                        PayMethod.Wallet -> WalletRow(
+                            walletLabel = walletLabel,
+                            onLink = onAddWallet,
+                            onChange = { wallet?.let { onAddWallet(it.provider) } },
+                        )
+                        PayMethod.Agent -> ReferenceRow(
+                            title = stringResource(R.string.merchant_agent_info),
+                            code = referenceCode,
+                        )
+                        PayMethod.Bank -> ReferenceRow(
+                            title = stringResource(R.string.merchant_bank_info),
+                            code = referenceCode,
+                        )
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
                 if (stage == FundingStage.Review) {
@@ -248,7 +330,7 @@ fun FundPlotScreen(
                         farmerName = plot?.ownerName.orEmpty(),
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    SelectedPaymentCard(method)
+                    SelectedPaymentCard(methodLabel)
                     Spacer(modifier = Modifier.height(12.dp))
                     DisbursementCard(total = PlotFinance.parseAmount(amount))
                     Spacer(modifier = Modifier.height(12.dp))
@@ -289,15 +371,20 @@ fun FundPlotScreen(
                         .fillMaxWidth()
                         .height(60.dp)
                         .clip(CardShape)
-                        .background(if (stage == FundingStage.Payment && !accepted) MuyuTermsBg else MuyuOlive)
+                        .background(if (stage == FundingStage.Payment && !canContinue) MuyuTermsBg else MuyuOlive)
                         .border(1.dp, Color.Black, CardShape)
-                        .clickable(enabled = stage != FundingStage.Payment || accepted) {
+                        .clickable(enabled = stage != FundingStage.Payment || canContinue) {
                             when (stage) {
                                 FundingStage.Summary -> stage = FundingStage.Payment
-                                FundingStage.Payment -> stage = FundingStage.Review
+                                FundingStage.Payment -> when {
+                                    methodReady -> stage = FundingStage.Review
+                                    method == PayMethod.Wallet -> onAddWallet(DigitalWalletProvider.Yape)
+                                    else -> onAddCard()
+                                }
                                 FundingStage.Review -> {
                                     if (funding) return@clickable
                                     funding = true
+                                    container.fundingMethodLabel = methodLabel
                                     scope.launch {
                                         try {
                                             val id = plot?.id ?: return@launch
@@ -306,17 +393,27 @@ fun FundPlotScreen(
                                                 onAcceptTerms()
                                             }.onFailure { error ->
                                                 val reason = error.message.orEmpty().lowercase()
-                                                stage = if (
+                                                stage = when {
+                                                    // Sin respuesta del procesador: no se sabe si se cobró.
+                                                    error is java.io.IOException -> {
+                                                        val started = PendingFunding(methodLabel, PlotFinance.timestampNow())
+                                                        container.savePendingFunding(id, started)
+                                                        pending = started
+                                                        stillUnknown = false
+                                                        FundingStage.Verifying
+                                                    }
                                                     "already" in reason || "funded" in reason ||
-                                                    "available" in reason || "409" in reason
-                                                ) FundingStage.Unavailable else FundingStage.Unconfirmed
+                                                        "available" in reason || "409" in reason -> FundingStage.Unavailable
+                                                    else -> FundingStage.Rejected
+                                                }
                                             }
                                         } finally {
                                             funding = false
                                         }
                                     }
                                 }
-                                FundingStage.Unconfirmed -> Unit
+                                FundingStage.Verifying -> Unit
+                                FundingStage.Rejected -> Unit
                                 FundingStage.Unavailable -> Unit
                             }
                         },
@@ -327,6 +424,8 @@ fun FundPlotScreen(
                             funding -> stringResource(R.string.muyu_funding_processing)
                             stage == FundingStage.Summary -> stringResource(R.string.merchant_continue)
                             stage == FundingStage.Review -> stringResource(R.string.merchant_confirm_and_pay, amount)
+                            accepted && !methodReady && method == PayMethod.Wallet -> stringResource(R.string.merchant_link_wallet)
+                            accepted && !methodReady -> stringResource(R.string.merchant_register_card)
                             accepted -> stringResource(R.string.merchant_continue)
                             else -> stringResource(R.string.merchant_accept_first)
                         },
@@ -334,7 +433,7 @@ fun FundPlotScreen(
                             fontFamily = UrbanistExtraBold,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 20.sp,
-                            color = if (stage == FundingStage.Payment && !accepted) Muted else Color.White,
+                            color = if (stage == FundingStage.Payment && !canContinue) Muted else Color.White,
                         ),
                     )
                 }
@@ -560,6 +659,37 @@ private fun PaymentMethodCard(
 }
 
 @Composable
+private fun SavedCardRow(cardLabel: String, onAddCard: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(Color.White)
+            .border(1.dp, MuyuForest, CardShape)
+            .clickable(onClick = onAddCard)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (cardLabel.isBlank()) {
+                stringResource(R.string.merchant_card_required)
+            } else {
+                stringResource(R.string.merchant_card_in_use, cardLabel)
+            },
+            modifier = Modifier.weight(1f),
+            style = TextStyle(fontFamily = UrbanistMedium, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Black),
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = stringResource(
+                if (cardLabel.isBlank()) R.string.merchant_register_card else R.string.merchant_change_card,
+            ),
+            style = TextStyle(fontFamily = UrbanistBold, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MuyuOlive),
+        )
+    }
+}
+
+@Composable
 private fun MethodChip(text: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
@@ -632,13 +762,91 @@ private fun ReviewLine(label: String, value: String) {
 }
 
 @Composable
-private fun SelectedPaymentCard(method: PayMethod) {
-    val label = when (method) {
-        PayMethod.Card -> stringResource(R.string.merchant_card_masked)
-        PayMethod.Wallet -> stringResource(R.string.merchant_wallet)
-        PayMethod.Agent -> stringResource(R.string.merchant_agent)
-        PayMethod.Bank -> stringResource(R.string.merchant_bank)
+private fun payMethodLabel(
+    method: PayMethod,
+    cardLabel: String,
+    walletLabel: String,
+    referenceCode: String,
+): String = when (method) {
+    PayMethod.Card -> cardLabel.ifBlank { stringResource(R.string.merchant_card) }
+    PayMethod.Wallet -> walletLabel.ifBlank { stringResource(R.string.merchant_wallet) }
+    PayMethod.Agent -> stringResource(R.string.merchant_method_with_code, stringResource(R.string.merchant_agent), referenceCode)
+    PayMethod.Bank -> stringResource(R.string.merchant_method_with_code, stringResource(R.string.merchant_bank), referenceCode)
+}
+
+/** Código fijo por parcela y comerciante para identificar el depósito o la transferencia. */
+private fun paymentReference(plotId: Int, email: String): String =
+    "MUYU-%04d-%04d".format(plotId, kotlin.math.abs(email.hashCode()) % 10000)
+
+@Composable
+private fun WalletRow(
+    walletLabel: String,
+    onLink: (DigitalWalletProvider) -> Unit,
+    onChange: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(Color.White)
+            .border(1.dp, MuyuForest, CardShape)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (walletLabel.isBlank()) {
+                stringResource(R.string.merchant_wallet_required)
+            } else {
+                stringResource(R.string.merchant_card_in_use, walletLabel)
+            },
+            modifier = Modifier.weight(1f),
+            style = TextStyle(fontFamily = UrbanistMedium, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Black),
+        )
+        val actions = if (walletLabel.isBlank()) {
+            listOf(
+                stringResource(R.string.bank_account_yape) to { onLink(DigitalWalletProvider.Yape) },
+                stringResource(R.string.bank_account_plin) to { onLink(DigitalWalletProvider.Plin) },
+            )
+        } else {
+            listOf(stringResource(R.string.merchant_change_card) to onChange)
+        }
+        actions.forEach { (label, onClick) ->
+            Text(
+                text = label,
+                modifier = Modifier
+                    .clip(MethodShape)
+                    .clickable(onClick = onClick)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                style = TextStyle(fontFamily = UrbanistBold, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MuyuOlive),
+            )
+        }
     }
+}
+
+@Composable
+private fun ReferenceRow(title: String, code: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(Color.White)
+            .border(1.dp, MuyuForest, CardShape)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        Text(
+            text = title,
+            style = TextStyle(fontFamily = UrbanistMedium, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Black),
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.merchant_reference_code, code),
+            style = TextStyle(fontFamily = UrbanistBold, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MuyuOlive),
+        )
+    }
+}
+
+@Composable
+private fun SelectedPaymentCard(label: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -674,6 +882,7 @@ private fun EscrowRulesCard(amount: String) {
 @Composable
 private fun PaymentUnconfirmedContent(
     amount: String,
+    methodLabel: String,
     onCheckTransactions: () -> Unit,
     onChangeMethod: () -> Unit,
     onRetry: () -> Unit,
@@ -685,21 +894,19 @@ private fun PaymentUnconfirmedContent(
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("!", style = TextStyle(fontFamily = UrbanistExtraBold, fontWeight = FontWeight.ExtraBold, fontSize = 58.sp, color = Color(0xFFD83939)))
-        Text(stringResource(R.string.merchant_payment_unconfirmed), style = TextStyle(fontFamily = FredokaSemiBold, fontWeight = FontWeight.SemiBold, fontSize = 26.sp))
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(R.string.merchant_payment_unconfirmed_body),
-            textAlign = TextAlign.Center,
-            style = TextStyle(fontFamily = UrbanistRegular, fontSize = 14.sp, color = Muted),
+        MascotMessage(
+            mood = MascotMood.Sad,
+            title = stringResource(R.string.funding_rejected_title),
+            body = stringResource(R.string.funding_rejected_body),
+            titleColor = Color(0xFFD83939),
         )
         Spacer(Modifier.height(18.dp))
         Column(
             modifier = Modifier.fillMaxWidth().clip(CardShape).background(Color.White).border(1.dp, Color(0xFFD83939), CardShape).padding(16.dp),
         ) {
-            ReviewLine(stringResource(R.string.merchant_status), stringResource(R.string.merchant_unconfirmed))
+            ReviewLine(stringResource(R.string.merchant_status), stringResource(R.string.funding_rejected_status))
             ReviewLine(stringResource(R.string.merchant_amount_funded), amount)
-            ReviewLine(stringResource(R.string.merchant_payment_method_label), stringResource(R.string.merchant_card_masked))
+            ReviewLine(stringResource(R.string.merchant_payment_method_label), methodLabel)
         }
         Spacer(Modifier.height(14.dp))
         FundingAction(stringResource(R.string.merchant_check_transactions), true, onCheckTransactions)
@@ -707,6 +914,56 @@ private fun PaymentUnconfirmedContent(
         FundingAction(stringResource(R.string.merchant_change_method), false, onChangeMethod)
         Spacer(Modifier.height(10.dp))
         FundingAction(stringResource(R.string.merchant_retry_payment), false, onRetry)
+    }
+}
+
+@Composable
+private fun PaymentVerifyingContent(
+    amount: String,
+    pending: PendingFunding?,
+    checking: Boolean,
+    stillUnknown: Boolean,
+    onCheckStatus: () -> Unit,
+    onCheckTransactions: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        MascotMessage(
+            mood = MascotMood.Reviewing,
+            title = stringResource(R.string.funding_verifying_title),
+            body = stringResource(R.string.funding_verifying_body),
+        )
+        Spacer(Modifier.height(18.dp))
+        Column(
+            modifier = Modifier.fillMaxWidth().clip(CardShape).background(Color.White).border(1.dp, MuyuForest, CardShape).padding(16.dp),
+        ) {
+            ReviewLine(stringResource(R.string.merchant_status), stringResource(R.string.funding_verifying_status))
+            ReviewLine(stringResource(R.string.merchant_amount_funded), amount)
+            ReviewLine(stringResource(R.string.merchant_payment_method_label), pending?.methodLabel.orEmpty())
+            ReviewLine(stringResource(R.string.funding_verifying_started), pending?.startedAt.orEmpty())
+        }
+        Spacer(Modifier.height(12.dp))
+        Box(
+            modifier = Modifier.fillMaxWidth().clip(CardShape).background(MuyuEscrowInfo).padding(14.dp),
+        ) {
+            Text(
+                stringResource(if (stillUnknown) R.string.funding_verifying_still else R.string.funding_verifying_locked),
+                style = TextStyle(fontFamily = UrbanistSemiBold, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MuyuEscrowText),
+            )
+        }
+        Spacer(Modifier.height(18.dp))
+        FundingAction(
+            stringResource(if (checking) R.string.funding_verifying_checking else R.string.funding_verifying_check),
+            true,
+            onCheckStatus,
+        )
+        Spacer(Modifier.height(10.dp))
+        FundingAction(stringResource(R.string.merchant_check_transactions), false, onCheckTransactions)
     }
 }
 

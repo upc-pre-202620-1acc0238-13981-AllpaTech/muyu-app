@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.incident
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,7 +38,6 @@ import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
 import com.example.muyu_app.core.di.LocalAppContainer
-import com.example.muyu_app.ui.theme.MuyuPageGray
 
 private val IncidentShape = RoundedCornerShape(14.dp)
 private val IncidentGreen = Color(0xFF2E7D32)
@@ -66,7 +66,7 @@ fun ReportIncidentScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         GreenTitleHeader(stringResource(R.string.report_title), onBack)
         Column(

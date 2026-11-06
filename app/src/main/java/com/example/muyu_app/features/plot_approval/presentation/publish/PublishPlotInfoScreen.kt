@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_approval.presentation.publish
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -69,7 +70,6 @@ import com.example.muyu_app.ui.theme.MuyuCoverChip
 import com.example.muyu_app.ui.theme.MuyuCoverText
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBlack
 import com.example.muyu_app.ui.theme.UrbanistBold
@@ -123,7 +123,7 @@ fun PublishPlotInfoScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -271,7 +271,7 @@ private fun CoverPhoto(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFEAF9E9)),
+                    .background(MuyuBackground),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(

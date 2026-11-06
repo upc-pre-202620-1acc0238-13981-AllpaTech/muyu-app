@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.labor_execution.presentation.evidence
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -80,7 +81,6 @@ import com.example.muyu_app.ui.theme.MuyuAction
 import com.example.muyu_app.ui.theme.MuyuAddPhoto
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuLocateBg
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuPendingBg
 import com.example.muyu_app.ui.theme.MuyuPendingText
 import com.example.muyu_app.ui.theme.UrbanistBold
@@ -310,7 +310,7 @@ fun RecordEvidenceScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(

@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.labor_execution.presentation.evidence
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -49,7 +50,6 @@ import com.example.muyu_app.ui.theme.MuyuFinancedBg
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuLocateBg
 import com.example.muyu_app.ui.theme.MuyuMutedChip
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuPendingBg
 import com.example.muyu_app.ui.theme.MuyuPendingText
 import com.example.muyu_app.ui.theme.UrbanistBold
@@ -104,7 +104,7 @@ fun CameraAccessDeniedContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         GreenTitleHeader(
             title = stringResource(R.string.evidence_capture_title),
@@ -242,7 +242,7 @@ fun CameraAccessDeniedContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MuyuPageGray)
+                .background(MuyuBackground)
                 .navigationBarsPadding()
                 .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),

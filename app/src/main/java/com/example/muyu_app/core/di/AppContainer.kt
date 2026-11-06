@@ -6,13 +6,18 @@ import com.example.muyu_app.core.i18n.LanguagePreferences
 import com.example.muyu_app.core.network.FakeApiPersistence
 import com.example.muyu_app.core.network.FakeApiStore
 import com.example.muyu_app.features.plot_approval.application.CreatePlotUseCase
+import com.example.muyu_app.features.plot_approval.application.DeletePlotUseCase
 import com.example.muyu_app.features.plot_financing.application.FundPlotUseCase
 import com.example.muyu_app.features.plot_approval.application.GetPlotsUseCase
 import com.example.muyu_app.features.plot_approval.application.UpdatePlotUseCase
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotDraft
+import com.example.muyu_app.features.plot_approval.domain.PlotVisit
+import com.example.muyu_app.features.plot_approval.domain.PlotVisitRepository
 import com.example.muyu_app.features.plot_approval.infrastructure.remote.PlotService
+import com.example.muyu_app.features.plot_approval.infrastructure.remote.VisitService
 import com.example.muyu_app.features.plot_approval.infrastructure.repositories.PlotRepositoryImpl
+import com.example.muyu_app.features.plot_approval.infrastructure.repositories.PlotVisitRepositoryImpl
 import com.example.muyu_app.features.user_management.application.LoginUseCase
 import com.example.muyu_app.features.user_management.application.RegisterUseCase
 import com.example.muyu_app.features.user_management.presentation.incident.IncidentDraft
@@ -46,6 +51,7 @@ enum class MerchantPlotReturn {
 
 // Carries the cross-role visit proposal until the remote API exposes visit endpoints.
 data class MerchantVisitRequest(
+    val id: Int = 0,
     val plotId: Int = 0,
     val plotName: String = "",
     val plotPlace: String = "",
@@ -99,6 +105,12 @@ class AppContainer(
     var rejectionCorrection: String = ""
     var reviewCompletedAt: Long = 0L
     var merchantVisitRequest: MerchantVisitRequest? = null
+    // Visita que el agricultor abrió para registrar o ver su resultado.
+    var selectedVisit: PlotVisit? = null
+    // Método con el que el comerciante confirmó el último financiamiento.
+    var fundingMethodLabel: String = ""
+    // Vuelve al paso de pago después de registrar una tarjeta desde el financiamiento.
+    var resumeFundingAtPayment: Boolean = false
 
     // Mantiene la pestaña desde la que se abrió el detalle de la parcela.
     fun merchantEvidenceBottomTab(): MerchantTab = when (merchantEvidenceOrigin) {
@@ -115,6 +127,7 @@ class AppContainer(
 
     val authService: AuthService = retrofit.create(AuthService::class.java)
     val plotService: PlotService = retrofit.create(PlotService::class.java)
+    private val visitService: VisitService = retrofit.create(VisitService::class.java)
 
     private val authRepository = AuthRepositoryImpl(authService, fakeStore)
     private val plotRepository = PlotRepositoryImpl(plotService, fakeStore)
@@ -125,12 +138,17 @@ class AppContainer(
     val createPlotUseCase = CreatePlotUseCase(plotRepository)
     val updatePlotUseCase = UpdatePlotUseCase(plotRepository)
     val fundPlotUseCase = FundPlotUseCase(plotRepository)
+    val deletePlotUseCase = DeletePlotUseCase(plotRepository)
+    val plotVisits: PlotVisitRepository = PlotVisitRepositoryImpl(visitService)
 
     suspend fun syncPlot(plot: Plot): Result<Plot> = plotRepository.syncPlot(plot)
+
+    suspend fun fetchRemotePlot(id: Int): Result<Plot?> = plotRepository.fetchRemotePlot(id)
 
     fun clearSession() {
         fakeStore.endSession()
         selectedPlot = null
+        selectedVisit = null
         // Limpia los destinos anteriores para no heredarlos en otra sesión.
         merchantEvidenceOrigin = MerchantEvidenceOrigin.Alerts
         merchantPlotReturn = MerchantPlotReturn.Catalog
