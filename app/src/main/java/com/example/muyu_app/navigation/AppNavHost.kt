@@ -73,6 +73,8 @@ import com.example.muyu_app.features.user_management.presentation.pin.SafetyPinS
 import com.example.muyu_app.features.user_management.presentation.profile.MerchantProfileScreen
 import com.example.muyu_app.features.user_management.presentation.profile.BankAccountScreen
 import com.example.muyu_app.features.user_management.presentation.profile.AddBankCardScreen
+import com.example.muyu_app.features.user_management.presentation.profile.DigitalWalletProvider
+import com.example.muyu_app.features.user_management.presentation.profile.EditDigitalWalletScreen
 import com.example.muyu_app.features.user_management.presentation.incident.ReportIncidentPhotoScreen
 import com.example.muyu_app.features.user_management.presentation.incident.ReportIncidentScreen
 import com.example.muyu_app.features.user_management.presentation.profile.ProfileScreen
@@ -127,6 +129,8 @@ private enum class WalkthroughStep {
     Profile,
     BankAccount,
     AddBankCard,
+    EditYape,
+    EditPlin,
     PaymentHistory,
     PaymentDetails,
     MerchantCatalog,
@@ -254,6 +258,8 @@ fun AppNavHost() {
         WalkthroughStep.ChangePin, WalkthroughStep.PinFlowComplete -> WalkthroughStep.Profile
         WalkthroughStep.BankAccount -> WalkthroughStep.Profile
         WalkthroughStep.AddBankCard -> WalkthroughStep.BankAccount
+        WalkthroughStep.EditYape -> WalkthroughStep.BankAccount
+        WalkthroughStep.EditPlin -> WalkthroughStep.BankAccount
         WalkthroughStep.ReportIncident -> WalkthroughStep.Profile
         WalkthroughStep.ReportIncidentPhoto -> WalkthroughStep.ReportIncident
         WalkthroughStep.Terms, WalkthroughStep.Privacy -> termsReturnStep
@@ -300,6 +306,8 @@ fun AppNavHost() {
         WalkthroughStep.Profile,
         WalkthroughStep.BankAccount,
         WalkthroughStep.AddBankCard,
+        WalkthroughStep.EditYape,
+        WalkthroughStep.EditPlin,
         WalkthroughStep.PaymentHistory,
         WalkthroughStep.PaymentDetails,
         WalkthroughStep.MerchantCatalog,
@@ -710,11 +718,53 @@ fun AppNavHost() {
         WalkthroughStep.BankAccount -> BankAccountScreen(
             onBack = { step = WalkthroughStep.Profile },
             onAddCard = { step = WalkthroughStep.AddBankCard },
+            onYapeClick = { step = WalkthroughStep.EditYape },
+            onPlinClick = { step = WalkthroughStep.EditPlin },
         )
         WalkthroughStep.AddBankCard -> AddBankCardScreen(
             onBack = { step = WalkthroughStep.BankAccount },
             onSave = { card ->
                 container.savedBankCard = card
+                step = WalkthroughStep.BankAccount
+            },
+        )
+        WalkthroughStep.EditYape -> EditDigitalWalletScreen(
+            provider = DigitalWalletProvider.Yape,
+            account = container.yapeAccount,
+            holderName = container.yapeAccount?.holderName?.takeIf(String::isNotBlank)
+                ?: container.fakeStore.currentUser?.displayName?.takeIf(String::isNotBlank)
+                .orEmpty(),
+            initialPhone = container.fakeStore.currentUser?.phone.orEmpty(),
+            onBack = { step = WalkthroughStep.BankAccount },
+            onSave = { account ->
+                container.yapeAccount = account
+                if (account.isPrimary) {
+                    container.plinAccount = container.plinAccount?.copy(isPrimary = false)
+                }
+                step = WalkthroughStep.BankAccount
+            },
+            onUnlink = {
+                container.yapeAccount = null
+                step = WalkthroughStep.BankAccount
+            },
+        )
+        WalkthroughStep.EditPlin -> EditDigitalWalletScreen(
+            provider = DigitalWalletProvider.Plin,
+            account = container.plinAccount,
+            holderName = container.plinAccount?.holderName?.takeIf(String::isNotBlank)
+                ?: container.fakeStore.currentUser?.displayName?.takeIf(String::isNotBlank)
+                .orEmpty(),
+            initialPhone = container.fakeStore.currentUser?.phone.orEmpty(),
+            onBack = { step = WalkthroughStep.BankAccount },
+            onSave = { account ->
+                container.plinAccount = account
+                if (account.isPrimary) {
+                    container.yapeAccount = container.yapeAccount?.copy(isPrimary = false)
+                }
+                step = WalkthroughStep.BankAccount
+            },
+            onUnlink = {
+                container.plinAccount = null
                 step = WalkthroughStep.BankAccount
             },
         )
