@@ -47,3 +47,13 @@ fun passesLuhnCheck(number: String): Boolean {
     }.sum()
     return sum % 10 == 0
 }
+
+// Texto corto para mostrar la tarjeta en pagos y perfil, por ejemplo "Visa •••• 4589".
+fun bankCardSummary(card: SavedBankCard): String {
+    val brand = when (card.brand) {
+        BankCardBrand.Visa -> "Visa"
+        BankCardBrand.Mastercard -> "Mastercard"
+        BankCardBrand.Unknown -> ""
+    }
+    return listOf(brand, "•••• ${card.lastFour}").filter { it.isNotBlank() }.joinToString(" ")
+}

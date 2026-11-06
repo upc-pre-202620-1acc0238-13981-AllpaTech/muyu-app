@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -133,17 +134,24 @@ fun BankAccountScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp, vertical = 18.dp),
         ) {
-            DebitCard(
-                balance = balance,
-                card = container.savedBankCard,
-            )
+            val card = container.savedBankCard
+            if (card != null) {
+                DebitCard(balance = balance, card = card)
+            } else {
+                EmptyCard(balance = balance)
+            }
             Spacer(modifier = Modifier.height(12.dp))
-            AddCardButton(onClick = onAddCard)
+            AddCardButton(
+                label = stringResource(
+                    if (card == null) R.string.bank_account_add_card else R.string.bank_account_replace_card,
+                ),
+                onClick = onAddCard,
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
             BankSectionTitle(text = stringResource(R.string.bank_account_details))
             Spacer(modifier = Modifier.height(10.dp))
-            AccountDetailsCard()
+            AccountDetailsCard(card = card)
 
             Spacer(modifier = Modifier.height(24.dp))
             BankSectionTitle(text = stringResource(R.string.bank_account_digital_wallets))
@@ -185,23 +193,6 @@ fun BankAccountScreen(
                 } ?: stringResource(R.string.plin_not_linked),
                 onClick = onPlinClick,
             )
-
-            Spacer(modifier = Modifier.height(40.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MuyuOlive, BankCardShape)
-                    .clickable(onClick = onSave)
-                    .padding(vertical = 17.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.bank_account_save_changes),
-                    color = Color.White,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -302,7 +293,45 @@ private fun Plot.releasedBalance(): Double {
 }
 
 @Composable
-private fun AccountDetailsCard() {
+private fun EmptyCard(balance: Double) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(172.dp)
+            .background(Color.White, BankCardShape)
+            .border(1.5.dp, BankBorder, BankCardShape)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.CreditCard,
+            contentDescription = null,
+            tint = MuyuOlive,
+            modifier = Modifier.size(32.dp),
+        )
+        Text(
+            text = stringResource(R.string.bank_account_no_card_title),
+            color = Color(0xFF171717),
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(R.string.bank_account_no_card_body),
+            color = SecondaryText,
+            fontSize = 14.sp,
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = stringResource(R.string.bank_account_balance, PlotFinance.formatAmount(balance)),
+            color = MuyuOlive,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun AccountDetailsCard(card: SavedBankCard?) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -311,14 +340,22 @@ private fun AccountDetailsCard() {
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
-        AccountDetailRow(
-            label = stringResource(R.string.bank_account_account_label),
-            value = stringResource(R.string.bank_account_account_number),
-        )
-        AccountDetailRow(
-            label = stringResource(R.string.bank_account_cci_label),
-            value = stringResource(R.string.bank_account_cci_number),
-        )
+        if (card == null) {
+            Text(
+                text = stringResource(R.string.bank_account_no_details),
+                color = Color(0xFF557052),
+                fontSize = 13.sp,
+            )
+        } else {
+            AccountDetailRow(
+                label = stringResource(R.string.bank_account_holder_label),
+                value = card.holderName.ifBlank { "—" },
+            )
+            AccountDetailRow(
+                label = stringResource(R.string.bank_account_card_label),
+                value = bankCardSummary(card),
+            )
+        }
     }
 }
 
@@ -327,7 +364,7 @@ private fun AccountDetailRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = label,
-            modifier = Modifier.width(72.dp),
+            modifier = Modifier.width(96.dp),
             color = Color(0xFF557052),
             fontSize = 13.sp,
         )
@@ -340,7 +377,7 @@ private fun AccountDetailRow(label: String, value: String) {
 }
 
 @Composable
-private fun AddCardButton(onClick: () -> Unit) {
+private fun AddCardButton(label: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -359,7 +396,7 @@ private fun AddCardButton(onClick: () -> Unit) {
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
-            text = stringResource(R.string.bank_account_add_card),
+            text = label,
             color = MuyuOlive,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,

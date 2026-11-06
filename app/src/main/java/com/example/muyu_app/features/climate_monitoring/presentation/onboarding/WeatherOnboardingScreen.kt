@@ -13,6 +13,7 @@ import com.example.muyu_app.ui.theme.MuyuappTheme
 fun WeatherOnboardingScreen(
     onStart: () -> Unit,
     modifier: Modifier = Modifier,
+    onBack: () -> Unit = {},
 ) {
     OnboardingScaffold(
         illustration = R.drawable.onboarding_weather,
@@ -23,6 +24,7 @@ fun WeatherOnboardingScreen(
         pageIndex = 2,
         primaryLabel = stringResource(R.string.onboarding_start),
         onPrimary = onStart,
+        onBack = onBack,
         illustrationContentDescription = stringResource(R.string.onboarding_weather_image),
         modifier = modifier,
     )

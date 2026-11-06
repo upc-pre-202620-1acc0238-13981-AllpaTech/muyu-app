@@ -25,6 +25,7 @@ fun ListPlotOnboardingScreen(
         primaryLabel = stringResource(R.string.onboarding_next),
         onPrimary = onNext,
         onSkip = onSkip,
+        onSwipeNext = onNext,
         skipLabel = stringResource(R.string.onboarding_skip),
         illustrationContentDescription = stringResource(R.string.onboarding_plot_image),
         modifier = modifier,
