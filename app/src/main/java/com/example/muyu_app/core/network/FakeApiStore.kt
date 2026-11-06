@@ -54,6 +54,7 @@ data class PlotRecord(
     val milestoneStates: List<MilestoneState> = emptyList(),
     val visitOutcome: String = "",
     val visitDate: String = "",
+    val agreedPrice: String = "",
     val harvestReceivedAt: String = "",
     val harvestReceivedBy: String = "",
     val harvestIncidents: List<HarvestIncident> = emptyList(),
@@ -533,6 +534,7 @@ class FakeApiStore(
         milestoneStates = record.milestoneStates,
         visitOutcome = record.visitOutcome,
         visitDate = record.visitDate,
+        agreedPrice = record.agreedPrice,
         harvestReceivedAt = record.harvestReceivedAt,
         harvestReceivedBy = record.harvestReceivedBy,
         harvestIncidents = record.harvestIncidents,
@@ -610,6 +612,7 @@ class FakeApiStore(
         milestoneStates = (milestoneStates ?: emptyList()).map { it.normalized() },
         visitOutcome = visitOutcome.orEmpty(),
         visitDate = visitDate.orEmpty(),
+        agreedPrice = agreedPrice.orEmpty(),
         // Gson deja en null los campos que no existen en datos guardados antes.
         harvestReceivedAt = (harvestReceivedAt as String?).orEmpty(),
         harvestReceivedBy = (harvestReceivedBy as String?).orEmpty(),

@@ -136,6 +136,21 @@ class PlotRepositoryImpl(
         }
     }
 
+    override suspend fun deletePlot(id: Int): Result<Unit> {
+        return try {
+            val response = service.deletePlot(id)
+            if (response.isSuccessful) {
+                store.plots.removeAll { it.id == id }
+                store.persist()
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun PlotDto.toPlot() = Plot(
         id = id,
         name = name,
@@ -160,6 +175,7 @@ class PlotRepositoryImpl(
         milestoneStates = milestoneStates,
         visitOutcome = visitOutcome,
         visitDate = visitDate,
+        agreedPrice = agreedPrice.orEmpty(),
         harvestReceivedAt = harvestReceivedAt.orEmpty(),
         harvestReceivedBy = harvestReceivedBy.orEmpty(),
         harvestIncidents = harvestIncidents.orEmpty(),
@@ -169,7 +185,7 @@ class PlotRepositoryImpl(
     private fun Plot.toDto() = PlotDto(
         id, name, crop, area, harvestDate, place, stage, progress, status, amount,
         cycle, milestones, imageUri, ownerEmail, ownerName, fundedByEmail, latitude,
-        longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate,
+        longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate, agreedPrice,
         harvestReceivedAt, harvestReceivedBy, harvestIncidents, weatherMeasures,
     )
 
@@ -177,6 +193,7 @@ class PlotRepositoryImpl(
         id, name, crop, area, harvestDate, place, stage, progress, status, amount,
         cycle, milestones, imageUri, ownerEmail, ownerName, fundedByEmail, latitude,
         longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate,
+        agreedPrice.orEmpty(),
         harvestReceivedAt.orEmpty(), harvestReceivedBy.orEmpty(),
         harvestIncidents.orEmpty(), weatherMeasures.orEmpty(),
     )
