@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
-import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.ui.theme.MuyuOlive
 import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.UrbanistBold
@@ -59,30 +58,33 @@ private val YapeBorder = Color(0xFF6F9B61)
 private val YapeDanger = Color(0xFFC93434)
 
 @Composable
-fun EditYapeScreen(
+fun EditDigitalWalletScreen(
+    provider: DigitalWalletProvider,
+    account: DigitalWalletAccount?,
+    holderName: String,
+    initialPhone: String,
     onBack: () -> Unit,
-    onSave: (YapeAccount) -> Unit,
+    onSave: (DigitalWalletAccount) -> Unit,
     onUnlink: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val container = LocalAppContainer.current
-    val account = container.yapeAccount
-    val currentUser = container.fakeStore.currentUser
-    val holderName = account?.holderName
-        ?.takeIf(String::isNotBlank)
-        ?: currentUser?.displayName?.takeIf(String::isNotBlank)
-        ?: stringResource(R.string.yape_holder_fallback)
+    val isYape = provider == DigitalWalletProvider.Yape
+    val providerNameRes = if (isYape) R.string.bank_account_yape else R.string.bank_account_plin
+    val editTitleRes = if (isYape) R.string.yape_edit_title else R.string.plin_edit_title
+    val unlinkRes = if (isYape) R.string.yape_unlink else R.string.plin_unlink
+    val primaryRes = if (isYape) R.string.yape_primary else R.string.plin_primary
+    val logoRes = if (isYape) R.drawable.yape_logo else R.drawable.plin_logo
     var phoneDigits by rememberSaveable(account?.phone) {
-        mutableStateOf(yapePhoneDigits(account?.phone ?: currentUser?.phone.orEmpty()))
+        mutableStateOf(walletPhoneDigits(account?.phone ?: initialPhone))
     }
     var verified by rememberSaveable(account?.phone) {
-        mutableStateOf(account?.isVerified == true && isValidYapePhone(phoneDigits))
+        mutableStateOf(account?.isVerified == true && isValidWalletPhone(phoneDigits))
     }
     var verificationAttempted by rememberSaveable { mutableStateOf(false) }
     var isPrimary by rememberSaveable(account?.isPrimary) {
         mutableStateOf(account?.isPrimary ?: true)
     }
-    val phoneValid = isValidYapePhone(phoneDigits)
+    val phoneValid = isValidWalletPhone(phoneDigits)
 
     Column(
         modifier = modifier
@@ -90,7 +92,7 @@ fun EditYapeScreen(
             .background(MuyuPageGray),
     ) {
         GreenTitleHeader(
-            title = stringResource(R.string.yape_edit_title),
+            title = stringResource(editTitleRes),
             onBack = onBack,
         )
         Column(
@@ -110,8 +112,8 @@ fun EditYapeScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(
-                    painter = painterResource(R.drawable.yape_logo),
-                    contentDescription = stringResource(R.string.bank_account_yape),
+                    painter = painterResource(logoRes),
+                    contentDescription = stringResource(providerNameRes),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(72.dp)
@@ -124,7 +126,7 @@ fun EditYapeScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Text(
-                            text = stringResource(R.string.bank_account_yape),
+                            text = stringResource(providerNameRes),
                             fontFamily = UrbanistBold,
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp,
@@ -148,7 +150,7 @@ fun EditYapeScreen(
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = maskYapePhone(phoneDigits).ifBlank { stringResource(R.string.yape_no_phone) },
+                        text = maskWalletPhone(phoneDigits).ifBlank { stringResource(R.string.yape_no_phone) },
                         fontFamily = UrbanistRegular,
                         fontSize = 17.sp,
                         color = Color(0xFF555555),
@@ -170,9 +172,9 @@ fun EditYapeScreen(
 
             YapeLabel(stringResource(R.string.yape_phone_label))
             OutlinedTextField(
-                value = formatYapePhone(phoneDigits),
+                value = formatWalletPhone(phoneDigits),
                 onValueChange = { value ->
-                    phoneDigits = yapePhoneDigits(value)
+                    phoneDigits = walletPhoneDigits(value)
                     verified = false
                     verificationAttempted = false
                 },
@@ -258,7 +260,7 @@ fun EditYapeScreen(
                     ),
                 )
                 Text(
-                    text = stringResource(R.string.yape_primary),
+                    text = stringResource(primaryRes),
                     modifier = Modifier.weight(1f),
                     fontFamily = UrbanistRegular,
                     fontSize = 16.sp,
@@ -299,7 +301,7 @@ fun EditYapeScreen(
                     .background(if (verified) MuyuOlive else Color(0xFFB8C7B9))
                     .clickable(enabled = verified) {
                         onSave(
-                            YapeAccount(
+                            DigitalWalletAccount(
                                 phone = phoneDigits,
                                 holderName = holderName,
                                 isPrimary = isPrimary,
@@ -321,7 +323,7 @@ fun EditYapeScreen(
             if (account != null) {
                 Spacer(Modifier.height(18.dp))
                 Text(
-                    text = stringResource(R.string.yape_unlink),
+                    text = stringResource(unlinkRes),
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .clickable(onClick = onUnlink)

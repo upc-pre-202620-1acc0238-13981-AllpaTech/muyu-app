@@ -8,18 +8,18 @@ import org.junit.Test
 class YapeAccountModelsTest {
     @Test
     fun formatsPeruvianMobileNumber() {
-        assertEquals("987 654 321", formatYapePhone("+51 987654321"))
+        assertEquals("987 654 321", formatWalletPhone("+51 987654321"))
     }
 
     @Test
     fun masksLinkedMobileNumber() {
-        assertEquals("987 *** 321", maskYapePhone("987654321"))
+        assertEquals("987 *** 321", maskWalletPhone("987654321"))
     }
 
     @Test
     fun validatesNineDigitMobileBeginningWithNine() {
-        assertTrue(isValidYapePhone("987654321"))
-        assertFalse(isValidYapePhone("187654321"))
-        assertFalse(isValidYapePhone("98765432"))
+        assertTrue(isValidWalletPhone("987654321"))
+        assertFalse(isValidWalletPhone("187654321"))
+        assertFalse(isValidWalletPhone("98765432"))
     }
 }

@@ -1,25 +1,27 @@
 package com.example.muyu_app.features.user_management.presentation.profile
 
-data class YapeAccount(
+enum class DigitalWalletProvider { Yape, Plin }
+
+data class DigitalWalletAccount(
     val phone: String = "987654321",
     val holderName: String = "",
     val isPrimary: Boolean = true,
     val isVerified: Boolean = true,
 )
 
-fun yapePhoneDigits(value: String): String = value.filter(Char::isDigit).takeLast(9)
+fun walletPhoneDigits(value: String): String = value.filter(Char::isDigit).takeLast(9)
 
-fun formatYapePhone(value: String): String = yapePhoneDigits(value)
+fun formatWalletPhone(value: String): String = walletPhoneDigits(value)
     .chunked(3)
     .joinToString(" ")
 
-fun maskYapePhone(value: String): String {
-    val digits = yapePhoneDigits(value)
+fun maskWalletPhone(value: String): String {
+    val digits = walletPhoneDigits(value)
     if (digits.length != 9) return digits
     return "${digits.take(3)} *** ${digits.takeLast(3)}"
 }
 
-fun isValidYapePhone(value: String): Boolean {
-    val digits = yapePhoneDigits(value)
+fun isValidWalletPhone(value: String): Boolean {
+    val digits = walletPhoneDigits(value)
     return digits.length == 9 && digits.startsWith('9')
 }

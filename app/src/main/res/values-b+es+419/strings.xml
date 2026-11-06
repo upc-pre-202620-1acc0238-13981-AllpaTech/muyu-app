@@ -443,6 +443,7 @@
     <string name="bank_account_yape_linked_value">Vinculado a %1$s</string>
     <string name="bank_account_plin">Plin</string>
     <string name="bank_account_default_wallet">Cuenta predeterminada</string>
+    <string name="bank_account_plin_linked_value">Vinculado a %1$s</string>
     <string name="bank_account_save_changes">Guardar cuenta</string>
     <string name="add_card_title">Agregar tarjeta</string>
     <string name="add_card_data_title">Datos de la tarjeta</string>
@@ -471,11 +472,14 @@
     <string name="yape_verify_phone">Verificar número</string>
     <string name="yape_phone_verified">Número verificado</string>
     <string name="yape_holder_label">Titular</string>
-    <string name="yape_holder_fallback">Gloria Vera</string>
     <string name="yape_primary">Usar Yape como billetera predeterminada</string>
     <string name="yape_disbursement_info">Los desembolsos se enviarán al número vinculado.</string>
     <string name="yape_save_changes">Guardar cambios</string>
     <string name="yape_unlink">Desvincular Yape</string>
+    <string name="plin_edit_title">Editar Plin</string>
+    <string name="plin_not_linked">No vinculado</string>
+    <string name="plin_primary">Usar Plin como billetera predeterminada</string>
+    <string name="plin_unlink">Desvincular Plin</string>
     <string name="profile_bank_account_body">Configura dónde recibir tus desembolsos</string>
     <string name="profile_change_password">Cambiar contraseña</string>
     <string name="profile_change_pin">Cambiar PIN</string>
