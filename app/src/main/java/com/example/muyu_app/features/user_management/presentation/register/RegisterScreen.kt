@@ -1,6 +1,23 @@
 package com.example.muyu_app.features.user_management.presentation.register
 
 import androidx.compose.foundation.background
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material3.Icon
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
+import com.example.muyu_app.core.designsystem.components.AuthErrorText
+import com.example.muyu_app.ui.theme.MuyuLime
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -142,15 +159,33 @@ fun RegisterScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState()),
         ) {
-            AuthFieldBlock(stringResource(R.string.register_name), name) {
+            val errorMessage = validationError?.let { stringResource(it.messageResource()) }
+            fun messageFor(vararg fields: RegistrationValidationError): String? =
+                errorMessage.takeIf { validationError in fields }
+
+            AuthFieldBlock(
+                label = stringResource(R.string.register_name),
+                value = name,
+                error = messageFor(RegistrationValidationError.NAME),
+            ) {
                 name = it
                 clearError()
             }
-            AuthFieldBlock(stringResource(R.string.login_email), email, KeyboardType.Email) {
+            AuthFieldBlock(
+                label = stringResource(R.string.login_email),
+                value = email,
+                keyboardType = KeyboardType.Email,
+                error = messageFor(RegistrationValidationError.EMAIL),
+            ) {
                 email = it
                 clearError()
             }
-            AuthFieldBlock(stringResource(R.string.register_phone), phone, KeyboardType.Phone) {
+            AuthFieldBlock(
+                label = stringResource(R.string.register_phone),
+                value = phone,
+                keyboardType = KeyboardType.Phone,
+                error = messageFor(RegistrationValidationError.PHONE),
+            ) {
                 phone = it.filter(Char::isDigit).take(9)
                 clearError()
             }
@@ -166,6 +201,12 @@ fun RegisterScreen(
                 authStyle = true,
                 modifier = Modifier.fillMaxWidth(),
             )
+            FieldError(
+                messageFor(
+                    RegistrationValidationError.BIRTHDATE_REQUIRED,
+                    RegistrationValidationError.BIRTHDATE_INVALID,
+                ),
+            )
             Spacer(modifier = Modifier.height(12.dp))
             AuthFieldBlock(
                 label = stringResource(R.string.login_password),
@@ -177,31 +218,11 @@ fun RegisterScreen(
                 keyboardType = KeyboardType.Password,
                 hidden = passwordHidden,
                 onToggleVisibility = { passwordHidden = !passwordHidden },
+                error = messageFor(RegistrationValidationError.PASSWORD),
+                bottomSpacing = 8.dp,
             )
-            Text(
-                text = stringResource(R.string.register_password_requirements),
-                color = Color.White.copy(alpha = 0.75f),
-                fontSize = 12.sp,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = if (acceptedTerms) "☑" else "☐",
-                    color = MuyuField,
-                    fontSize = 25.sp,
-                    modifier = Modifier.clickable {
-                        acceptedTerms = !acceptedTerms
-                        clearError()
-                    },
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.register_accept_terms),
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    modifier = Modifier.clickable { onTerms() },
-                )
-            }
+            PasswordChecklist(password = password)
+            Spacer(modifier = Modifier.height(12.dp))
             AuthFieldBlock(
                 label = stringResource(R.string.register_confirm_password),
                 value = confirmPassword,
@@ -212,21 +233,20 @@ fun RegisterScreen(
                 keyboardType = KeyboardType.Password,
                 hidden = confirmHidden,
                 onToggleVisibility = { confirmHidden = !confirmHidden },
+                error = messageFor(RegistrationValidationError.PASSWORD_MISMATCH),
             )
-            val validationMessage = validationError?.let { error ->
-                stringResource(error.messageResource())
-            }
-            if (validationMessage != null || registrationFailed) {
-                Text(
-                    text = validationMessage ?: stringResource(R.string.register_error),
-                    style = TextStyle(
-                        fontFamily = UrbanistSemiBold,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                        color = Color(0xFFFFC7C7),
-                    ),
-                )
+            TermsCheckbox(
+                checked = acceptedTerms,
+                onCheckedChange = {
+                    acceptedTerms = it
+                    clearError()
+                },
+                onOpenTerms = onTerms,
+            )
+            FieldError(messageFor(RegistrationValidationError.TERMS))
+            if (registrationFailed) {
                 Spacer(modifier = Modifier.height(8.dp))
+                FieldError(stringResource(R.string.register_error))
             }
             Spacer(modifier = Modifier.height(16.dp))
             AuthPrimaryButton(
@@ -321,13 +341,7 @@ private fun validateRegistration(
         return RegistrationValidationError.BIRTHDATE_INVALID
     }
 
-    val hasValidPassword = password.length >= 8 &&
-        password.any(Char::isUpperCase) &&
-        password.any(Char::isLowerCase) &&
-        password.any(Char::isDigit) &&
-        password.none(Char::isWhitespace) &&
-        password.any { !it.isLetterOrDigit() && !it.isWhitespace() }
-    if (!hasValidPassword) return RegistrationValidationError.PASSWORD
+    if (!passwordRules(password).all { it.met }) return RegistrationValidationError.PASSWORD
     if (password != confirmPassword) return RegistrationValidationError.PASSWORD_MISMATCH
     if (!acceptedTerms) return RegistrationValidationError.TERMS
     return null
@@ -344,6 +358,110 @@ private fun RegistrationValidationError.messageResource(): Int = when (this) {
     RegistrationValidationError.TERMS -> R.string.register_terms_required
 }
 
+private data class PasswordRule(@StringRes val label: Int, val met: Boolean)
+
+// Las mismas reglas validan el formulario y pintan la lista de ayuda.
+private fun passwordRules(password: String): List<PasswordRule> = listOf(
+    PasswordRule(R.string.register_rule_length, password.length >= 8),
+    PasswordRule(R.string.register_rule_uppercase, password.any(Char::isUpperCase)),
+    PasswordRule(R.string.register_rule_lowercase, password.any(Char::isLowerCase)),
+    PasswordRule(R.string.register_rule_number, password.any(Char::isDigit)),
+    PasswordRule(
+        R.string.register_rule_special,
+        password.any { !it.isLetterOrDigit() && !it.isWhitespace() },
+    ),
+    PasswordRule(
+        R.string.register_rule_no_spaces,
+        password.isNotEmpty() && password.none(Char::isWhitespace),
+    ),
+)
+
+@Composable
+private fun PasswordChecklist(password: String) {
+    val metLabel = stringResource(R.string.register_rule_met)
+    val missingLabel = stringResource(R.string.register_rule_missing)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        passwordRules(password).forEach { rule ->
+            val label = stringResource(rule.label)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "$label, ${if (rule.met) metLabel else missingLabel}"
+                },
+            ) {
+                Icon(
+                    imageVector = if (rule.met) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
+                    contentDescription = null,
+                    tint = if (rule.met) MuyuLime else Color.White.copy(alpha = 0.6f),
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = label,
+                    color = if (rule.met) Color.White else Color.White.copy(alpha = 0.75f),
+                    fontSize = 13.sp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TermsCheckbox(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    onOpenTerms: () -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = if (checked) Icons.Filled.CheckBox else Icons.Filled.CheckBoxOutlineBlank,
+            contentDescription = null,
+            tint = if (checked) MuyuLime else MuyuField,
+            modifier = Modifier
+                .size(48.dp)
+                .toggleable(
+                    value = checked,
+                    role = Role.Checkbox,
+                    onValueChange = onCheckedChange,
+                )
+                .padding(12.dp),
+        )
+        Text(
+            text = stringResource(R.string.register_accept_terms),
+            color = Color.White,
+            fontSize = 14.sp,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier.clickable(onClick = onOpenTerms),
+        )
+    }
+}
+
+@Composable
+private fun FieldError(message: String?) {
+    if (message == null) return
+    Row(
+        verticalAlignment = Alignment.Top,
+        modifier = Modifier.padding(top = 6.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.ErrorOutline,
+            contentDescription = null,
+            tint = AuthErrorText,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = message,
+            style = TextStyle(
+                fontFamily = UrbanistSemiBold,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = AuthErrorText,
+            ),
+        )
+    }
+}
+
 @Composable
 private fun AuthFieldBlock(
     label: String,
@@ -351,6 +469,8 @@ private fun AuthFieldBlock(
     keyboardType: KeyboardType = KeyboardType.Text,
     hidden: Boolean? = null,
     onToggleVisibility: (() -> Unit)? = null,
+    error: String? = null,
+    bottomSpacing: Dp = 12.dp,
     onValueChange: (String) -> Unit,
 ) {
     AuthLabel(text = label)
@@ -359,6 +479,7 @@ private fun AuthFieldBlock(
         value = value,
         onValueChange = onValueChange,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        isError = error != null,
         visualTransformation = if (hidden == true) {
             PasswordVisualTransformation()
         } else {
@@ -380,7 +501,8 @@ private fun AuthFieldBlock(
             null
         },
     )
-    Spacer(modifier = Modifier.height(12.dp))
+    FieldError(error)
+    Spacer(modifier = Modifier.height(bottomSpacing))
 }
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 874)

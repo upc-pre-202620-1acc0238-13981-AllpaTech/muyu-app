@@ -49,6 +49,14 @@
     <string name="register_password_invalid">La contraseña debe tener 8+ caracteres, mayúscula, minúscula, número y carácter especial.</string>
     <string name="register_password_mismatch">Las contraseñas no coinciden.</string>
     <string name="register_terms_required">Acepta los términos y condiciones para continuar.</string>
+    <string name="register_rule_length">Mínimo 8 caracteres</string>
+    <string name="register_rule_uppercase">Una letra mayúscula</string>
+    <string name="register_rule_lowercase">Una letra minúscula</string>
+    <string name="register_rule_number">Un número</string>
+    <string name="register_rule_special">Un carácter especial, como * ! @ #</string>
+    <string name="register_rule_no_spaces">Sin espacios</string>
+    <string name="register_rule_met">Cumplida</string>
+    <string name="register_rule_missing">Pendiente</string>
     <string name="reset_title">Recuperar contraseña</string>
     <string name="reset_heading">¿Restablecer contraseña?</string>
     <string name="reset_body">Ingresa el correo con el que te registraste y te enviaremos las instrucciones para recuperar tu contraseña.</string>

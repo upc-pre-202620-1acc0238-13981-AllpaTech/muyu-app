@@ -49,6 +49,14 @@
     <string name="register_password_invalid">Password must contain 8+ characters, uppercase, lowercase, a number, and a special character.</string>
     <string name="register_password_mismatch">Passwords do not match.</string>
     <string name="register_terms_required">Accept the terms and conditions to continue.</string>
+    <string name="register_rule_length">At least 8 characters</string>
+    <string name="register_rule_uppercase">One uppercase letter</string>
+    <string name="register_rule_lowercase">One lowercase letter</string>
+    <string name="register_rule_number">One number</string>
+    <string name="register_rule_special">One special character, such as * ! @ #</string>
+    <string name="register_rule_no_spaces">No spaces</string>
+    <string name="register_rule_met">Met</string>
+    <string name="register_rule_missing">Missing</string>
     <string name="reset_title">Reset password</string>
     <string name="reset_heading">Reset password?</string>
     <string name="reset_body">Enter the email address you used to register, and instructions for recovering your password will be sent to you.</string>

@@ -37,6 +37,8 @@ import com.example.muyu_app.ui.theme.UrbanistSemiBold
 
 val AuthSheetShape = RoundedCornerShape(topStart = 63.dp, topEnd = 63.dp)
 val AuthFieldShape = RoundedCornerShape(10.dp)
+val AuthErrorBorder = Color(0xFFE5484D)
+val AuthErrorText = Color(0xFFFFC7C7)
 
 @Composable
 fun AuthSheet(
@@ -81,6 +83,8 @@ fun AuthTextField(
     trailing: @Composable (() -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    // Marca el campo en rojo cuando su valor no pasa la validación.
+    isError: Boolean = false,
 ) {
     Row(
         modifier = modifier
@@ -88,7 +92,11 @@ fun AuthTextField(
             .height(50.dp)
             .clip(AuthFieldShape)
             .background(MuyuField)
-            .border(1.dp, Color.Black, AuthFieldShape)
+            .border(
+                width = if (isError) 2.dp else 1.dp,
+                color = if (isError) AuthErrorBorder else Color.Black,
+                shape = AuthFieldShape,
+            )
             .padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
