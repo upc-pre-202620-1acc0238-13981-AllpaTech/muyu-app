@@ -51,6 +51,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.example.muyu_app.R
+import com.example.muyu_app.ui.theme.MuyuLime
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.Icons
@@ -153,25 +155,26 @@ fun FarmerMyPlotsScreen(
                     Row(
                         modifier = Modifier
                             .clip(ButtonShape)
-                            .background(Color(0xFF0F3F0D))
+                            // Verde claro sobre el encabezado oscuro para que la acción principal resalte.
+                            .background(MuyuLime)
                             .clickable(onClick = onPublish)
                             .padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        MuyuAsset(
-                            fileName = "farmer/plus.svg",
+                        Icon(
+                            imageVector = Icons.Filled.Add,
                             contentDescription = null,
-                            width = 18.dp,
-                            height = 18.dp,
+                            tint = MuyuForest,
+                            modifier = Modifier.size(20.dp),
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.farmer_publish),
                             style = TextStyle(
                                 fontFamily = UrbanistBold,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
-                                color = Color(0xFFEAFAE9),
+                                color = MuyuForest,
                             ),
                         )
                     }
