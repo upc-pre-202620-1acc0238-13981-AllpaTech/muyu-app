@@ -322,6 +322,13 @@ private fun CardTypeOption(
 
 @Composable
 private fun addCardFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = Color(0xFF1B1B1B),
+    unfocusedTextColor = Color(0xFF1B1B1B),
+    disabledTextColor = Color(0xFF565656),
+    cursorColor = AddCardGreen,
+    focusedPlaceholderColor = Color(0xFF707070),
+    unfocusedPlaceholderColor = Color(0xFF707070),
+    errorTextColor = Color(0xFF1B1B1B),
     focusedBorderColor = AddCardGreen,
     unfocusedBorderColor = AddCardBorder,
     focusedContainerColor = Color.White,
