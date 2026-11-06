@@ -47,7 +47,6 @@ import com.example.muyu_app.features.plot_approval.presentation.home.FarmerHomeS
 import com.example.muyu_app.features.plot_approval.presentation.myplots.FarmerMyPlotsScreen
 import com.example.muyu_app.features.plot_approval.presentation.onboarding.ListPlotOnboardingScreen
 import com.example.muyu_app.features.plot_approval.presentation.plotdetail.MyPlotScreen
-import com.example.muyu_app.features.plot_approval.presentation.plotdetail.PlotDetailScreen
 import com.example.muyu_app.features.plot_approval.presentation.visits.VisitRequestsScreen
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishSuccessScreen
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishPlotInfoScreen
@@ -108,7 +107,6 @@ private enum class WalkthroughStep {
     OnboardingEscrow,
     OnboardingWeather,
     Role,
-    PlotDetail,
     FarmerHome,
     FarmerMyPlots,
     PublishInfo,
@@ -287,7 +285,6 @@ fun AppNavHost() {
         WalkthroughStep.Privacy,
         WalkthroughStep.ReportIncident,
         WalkthroughStep.ReportIncidentPhoto,
-        WalkthroughStep.PlotDetail,
         WalkthroughStep.FarmerHome,
         WalkthroughStep.FarmerMyPlots,
         WalkthroughStep.PublishInfo,
@@ -471,9 +468,6 @@ fun AppNavHost() {
                 step = WalkthroughStep.MerchantCatalog
             },
         )
-        WalkthroughStep.PlotDetail -> TabOrContent(currentTab, selectTab) {
-            PlotDetailScreen(onTabSelected = selectTab)
-        }
         WalkthroughStep.FarmerHome -> TabOrContent(currentTab, selectTab) {
             FarmerHomeScreen(
                 onWeather = { step = WalkthroughStep.WeatherAlert },
