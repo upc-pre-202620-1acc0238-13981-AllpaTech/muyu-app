@@ -1051,4 +1051,13 @@
     <string name="funding_rejected_status">Pago rechazado</string>
     <string name="funding_in_verification_cta">Pago en verificación</string>
     <string name="farmer_plot_actions">Acciones de la parcela</string>
+    <string name="profile_no_wallet">Sin Yape ni Plin vinculado</string>
+    <string name="profile_change_wallet">Cambiar</string>
+    <string name="merchant_wallet_required">Vincula tu Yape o Plin para pagar con Billetera.</string>
+    <string name="merchant_link_wallet">Vincular Yape o Plin</string>
+    <string name="merchant_agent_info">Deposita en cualquier agente BCP, Interbank o BBVA con esta referencia.</string>
+    <string name="merchant_bank_info">Haz la transferencia desde la app de tu banco con esta referencia.</string>
+    <string name="merchant_reference_code">Referencia: %1$s</string>
+    <string name="merchant_method_with_code">%1$s · %2$s</string>
+    <string name="merchant_wallet_payment_info">Muyu cobrará el financiamiento a este número. Confirmarás el pago en tu app.</string>
 </resources>

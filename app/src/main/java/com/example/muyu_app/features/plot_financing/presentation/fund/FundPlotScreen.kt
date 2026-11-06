@@ -47,6 +47,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
+import com.example.muyu_app.features.user_management.presentation.profile.merchantWalletSummary
+import com.example.muyu_app.features.user_management.presentation.profile.merchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.DigitalWalletProvider
 import com.example.muyu_app.ui.theme.MuyuEscrowText
 import com.example.muyu_app.core.designsystem.components.MascotMood
 import com.example.muyu_app.core.designsystem.components.MascotMessage
@@ -96,6 +99,7 @@ fun FundPlotScreen(
     onCheckTransactions: () -> Unit,
     onAcceptTerms: () -> Unit,
     onAddCard: () -> Unit = {},
+    onAddWallet: (DigitalWalletProvider) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val container = LocalAppContainer.current
@@ -127,10 +131,18 @@ fun FundPlotScreen(
     // Pagar con tarjeta exige una tarjeta registrada por el comerciante.
     val savedCard = container.savedBankCard
     val cardLabel = savedCard?.let(::bankCardSummary).orEmpty()
-    val methodReady = method != PayMethod.Card || savedCard != null
+    val wallet = container.merchantWallet()
+    val walletLabel = wallet?.let(::merchantWalletSummary).orEmpty()
+    // Depósito en agente y transferencia usan un código de referencia de la orden.
+    val referenceCode = paymentReference(plot?.id ?: 0, container.currentUserEmail().orEmpty())
+    val methodReady = when (method) {
+        PayMethod.Card -> savedCard != null
+        PayMethod.Wallet -> wallet != null
+        else -> true
+    }
     // Con los términos aceptados el botón avanza o, si falta la tarjeta, abre su registro.
     val canContinue = accepted
-    val methodLabel = payMethodLabel(method, cardLabel)
+    val methodLabel = payMethodLabel(method, cardLabel, walletLabel, referenceCode)
 
     val stageBack: () -> Unit = {
         when (stage) {
@@ -290,9 +302,22 @@ fun FundPlotScreen(
                 }
                 if (stage == FundingStage.Payment) {
                     PaymentMethodCard(method = method, onMethod = { method = it })
-                    if (method == PayMethod.Card) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        SavedCardRow(cardLabel = cardLabel, onAddCard = onAddCard)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    when (method) {
+                        PayMethod.Card -> SavedCardRow(cardLabel = cardLabel, onAddCard = onAddCard)
+                        PayMethod.Wallet -> WalletRow(
+                            walletLabel = walletLabel,
+                            onLink = onAddWallet,
+                            onChange = { wallet?.let { onAddWallet(it.provider) } },
+                        )
+                        PayMethod.Agent -> ReferenceRow(
+                            title = stringResource(R.string.merchant_agent_info),
+                            code = referenceCode,
+                        )
+                        PayMethod.Bank -> ReferenceRow(
+                            title = stringResource(R.string.merchant_bank_info),
+                            code = referenceCode,
+                        )
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
@@ -305,7 +330,7 @@ fun FundPlotScreen(
                         farmerName = plot?.ownerName.orEmpty(),
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    SelectedPaymentCard(method, cardLabel)
+                    SelectedPaymentCard(methodLabel)
                     Spacer(modifier = Modifier.height(12.dp))
                     DisbursementCard(total = PlotFinance.parseAmount(amount))
                     Spacer(modifier = Modifier.height(12.dp))
@@ -351,7 +376,11 @@ fun FundPlotScreen(
                         .clickable(enabled = stage != FundingStage.Payment || canContinue) {
                             when (stage) {
                                 FundingStage.Summary -> stage = FundingStage.Payment
-                                FundingStage.Payment -> if (methodReady) stage = FundingStage.Review else onAddCard()
+                                FundingStage.Payment -> when {
+                                    methodReady -> stage = FundingStage.Review
+                                    method == PayMethod.Wallet -> onAddWallet(DigitalWalletProvider.Yape)
+                                    else -> onAddCard()
+                                }
                                 FundingStage.Review -> {
                                     if (funding) return@clickable
                                     funding = true
@@ -395,6 +424,7 @@ fun FundPlotScreen(
                             funding -> stringResource(R.string.muyu_funding_processing)
                             stage == FundingStage.Summary -> stringResource(R.string.merchant_continue)
                             stage == FundingStage.Review -> stringResource(R.string.merchant_confirm_and_pay, amount)
+                            accepted && !methodReady && method == PayMethod.Wallet -> stringResource(R.string.merchant_link_wallet)
                             accepted && !methodReady -> stringResource(R.string.merchant_register_card)
                             accepted -> stringResource(R.string.merchant_continue)
                             else -> stringResource(R.string.merchant_accept_first)
@@ -732,16 +762,91 @@ private fun ReviewLine(label: String, value: String) {
 }
 
 @Composable
-private fun payMethodLabel(method: PayMethod, cardLabel: String): String = when (method) {
+private fun payMethodLabel(
+    method: PayMethod,
+    cardLabel: String,
+    walletLabel: String,
+    referenceCode: String,
+): String = when (method) {
     PayMethod.Card -> cardLabel.ifBlank { stringResource(R.string.merchant_card) }
-    PayMethod.Wallet -> stringResource(R.string.merchant_wallet)
-    PayMethod.Agent -> stringResource(R.string.merchant_agent)
-    PayMethod.Bank -> stringResource(R.string.merchant_bank)
+    PayMethod.Wallet -> walletLabel.ifBlank { stringResource(R.string.merchant_wallet) }
+    PayMethod.Agent -> stringResource(R.string.merchant_method_with_code, stringResource(R.string.merchant_agent), referenceCode)
+    PayMethod.Bank -> stringResource(R.string.merchant_method_with_code, stringResource(R.string.merchant_bank), referenceCode)
+}
+
+/** Código fijo por parcela y comerciante para identificar el depósito o la transferencia. */
+private fun paymentReference(plotId: Int, email: String): String =
+    "MUYU-%04d-%04d".format(plotId, kotlin.math.abs(email.hashCode()) % 10000)
+
+@Composable
+private fun WalletRow(
+    walletLabel: String,
+    onLink: (DigitalWalletProvider) -> Unit,
+    onChange: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(Color.White)
+            .border(1.dp, MuyuForest, CardShape)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (walletLabel.isBlank()) {
+                stringResource(R.string.merchant_wallet_required)
+            } else {
+                stringResource(R.string.merchant_card_in_use, walletLabel)
+            },
+            modifier = Modifier.weight(1f),
+            style = TextStyle(fontFamily = UrbanistMedium, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Black),
+        )
+        val actions = if (walletLabel.isBlank()) {
+            listOf(
+                stringResource(R.string.bank_account_yape) to { onLink(DigitalWalletProvider.Yape) },
+                stringResource(R.string.bank_account_plin) to { onLink(DigitalWalletProvider.Plin) },
+            )
+        } else {
+            listOf(stringResource(R.string.merchant_change_card) to onChange)
+        }
+        actions.forEach { (label, onClick) ->
+            Text(
+                text = label,
+                modifier = Modifier
+                    .clip(MethodShape)
+                    .clickable(onClick = onClick)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                style = TextStyle(fontFamily = UrbanistBold, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MuyuOlive),
+            )
+        }
+    }
 }
 
 @Composable
-private fun SelectedPaymentCard(method: PayMethod, cardLabel: String) {
-    val label = payMethodLabel(method, cardLabel)
+private fun ReferenceRow(title: String, code: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(Color.White)
+            .border(1.dp, MuyuForest, CardShape)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        Text(
+            text = title,
+            style = TextStyle(fontFamily = UrbanistMedium, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Black),
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.merchant_reference_code, code),
+            style = TextStyle(fontFamily = UrbanistBold, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MuyuOlive),
+        )
+    }
+}
+
+@Composable
+private fun SelectedPaymentCard(label: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()

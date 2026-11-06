@@ -1051,4 +1051,13 @@
     <string name="funding_rejected_status">Payment rejected</string>
     <string name="funding_in_verification_cta">Payment in verification</string>
     <string name="farmer_plot_actions">Plot actions</string>
+    <string name="profile_no_wallet">No Yape or Plin linked</string>
+    <string name="profile_change_wallet">Change</string>
+    <string name="merchant_wallet_required">Link your Yape or Plin to pay with Wallet.</string>
+    <string name="merchant_link_wallet">Link Yape or Plin</string>
+    <string name="merchant_agent_info">Deposit at any BCP, Interbank or BBVA agent using this reference.</string>
+    <string name="merchant_bank_info">Make the transfer from your bank app using this reference.</string>
+    <string name="merchant_reference_code">Reference: %1$s</string>
+    <string name="merchant_method_with_code">%1$s · %2$s</string>
+    <string name="merchant_wallet_payment_info">Muyu will charge the financing to this number. You will confirm the payment in your app.</string>
 </resources>

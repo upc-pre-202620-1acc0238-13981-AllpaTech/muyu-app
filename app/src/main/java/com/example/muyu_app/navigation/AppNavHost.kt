@@ -88,6 +88,10 @@ import com.example.muyu_app.features.user_management.presentation.rating.RateBuy
 import com.example.muyu_app.features.user_management.presentation.rating.RatingSubmittedScreen
 import androidx.compose.ui.res.stringResource
 import com.example.muyu_app.R
+import com.example.muyu_app.features.user_management.presentation.profile.saveMerchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.merchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.MerchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.DigitalWalletAccount
 import com.example.muyu_app.core.storage.UserPreferences
 import com.example.muyu_app.ui.splash.SplashScreen
 import kotlinx.coroutines.delay
@@ -131,6 +135,7 @@ private enum class WalkthroughStep {
     AddBankCard,
     EditYape,
     EditPlin,
+    MerchantWallet,
     PaymentHistory,
     PaymentDetails,
     MerchantCatalog,
@@ -188,6 +193,7 @@ fun AppNavHost() {
     var recoveryEmail by rememberSaveable { mutableStateOf("") }
     // Pantalla a la que vuelve el registro de tarjeta: cuenta bancaria, perfil o financiamiento.
     var cardReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.BankAccount) }
+    var merchantWalletProvider by rememberSaveable { mutableStateOf(DigitalWalletProvider.Yape) }
     val container = LocalAppContainer.current
     val languages = container.languages
     val appLanguage = languages.current(isMerchant)
@@ -264,7 +270,7 @@ fun AppNavHost() {
         WalkthroughStep.PasswordFlowComplete -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
         WalkthroughStep.ChangePin, WalkthroughStep.PinFlowComplete -> WalkthroughStep.Profile
         WalkthroughStep.BankAccount -> WalkthroughStep.Profile
-        WalkthroughStep.AddBankCard -> cardReturnStep
+        WalkthroughStep.AddBankCard, WalkthroughStep.MerchantWallet -> cardReturnStep
         WalkthroughStep.EditYape -> WalkthroughStep.BankAccount
         WalkthroughStep.EditPlin -> WalkthroughStep.BankAccount
         WalkthroughStep.ReportIncident -> WalkthroughStep.Profile
@@ -315,6 +321,7 @@ fun AppNavHost() {
         WalkthroughStep.AddBankCard,
         WalkthroughStep.EditYape,
         WalkthroughStep.EditPlin,
+        WalkthroughStep.MerchantWallet,
         WalkthroughStep.PaymentHistory,
         WalkthroughStep.PaymentDetails,
         WalkthroughStep.MerchantCatalog,
@@ -684,6 +691,12 @@ fun AppNavHost() {
                         cardReturnStep = WalkthroughStep.Profile
                         step = WalkthroughStep.AddBankCard
                     },
+                    onManageWallet = { provider ->
+                        tab = null
+                        merchantWalletProvider = provider
+                        cardReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.MerchantWallet
+                    },
                     onLogout = goToLogin,
                     onTerms = {
                         termsReturnStep = WalkthroughStep.Profile
@@ -898,7 +911,40 @@ fun AppNavHost() {
                 cardReturnStep = WalkthroughStep.FundPlot
                 step = WalkthroughStep.AddBankCard
             },
+            onAddWallet = { provider ->
+                merchantWalletProvider = provider
+                cardReturnStep = WalkthroughStep.FundPlot
+                step = WalkthroughStep.MerchantWallet
+            },
         )
+        WalkthroughStep.MerchantWallet -> {
+            // Billetera propia del comerciante para pagar; no comparte datos con la del agricultor.
+            val saved = container.merchantWallet()?.takeIf { it.provider == merchantWalletProvider }
+            val leave = {
+                container.resumeFundingAtPayment = cardReturnStep == WalkthroughStep.FundPlot
+                step = cardReturnStep
+            }
+            EditDigitalWalletScreen(
+                provider = merchantWalletProvider,
+                account = saved?.let { DigitalWalletAccount(phone = it.phone, holderName = it.holderName) },
+                holderName = saved?.holderName?.takeIf(String::isNotBlank)
+                    ?: container.fakeStore.currentUser?.displayName.orEmpty(),
+                initialPhone = container.fakeStore.currentUser?.phone.orEmpty(),
+                onBack = leave,
+                onSave = { account ->
+                    container.saveMerchantWallet(
+                        MerchantWallet(merchantWalletProvider, account.phone, account.holderName),
+                    )
+                    leave()
+                },
+                onUnlink = {
+                    container.saveMerchantWallet(null)
+                    leave()
+                },
+                showPrimaryOption = false,
+                infoText = stringResource(R.string.merchant_wallet_payment_info),
+            )
+        }
         WalkthroughStep.FundSuccess -> FundSuccessScreen(
             onBack = { step = WalkthroughStep.FundPlot },
             onViewPlot = { step = WalkthroughStep.MerchantPlotDetail },
