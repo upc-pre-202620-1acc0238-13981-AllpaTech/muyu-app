@@ -3,7 +3,8 @@ package com.example.muyu_app.features.user_management.presentation.profile
 enum class DigitalWalletProvider { Yape, Plin }
 
 data class DigitalWalletAccount(
-    val phone: String = "987654321",
+    // Sin número de ejemplo: el usuario registra el suyo.
+    val phone: String = "",
     val holderName: String = "",
     val isPrimary: Boolean = true,
     val isVerified: Boolean = true,

@@ -91,10 +91,38 @@ class AppContainer(
     fun currentUserEmail(): String? =
         fakeStore.currentUser?.email?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
 
-    var yapeAccount by mutableStateOf<DigitalWalletAccount?>(
-        DigitalWalletAccount(isPrimary = false),
-    )
-    var plinAccount by mutableStateOf<DigitalWalletAccount?>(DigitalWalletAccount())
+    // Yape y Plin del agricultor: se guardan por usuario y una cuenta nueva empieza sin billeteras.
+    private var walletVersion by mutableIntStateOf(0)
+    var yapeAccount: DigitalWalletAccount?
+        get() = loadWallet(KEY_YAPE)
+        set(value) = saveWallet(KEY_YAPE, value)
+    var plinAccount: DigitalWalletAccount?
+        get() = loadWallet(KEY_PLIN)
+        set(value) = saveWallet(KEY_PLIN, value)
+
+    private fun loadWallet(name: String): DigitalWalletAccount? {
+        walletVersion
+        val email = currentUserEmail() ?: return null
+        val parts = userPreferences?.loadString(email, name, "").orEmpty().split(WALLET_SEPARATOR)
+        val phone = parts.getOrNull(0).orEmpty()
+        if (phone.isBlank()) return null
+        return DigitalWalletAccount(
+            phone = phone,
+            holderName = parts.getOrNull(1).orEmpty(),
+            isPrimary = parts.getOrNull(2) == "1",
+            isVerified = parts.getOrNull(3) == "1",
+        )
+    }
+
+    private fun saveWallet(name: String, account: DigitalWalletAccount?) {
+        val email = currentUserEmail() ?: return
+        val value = account?.let {
+            listOf(it.phone, it.holderName, if (it.isPrimary) "1" else "0", if (it.isVerified) "1" else "0")
+                .joinToString(WALLET_SEPARATOR)
+        }.orEmpty()
+        userPreferences?.saveString(email, name, value)
+        walletVersion++
+    }
     val languages = LanguagePreferences()
     var selectedPlot: Plot? = null
     var selectedMilestoneKey: String = "fertilization"
@@ -111,6 +139,7 @@ class AppContainer(
     var fundingMethodLabel: String = ""
     // Vuelve al paso de pago después de registrar una tarjeta desde el financiamiento.
     var resumeFundingAtPayment: Boolean = false
+    var resumeFundingMethod: String = ""
 
     // Mantiene la pestaña desde la que se abrió el detalle de la parcela.
     fun merchantEvidenceBottomTab(): MerchantTab = when (merchantEvidenceOrigin) {
@@ -166,3 +195,7 @@ class AppContainer(
 val LocalAppContainer = staticCompositionLocalOf<AppContainer> {
     error("AppContainer was not provided")
 }
+
+private const val KEY_YAPE = "farmer_yape"
+private const val KEY_PLIN = "farmer_plin"
+private const val WALLET_SEPARATOR = "\u001F"
