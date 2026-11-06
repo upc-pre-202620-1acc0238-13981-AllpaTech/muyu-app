@@ -1,6 +1,5 @@
 package com.example.muyu_app.core.designsystem.components
 
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -134,8 +133,9 @@ fun AuthPrimaryButton(
             .fillMaxWidth()
             .height(height)
             .clip(AuthFieldShape)
-            .background(background)
-            .alpha(if (enabled) 1f else 0.5f)
+            // El estado deshabilitado se pinta con colores atenuados, sin capa de alpha,
+            // para que el fondo del botón siempre se dibuje.
+            .background(if (enabled) background else background.copy(alpha = 0.5f))
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -145,7 +145,7 @@ fun AuthPrimaryButton(
                 fontFamily = UrbanistBold,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
-                color = contentColor,
+                color = if (enabled) contentColor else contentColor.copy(alpha = 0.5f),
             ),
         )
     }
