@@ -61,6 +61,8 @@ import com.example.muyu_app.features.plot_financing.presentation.evidence.Mercha
 import com.example.muyu_app.features.plot_financing.presentation.catalog.MerchantCatalogScreen
 import com.example.muyu_app.features.plot_financing.presentation.fund.FundPlotScreen
 import com.example.muyu_app.features.plot_financing.presentation.fund.FundSuccessScreen
+import com.example.muyu_app.features.plot_financing.presentation.harvest.HarvestIncidentScreen
+import com.example.muyu_app.features.plot_financing.presentation.harvest.HarvestReceiptScreen
 import com.example.muyu_app.features.escrow_custody.presentation.payments.MerchantPaymentHistoryScreen
 import com.example.muyu_app.features.plot_financing.presentation.myplots.MerchantMyPlotsScreen
 import com.example.muyu_app.features.plot_financing.presentation.plotdetail.MerchantPlotDetailScreen
@@ -143,6 +145,8 @@ private enum class WalkthroughStep {
     MerchantMilestoneApproved,
     MerchantRejectionReason,
     MerchantReviewOutcome,
+    HarvestReceipt,
+    HarvestIncident,
     Terms,
     Privacy,
     ReportIncident,
@@ -266,6 +270,7 @@ fun AppNavHost() {
         WalkthroughStep.MerchantRejectionReason -> WalkthroughStep.MerchantApproveReject
         WalkthroughStep.MerchantVisitRequest -> WalkthroughStep.MerchantPlotDetail
         WalkthroughStep.MerchantVisitSent -> WalkthroughStep.MerchantVisitRequest
+        WalkthroughStep.HarvestReceipt, WalkthroughStep.HarvestIncident -> WalkthroughStep.MerchantPlotDetail
         WalkthroughStep.MerchantMilestoneEvidence,
         WalkthroughStep.MerchantMilestoneApproved,
         WalkthroughStep.MerchantReviewOutcome -> when (container.merchantEvidenceOrigin) {
@@ -320,6 +325,8 @@ fun AppNavHost() {
         WalkthroughStep.MerchantMilestoneApproved,
         WalkthroughStep.MerchantRejectionReason,
         WalkthroughStep.MerchantReviewOutcome,
+        WalkthroughStep.HarvestReceipt,
+        WalkthroughStep.HarvestIncident,
     )
 
     val darkSheet = (
@@ -826,7 +833,17 @@ fun AppNavHost() {
                 }
             },
             onViewEvidence = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onConfirmHarvest = { step = WalkthroughStep.HarvestReceipt },
+            onReportHarvestIncident = { step = WalkthroughStep.HarvestIncident },
             onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.HarvestReceipt -> HarvestReceiptScreen(
+            onBack = { step = WalkthroughStep.MerchantPlotDetail },
+            onBackToPlot = { step = WalkthroughStep.MerchantPlotDetail },
+        )
+        WalkthroughStep.HarvestIncident -> HarvestIncidentScreen(
+            onBack = { step = WalkthroughStep.MerchantPlotDetail },
+            onBackToPlot = { step = WalkthroughStep.MerchantPlotDetail },
         )
         WalkthroughStep.FundPlot -> FundPlotScreen(
             onBack = { step = WalkthroughStep.MerchantPlotDetail },

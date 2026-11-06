@@ -60,6 +60,7 @@ import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.features.plot_approval.presentation.myplots.formatPlotArea
 import com.example.muyu_app.features.plot_financing.presentation.evidence.formatEvidenceTime
+import com.example.muyu_app.features.plot_financing.presentation.harvest.HarvestDeliveryCard
 import com.example.muyu_app.features.plot_financing.presentation.myplots.evidenceMilestoneKey
 import com.example.muyu_app.features.plot_financing.presentation.myplots.milestoneStatesOrSeed
 import com.example.muyu_app.ui.theme.MuyuAction
@@ -92,6 +93,8 @@ fun MerchantPlotDetailScreen(
     onFundPlot: () -> Unit,
     onRequestVisit: () -> Unit = {},
     onViewEvidence: () -> Unit = {},
+    onConfirmHarvest: () -> Unit = {},
+    onReportHarvestIncident: () -> Unit = {},
     onTabSelected: (MerchantTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -170,6 +173,8 @@ fun MerchantPlotDetailScreen(
                             }
                         },
                         onRequestVisit = onRequestVisit,
+                        onConfirmHarvest = onConfirmHarvest,
+                        onReportHarvestIncident = onReportHarvestIncident,
                     )
                 }
             }
@@ -322,6 +327,8 @@ private fun FundedPlotBody(
     ctaLabel: String,
     onCtaClick: () -> Unit,
     onRequestVisit: () -> Unit,
+    onConfirmHarvest: () -> Unit,
+    onReportHarvestIncident: () -> Unit,
 ) {
     val area = formatPlotArea(plot.area)
     val deposit = PlotFinance.parseAmount(plot.amount)
@@ -506,6 +513,14 @@ private fun FundedPlotBody(
                 fontSize = 16.sp,
                 color = MuyuAction,
             ),
+        )
+    }
+    if (showHarvestReceipt && harvestApproved) {
+        Spacer(modifier = Modifier.height(16.dp))
+        HarvestDeliveryCard(
+            plot = plot,
+            onConfirm = onConfirmHarvest,
+            onReportIncident = onReportHarvestIncident,
         )
     }
     if (showHarvestReceipt && !harvestApproved) {

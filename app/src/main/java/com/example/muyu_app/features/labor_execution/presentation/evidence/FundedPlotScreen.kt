@@ -174,6 +174,10 @@ fun FundedPlotScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 if (isFunded) {
+                    plot?.let { current ->
+                        FarmerHarvestNotice(plot = current)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                     CycleMilestonesCard(
                         states = states,
                         currentKey = currentKey,

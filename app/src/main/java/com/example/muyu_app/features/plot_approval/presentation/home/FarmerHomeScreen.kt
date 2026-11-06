@@ -62,6 +62,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.example.muyu_app.R
+import com.example.muyu_app.features.labor_execution.presentation.evidence.FarmerHarvestNotice
 import com.example.muyu_app.core.designsystem.components.LanguageToggleButton
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
@@ -271,6 +272,12 @@ fun FarmerHomeScreen(
                         .padding(start = ScreenPadding, end = 30.dp, bottom = MuyuScrollBottomInset),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
+                    // Avisos del comerciante sobre la entrega de la cosecha.
+                    plots.filter {
+                        it.harvestReceivedAt.isNotBlank() || it.harvestIncidents.isNotEmpty()
+                    }.take(2).forEach { plot ->
+                        FarmerHarvestNotice(plot = plot)
+                    }
                     when {
                         isLoadingPlots && plots.isEmpty() -> Box(
                             modifier = Modifier.fillMaxWidth(),
