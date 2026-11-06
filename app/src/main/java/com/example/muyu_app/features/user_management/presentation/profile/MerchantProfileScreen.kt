@@ -38,6 +38,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
+import com.example.muyu_app.core.storage.UserPreferences
+import androidx.compose.runtime.LaunchedEffect
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
@@ -86,7 +88,7 @@ private val BodyStyle = TextStyle(
 @Composable
 fun MerchantProfileScreen(
     onTabSelected: (MerchantTab) -> Unit,
-    @DrawableRes avatarRes: Int? = R.drawable.profilelacosecha,
+    @DrawableRes avatarRes: Int? = null,
     onChangePassword: () -> Unit = {},
     onLogout: () -> Unit = {},
     onTerms: () -> Unit = {},
@@ -95,11 +97,25 @@ fun MerchantProfileScreen(
 ) {
     val container = LocalAppContainer.current
     val currentUser = container.fakeStore.currentUser
-    val defaultCompany = stringResource(R.string.profile_company_legal_name)
-    val defaultActivity = stringResource(R.string.profile_wholesale)
-    val defaultLocation = stringResource(R.string.profile_merchant_place)
-    val defaultCompanyEmail = "contacto@lacosecha.pe"
-    var notificationPref by remember { mutableStateOf(MerchantAlertChannel.Call) }
+    // Sin datos de ejemplo: una cuenta nueva parte de su nombre y su correo.
+    val defaultCompany = currentUser?.displayName.orEmpty()
+    val defaultActivity = ""
+    val defaultLocation = ""
+    val defaultCompanyEmail = currentUser?.email.orEmpty()
+    val preferences = container.userPreferences
+    val preferencesEmail = container.currentUserEmail().orEmpty()
+    var notificationPref by remember(preferencesEmail) {
+        mutableStateOf(
+            preferences
+                ?.loadString(preferencesEmail, UserPreferences.KEY_ALERT_CHANNEL, MerchantAlertChannel.Call.name)
+                ?.let { saved -> MerchantAlertChannel.entries.firstOrNull { it.name == saved } }
+                ?: MerchantAlertChannel.Call,
+        )
+    }
+    LaunchedEffect(preferencesEmail, notificationPref) {
+        if (preferencesEmail.isBlank()) return@LaunchedEffect
+        preferences?.saveString(preferencesEmail, UserPreferences.KEY_ALERT_CHANNEL, notificationPref.name)
+    }
     var editingContact by rememberSaveable { mutableStateOf(false) }
     var companyName by rememberSaveable {
         mutableStateOf(currentUser?.companyName?.ifBlank { null } ?: defaultCompany)
@@ -108,7 +124,7 @@ fun MerchantProfileScreen(
         mutableStateOf(currentUser?.companyActivity?.ifBlank { null } ?: defaultActivity)
     }
     var ruc by rememberSaveable {
-        mutableStateOf(currentUser?.ruc?.ifBlank { null } ?: "20123456789")
+        mutableStateOf(currentUser?.ruc?.ifBlank { null } ?: "")
     }
     var location by rememberSaveable {
         mutableStateOf(currentUser?.location?.ifBlank { null } ?: defaultLocation)
@@ -176,11 +192,9 @@ fun MerchantProfileScreen(
                         ),
                     )
                     Text(
-                        text = stringResource(
-                            R.string.profile_role_place,
-                            stringResource(R.string.role_merchant_short),
-                            stringResource(R.string.profile_merchant_place),
-                        ),
+                        text = location.trim().takeIf { it.isNotBlank() }?.let {
+                            stringResource(R.string.profile_role_place, stringResource(R.string.role_merchant_short), it)
+                        } ?: stringResource(R.string.role_merchant_short),
                         style = TextStyle(
                             fontFamily = UrbanistRegular,
                             fontSize = 16.sp,
@@ -243,7 +257,7 @@ fun MerchantProfileScreen(
                                     val user = container.fakeStore.currentUser
                                     companyName = user?.companyName?.ifBlank { null } ?: defaultCompany
                                     companyActivity = user?.companyActivity?.ifBlank { null } ?: defaultActivity
-                                    ruc = user?.ruc?.ifBlank { null } ?: "20123456789"
+                                    ruc = user?.ruc?.ifBlank { null } ?: ""
                                     location = user?.location?.ifBlank { null } ?: defaultLocation
                                     companyEmail = user?.companyEmail?.ifBlank { null } ?: defaultCompanyEmail
                                     editingContact = false
@@ -258,21 +272,27 @@ fun MerchantProfileScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = companyName,
+                                    text = companyName.ifBlank { defaultCompany },
                                     style = TitleStyle,
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
+                                val businessLine = when {
+                                    companyActivity.isNotBlank() && ruc.isNotBlank() ->
+                                        stringResource(R.string.profile_ruc_line, companyActivity, ruc)
+                                    ruc.isNotBlank() -> stringResource(R.string.profile_ruc_only, ruc)
+                                    companyActivity.isNotBlank() -> companyActivity
+                                    else -> stringResource(R.string.profile_company_incomplete)
+                                }
                                 Text(
-                                    text = stringResource(
-                                        R.string.profile_ruc_line,
-                                        companyActivity.ifBlank { defaultActivity },
-                                        ruc,
-                                    ),
+                                    text = businessLine,
                                     style = BodyStyle,
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "$location · $companyEmail",
+                                    text = listOf(location, companyEmail)
+                                        .map { it.trim() }
+                                        .filter { it.isNotBlank() }
+                                        .joinToString(" · "),
                                     style = BodyStyle,
                                 )
                             }
@@ -339,7 +359,8 @@ fun MerchantProfileScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = stringResource(R.string.profile_visa_bcp),
+                        text = container.savedBankCard?.let(::bankCardSummary)
+                            ?: stringResource(R.string.payment_no_card),
                         style = BodyStyle,
                     )
                 }

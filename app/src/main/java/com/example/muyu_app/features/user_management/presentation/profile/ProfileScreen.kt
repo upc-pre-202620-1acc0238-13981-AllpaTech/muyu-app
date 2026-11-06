@@ -44,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
+import com.example.muyu_app.core.storage.UserPreferences
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
@@ -67,7 +68,7 @@ private val RedLogout = Color(0xFFC63939)
 fun ProfileScreen(
     onTabSelected: (MuyuTab) -> Unit,
     modifier: Modifier = Modifier,
-    @DrawableRes avatarRes: Int? = R.drawable.merchant_maria,
+    @DrawableRes avatarRes: Int? = null,
     onChangePassword: () -> Unit = {},
     onChangePin: () -> Unit = {},
     onCallSupport: () -> Unit = {},
@@ -91,17 +92,47 @@ fun ProfileScreen(
     var emailDraft by rememberSaveable { mutableStateOf(farmerEmail) }
 
     var plots by remember { mutableStateOf<List<Plot>>(emptyList()) }
-    var notificationPref by remember { mutableStateOf(FarmerAlertChannel.Call) }
-    var syncWifiOnly by remember { mutableStateOf(true) }
+    // Las preferencias se guardan por usuario y se mantienen al salir de la pantalla.
+    val preferences = container.userPreferences
+    val preferencesEmail = container.currentUserEmail().orEmpty()
+    var notificationPref by remember(preferencesEmail) {
+        mutableStateOf(
+            preferences
+                ?.loadString(preferencesEmail, UserPreferences.KEY_ALERT_CHANNEL, FarmerAlertChannel.Call.name)
+                ?.let { saved -> FarmerAlertChannel.entries.firstOrNull { it.name == saved } }
+                ?: FarmerAlertChannel.Call,
+        )
+    }
+    var syncWifiOnly by remember(preferencesEmail) {
+        mutableStateOf(
+            preferences?.loadBoolean(preferencesEmail, UserPreferences.KEY_SYNC_WIFI_ONLY, true) ?: true,
+        )
+    }
+    LaunchedEffect(preferencesEmail, notificationPref, syncWifiOnly) {
+        if (preferencesEmail.isBlank()) return@LaunchedEffect
+        preferences?.saveString(preferencesEmail, UserPreferences.KEY_ALERT_CHANNEL, notificationPref.name)
+        preferences?.saveBoolean(preferencesEmail, UserPreferences.KEY_SYNC_WIFI_ONLY, syncWifiOnly)
+    }
 
     LaunchedEffect(farmerEmail) {
         container.getPlotsUseCase().onSuccess { all ->
-            plots = all.filter { it.ownerEmail.equals(farmerEmail, ignoreCase = true) }
+            plots = all
+                .filter { it.ownerEmail.equals(farmerEmail, ignoreCase = true) }
+                .map { plot ->
+                    if (plot.status != "funded") return@map plot
+                    container.fakeStore.ensureMilestones(plot.id)
+                        ?.let(container.fakeStore::toDomain)
+                        ?: plot
+                }
         }
     }
 
     val plotCount = plots.size
-    val milestoneCount = plots.count { it.status == "approved" || it.status == "funded" }
+    // Cuenta hitos aprobados, no parcelas.
+    val milestoneCount = plots.sumOf { plot -> plot.milestoneStates.count { it.isApproved } }
+    val farmerPlace = plots
+        .map { it.place.trim() }
+        .firstOrNull { it.isNotBlank() && it != "—" }
     val activeCropCount = plots
         .filter { it.status != "pending" }
         .map { it.crop }
@@ -139,11 +170,9 @@ fun ProfileScreen(
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = stringResource(
-                                R.string.profile_role_place,
-                                stringResource(R.string.role_farmer_short),
-                                stringResource(R.string.profile_farmer_place),
-                            ),
+                            text = farmerPlace?.let {
+                                stringResource(R.string.profile_role_place, stringResource(R.string.role_farmer_short), it)
+                            } ?: stringResource(R.string.role_farmer_short),
                             fontSize = 13.sp,
                             color = Color.White.copy(alpha = 0.9f),
                         )

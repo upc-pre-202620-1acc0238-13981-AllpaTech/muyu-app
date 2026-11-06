@@ -766,6 +766,8 @@
     <string name="merchant_view_milestone">View milestone</string>
     <string name="merchant_back_to_plot">Back to plot</string>
     <string name="profile_role_place">%1$s · %2$s</string>
+    <string name="profile_ruc_only">RUC %1$s</string>
+    <string name="profile_company_incomplete">Complete your company details with the pencil icon.</string>
     <string name="profile_ruc_line">%1$s · RUC %2$s</string>
     <string name="plot_status_submitted">Submitted</string>
     <string name="plot_status_queued">Waiting to sync</string>

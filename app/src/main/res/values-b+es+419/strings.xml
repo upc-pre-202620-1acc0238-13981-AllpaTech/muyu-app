@@ -766,6 +766,8 @@
     <string name="merchant_view_milestone">Ver hito</string>
     <string name="merchant_back_to_plot">Volver a la parcela</string>
     <string name="profile_role_place">%1$s · %2$s</string>
+    <string name="profile_ruc_only">RUC %1$s</string>
+    <string name="profile_company_incomplete">Completa los datos de tu empresa con el ícono del lápiz.</string>
     <string name="profile_ruc_line">%1$s · RUC %2$s</string>
     <string name="plot_status_submitted">Enviado</string>
     <string name="plot_status_queued">Pendiente de sincronización</string>
