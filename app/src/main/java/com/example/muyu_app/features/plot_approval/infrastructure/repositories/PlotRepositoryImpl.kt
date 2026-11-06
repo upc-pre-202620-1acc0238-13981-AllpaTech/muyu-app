@@ -144,17 +144,24 @@ class PlotRepositoryImpl(
         milestoneStates = milestoneStates,
         visitOutcome = visitOutcome,
         visitDate = visitDate,
+        harvestReceivedAt = harvestReceivedAt.orEmpty(),
+        harvestReceivedBy = harvestReceivedBy.orEmpty(),
+        harvestIncidents = harvestIncidents.orEmpty(),
+        weatherMeasures = weatherMeasures.orEmpty(),
     )
 
     private fun Plot.toDto() = PlotDto(
         id, name, crop, area, harvestDate, place, stage, progress, status, amount,
         cycle, milestones, imageUri, ownerEmail, ownerName, fundedByEmail, latitude,
         longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate,
+        harvestReceivedAt, harvestReceivedBy, harvestIncidents, weatherMeasures,
     )
 
     private fun PlotDto.toRecord() = PlotRecord(
         id, name, crop, area, harvestDate, place, stage, progress, status, amount,
         cycle, milestones, imageUri, ownerEmail, ownerName, fundedByEmail, latitude,
         longitude, accuracyMeters, publishedAt, milestoneStates, visitOutcome, visitDate,
+        harvestReceivedAt.orEmpty(), harvestReceivedBy.orEmpty(),
+        harvestIncidents.orEmpty(), weatherMeasures.orEmpty(),
     )
 }

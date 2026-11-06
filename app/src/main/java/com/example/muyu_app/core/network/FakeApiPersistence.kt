@@ -20,6 +20,7 @@ data class FakeApiSnapshot(
     val plots: List<PlotRecord> = emptyList(),
     val merchantNotifications: List<MerchantNotificationRecord> = emptyList(),
     val syncHistory: List<SyncHistoryRecord> = emptyList(),
+    val farmerNotifications: List<FarmerNotificationRecord>? = emptyList(),
 )
 
 class FakeApiPersistence(
@@ -31,7 +32,13 @@ class FakeApiPersistence(
     fun load(): FakeApiSnapshot? {
         readFile(runtimeFile)?.let { return it }
         return readAssets()?.also { snapshot ->
-            save(snapshot.users, snapshot.plots, snapshot.merchantNotifications, snapshot.syncHistory)
+            save(
+                snapshot.users,
+                snapshot.plots,
+                snapshot.merchantNotifications,
+                snapshot.syncHistory,
+                snapshot.farmerNotifications.orEmpty(),
+            )
         }
     }
 
@@ -76,8 +83,11 @@ class FakeApiPersistence(
         plots: List<PlotRecord>,
         merchantNotifications: List<MerchantNotificationRecord> = emptyList(),
         syncHistory: List<SyncHistoryRecord> = emptyList(),
+        farmerNotifications: List<FarmerNotificationRecord> = emptyList(),
     ) {
-        val json = gson.toJson(FakeApiSnapshot(users, plots, merchantNotifications, syncHistory))
+        val json = gson.toJson(
+            FakeApiSnapshot(users, plots, merchantNotifications, syncHistory, farmerNotifications),
+        )
         runCatching {
             runtimeFile.parentFile?.mkdirs()
             runtimeFile.writeText(json)

@@ -59,6 +59,14 @@ object PlotFinance {
         return "${now.get(Calendar.DAY_OF_MONTH)} ${monthAbbr(now)} ${now.get(Calendar.YEAR)}"
     }
 
+    /** Fecha y hora de un registro, por ejemplo "6 Nov 2026, 15:42". */
+    fun timestampNow(): String {
+        val now = Calendar.getInstance()
+        val hour = now.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')
+        val minute = now.get(Calendar.MINUTE).toString().padStart(2, '0')
+        return "${publishedToday()}, $hour:$minute"
+    }
+
     fun shortDate(value: String = publishedToday()): String {
         val parsed = parseDate(value)
         val calendar = Calendar.getInstance()
