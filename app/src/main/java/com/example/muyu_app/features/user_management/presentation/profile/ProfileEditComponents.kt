@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -45,12 +46,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.muyu_app.R
 import com.example.muyu_app.core.di.LocalAppContainer
 
 private val ProfileFieldShape = RoundedCornerShape(12.dp)
 private val ProfileActionGreen = Color(0xFF2E7D32)
+private val AvatarInitialsBg = Color(0xFF618840)
 
 @Composable
 internal fun EditableProfileAvatar(
@@ -75,50 +80,78 @@ internal fun EditableProfileAvatar(
         }
     }
 
+    val changePhoto = stringResource(R.string.profile_change_photo)
+    // El contenedor no se recorta: así el botón de cámara queda completo sobre el borde.
     Box(
         modifier = Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(Color(0xFFE5E7EB))
-            .clickable {
+            .size(size + 6.dp)
+            .clickable(
+                role = Role.Button,
+                onClickLabel = changePhoto,
+            ) {
                 picker.launch(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                 )
             },
     ) {
-        when {
-            avatarUri.isNotBlank() -> AsyncImage(
-                model = avatarUri,
-                contentDescription = contentDescription,
-                modifier = Modifier.matchParentSize(),
-                contentScale = ContentScale.Crop,
-            )
+        Box(
+            modifier = Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(AvatarInitialsBg)
+                .border(2.dp, Color.White, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            when {
+                avatarUri.isNotBlank() -> AsyncImage(
+                    model = avatarUri,
+                    contentDescription = contentDescription,
+                    modifier = Modifier.matchParentSize(),
+                    contentScale = ContentScale.Crop,
+                )
 
-            fallbackRes != null -> Image(
-                painter = painterResource(fallbackRes),
-                contentDescription = contentDescription,
-                modifier = Modifier.matchParentSize(),
-                contentScale = ContentScale.Crop,
-            )
+                fallbackRes != null -> Image(
+                    painter = painterResource(fallbackRes),
+                    contentDescription = contentDescription,
+                    modifier = Modifier.matchParentSize(),
+                    contentScale = ContentScale.Crop,
+                )
+
+                // Una cuenta nueva muestra sus iniciales y no la foto de otra persona.
+                else -> Text(
+                    text = initialsOf(contentDescription),
+                    color = Color.White,
+                    fontSize = (size.value * 0.36f).sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
         }
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .size(24.dp)
+                .size(28.dp)
                 .clip(CircleShape)
                 .background(ProfileActionGreen)
                 .border(2.dp, Color.White, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Outlined.Edit,
-                contentDescription = stringResource(R.string.profile_change_photo),
+                imageVector = Icons.Outlined.PhotoCamera,
+                contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(13.dp),
+                modifier = Modifier.size(16.dp),
             )
         }
     }
 }
+
+internal fun initialsOf(name: String): String = name
+    .trim()
+    .split(Regex("\\s+"))
+    .filter { it.isNotBlank() }
+    .take(2)
+    .joinToString("") { it.first().uppercase() }
+    .ifBlank { "?" }
 
 @Composable
 internal fun ContactEditField(
