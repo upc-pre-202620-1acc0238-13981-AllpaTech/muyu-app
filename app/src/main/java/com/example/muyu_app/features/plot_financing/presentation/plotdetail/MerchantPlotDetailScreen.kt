@@ -60,6 +60,7 @@ import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.features.plot_approval.presentation.myplots.formatPlotArea
 import com.example.muyu_app.features.plot_financing.presentation.evidence.formatEvidenceTime
+import com.example.muyu_app.features.plot_financing.presentation.fund.pendingFunding
 import com.example.muyu_app.features.plot_financing.presentation.harvest.HarvestDeliveryCard
 import com.example.muyu_app.features.plot_financing.presentation.myplots.evidenceMilestoneKey
 import com.example.muyu_app.features.plot_financing.presentation.myplots.milestoneStatesOrSeed
@@ -161,7 +162,12 @@ fun MerchantPlotDetailScreen(
                         companyName = stringResource(R.string.merchant_company_name),
                         showHarvestReceipt = isFunded,
                         ctaLabel = stringResource(
-                            if (isFunded) R.string.merchant_view_evidence else R.string.merchant_fund_plot,
+                            when {
+                                isFunded -> R.string.merchant_view_evidence
+                                // El pago sigue en verificación: se abre su estado, no un nuevo pago.
+                                container.pendingFunding(current.id) != null -> R.string.funding_in_verification_cta
+                                else -> R.string.merchant_fund_plot
+                            },
                         ),
                         onCtaClick = {
                             if (isFunded) {

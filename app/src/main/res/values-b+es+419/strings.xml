@@ -392,7 +392,6 @@
     <string name="merchant_funds_secured">Fondos asegurados en Escrow</string>
     <string name="merchant_success_body">Esperanza Plot ya está financiada.\nMaría Quispe recibió una confirmación.</string>
     <string name="merchant_amount_funded">Monto financiado</string>
-    <string name="merchant_card_masked">Card ....4821</string>
     <string name="merchant_status">Estado</string>
     <string name="merchant_held">Fondos retenidos en Escrow</string>
     <string name="merchant_date">Fecha</string>
@@ -996,4 +995,16 @@
     <string name="weather_measures_hint">Marca las recomendaciones que ya aplicaste para proteger tu cultivo.</string>
     <string name="weather_measures_attended_body">Registraste estas medidas el %1$s.</string>
     <string name="weather_measures_confirm">Confirmar medidas tomadas</string>
+    <string name="funding_verifying_title">Pago en verificación</string>
+    <string name="funding_verifying_body">El proveedor de pagos aún no confirma el resultado. La parcela no figura como financiada hasta recibir una respuesta.</string>
+    <string name="funding_verifying_status">Pago en verificación</string>
+    <string name="funding_verifying_started">Iniciado el</string>
+    <string name="funding_verifying_locked">No vuelvas a pagar: los nuevos intentos de esta orden quedan bloqueados mientras la verificamos.</string>
+    <string name="funding_verifying_still">Aún no hay respuesta del proveedor. Vuelve a consultar en unos minutos.</string>
+    <string name="funding_verifying_check">Consultar estado del pago</string>
+    <string name="funding_verifying_checking">Consultando…</string>
+    <string name="funding_rejected_title">Pago rechazado</string>
+    <string name="funding_rejected_body">El proveedor confirmó que el pago no se realizó. No se retuvo dinero. Reintenta o elige otro método.</string>
+    <string name="funding_rejected_status">Pago rechazado</string>
+    <string name="funding_in_verification_cta">Pago en verificación</string>
 </resources>

@@ -132,6 +132,8 @@ class AppContainer(
 
     suspend fun syncPlot(plot: Plot): Result<Plot> = plotRepository.syncPlot(plot)
 
+    suspend fun fetchRemotePlot(id: Int): Result<Plot?> = plotRepository.fetchRemotePlot(id)
+
     fun clearSession() {
         fakeStore.endSession()
         selectedPlot = null

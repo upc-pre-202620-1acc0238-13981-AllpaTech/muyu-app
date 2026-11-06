@@ -27,6 +27,21 @@ class PlotRepositoryImpl(
         Result.failure(e)
     }
 
+    /** Consulta el estado real de una parcela en el servidor y lo guarda en el dispositivo. */
+    suspend fun fetchRemotePlot(id: Int): Result<Plot?> = try {
+        val response = service.getPlots()
+        val body = response.body()
+        if (response.isSuccessful && body != null) {
+            val dto = body.plots.find { it.id == id }
+            dto?.let { store.upsertPlot(it.toRecord()) }
+            Result.success(dto?.toPlot())
+        } else {
+            Result.failure(Exception(response.message()))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
     override suspend fun getPlots(): Result<List<Plot>> {
         if (!Environment.USE_FAKE_API) {
             return Result.success(store.plots.map { store.toDomain(it) })

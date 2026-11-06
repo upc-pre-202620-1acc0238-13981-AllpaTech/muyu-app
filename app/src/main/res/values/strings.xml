@@ -392,7 +392,6 @@
     <string name="merchant_funds_secured">Funds secured in Escrow</string>
     <string name="merchant_success_body">Esperanza Plot is now financed.\nMaría Quispe has received a confirmation.</string>
     <string name="merchant_amount_funded">Amount funded</string>
-    <string name="merchant_card_masked">Card ....4821</string>
     <string name="merchant_status">Status</string>
     <string name="merchant_held">Funds held in Escrow</string>
     <string name="merchant_date">Date</string>
@@ -996,4 +995,16 @@
     <string name="weather_measures_hint">Mark the recommendations you already applied to protect your crop.</string>
     <string name="weather_measures_attended_body">You registered these measures on %1$s.</string>
     <string name="weather_measures_confirm">Confirm measures taken</string>
+    <string name="funding_verifying_title">Payment in verification</string>
+    <string name="funding_verifying_body">The payment provider has not confirmed the result yet. The plot is not financed until we receive an answer.</string>
+    <string name="funding_verifying_status">Payment in verification</string>
+    <string name="funding_verifying_started">Started on</string>
+    <string name="funding_verifying_locked">Do not pay again: new attempts for this order stay locked while we verify it.</string>
+    <string name="funding_verifying_still">We still have no answer from the provider. Try again in a few minutes.</string>
+    <string name="funding_verifying_check">Check payment status</string>
+    <string name="funding_verifying_checking">Checking…</string>
+    <string name="funding_rejected_title">Payment rejected</string>
+    <string name="funding_rejected_body">The provider confirmed the payment was not made. No money was held. Retry or choose another method.</string>
+    <string name="funding_rejected_status">Payment rejected</string>
+    <string name="funding_in_verification_cta">Payment in verification</string>
 </resources>
