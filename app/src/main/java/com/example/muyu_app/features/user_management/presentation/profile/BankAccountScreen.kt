@@ -194,6 +194,13 @@ fun BankAccountScreen(
                 } ?: stringResource(R.string.plin_not_linked),
                 onClick = onPlinClick,
             )
+            Spacer(modifier = Modifier.height(10.dp))
+            // Las billeteras tienen tope por transferencia: los desembolsos grandes van a la cuenta.
+            Text(
+                text = stringResource(R.string.bank_account_wallet_limit_note),
+                color = SecondaryText,
+                fontSize = 13.sp,
+            )
             Spacer(modifier = Modifier.height(24.dp))
         }
     }

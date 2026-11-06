@@ -47,6 +47,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import com.example.muyu_app.ui.theme.MuyuPendingText
+import com.example.muyu_app.ui.theme.MuyuPendingBg
+import com.example.muyu_app.core.designsystem.components.MuyuMascot
 import com.example.muyu_app.features.user_management.presentation.profile.merchantWalletSummary
 import com.example.muyu_app.features.user_management.presentation.profile.merchantWallet
 import com.example.muyu_app.features.user_management.presentation.profile.DigitalWalletProvider
@@ -110,7 +116,10 @@ fun FundPlotScreen(
     val crop = plot?.crop.orEmpty()
     val area = plot?.area.orEmpty()
     // Conserva el método elegido al rotar y separa el estado de cada parcela.
-    var method by rememberSaveable(plot?.id) { mutableStateOf(PayMethod.Card) }
+    // Al volver de registrar tarjeta o billetera se conserva el método que estaba elegido.
+    var method by rememberSaveable(plot?.id) {
+        mutableStateOf(PayMethod.entries.find { it.name == container.resumeFundingMethod } ?: PayMethod.Card)
+    }
     var accepted by rememberSaveable(plot?.id) { mutableStateOf(false) }
     var pending by remember(plot?.id) { mutableStateOf(plot?.id?.let { container.pendingFunding(it) }) }
     var stage by rememberSaveable(plot?.id) {
@@ -125,7 +134,18 @@ fun FundPlotScreen(
     }
     var checking by remember(plot?.id) { mutableStateOf(false) }
     var stillUnknown by remember(plot?.id) { mutableStateOf(false) }
-    LaunchedEffect(Unit) { container.resumeFundingAtPayment = false }
+    LaunchedEffect(Unit) {
+        container.resumeFundingAtPayment = false
+        container.resumeFundingMethod = ""
+    }
+    val openCardSetup: () -> Unit = {
+        container.resumeFundingMethod = method.name
+        onAddCard()
+    }
+    val openWalletSetup: (DigitalWalletProvider) -> Unit = { provider ->
+        container.resumeFundingMethod = method.name
+        onAddWallet(provider)
+    }
     // Bloquea nuevas solicitudes mientras el financiamiento está en curso.
     var funding by remember(plot?.id) { mutableStateOf(false) }
     // Pagar con tarjeta exige una tarjeta registrada por el comerciante.
@@ -140,9 +160,21 @@ fun FundPlotScreen(
         PayMethod.Wallet -> wallet != null
         else -> true
     }
-    // Con los términos aceptados el botón avanza o, si falta la tarjeta, abre su registro.
-    val canContinue = accepted
     val methodLabel = payMethodLabel(method, cardLabel, walletLabel, referenceCode)
+    // Yape y Plin tienen un tope diario: un financiamiento mayor no se puede pagar con billetera.
+    val walletOverLimit = PlotFinance.parseAmount(amount) > WALLET_DAILY_LIMIT
+    val blockedByLimit = method == PayMethod.Wallet && walletOverLimit
+    // Yape confirma el pago con el código de aprobación de su app; no se guarda.
+    val needsYapeCode = method == PayMethod.Wallet && wallet?.provider == DigitalWalletProvider.Yape
+    var approvalCode by remember(plot?.id, method) { mutableStateOf("") }
+    val codeReady = !needsYapeCode || approvalCode.length == APPROVAL_CODE_LENGTH
+    // Con los términos aceptados el botón avanza o, si falta la tarjeta, abre su registro.
+    val canContinue = accepted && !blockedByLimit
+    val buttonEnabled = when (stage) {
+        FundingStage.Payment -> canContinue
+        FundingStage.Review -> codeReady
+        else -> true
+    }
 
     val stageBack: () -> Unit = {
         when (stage) {
@@ -304,12 +336,16 @@ fun FundPlotScreen(
                     PaymentMethodCard(method = method, onMethod = { method = it })
                     Spacer(modifier = Modifier.height(12.dp))
                     when (method) {
-                        PayMethod.Card -> SavedCardRow(cardLabel = cardLabel, onAddCard = onAddCard)
-                        PayMethod.Wallet -> WalletRow(
-                            walletLabel = walletLabel,
-                            onLink = onAddWallet,
-                            onChange = { wallet?.let { onAddWallet(it.provider) } },
-                        )
+                        PayMethod.Card -> SavedCardRow(cardLabel = cardLabel, onAddCard = openCardSetup)
+                        PayMethod.Wallet -> if (walletOverLimit) {
+                            WalletLimitRow(amount = amount)
+                        } else {
+                            WalletRow(
+                                walletLabel = walletLabel,
+                                onLink = openWalletSetup,
+                                onChange = { wallet?.let { openWalletSetup(it.provider) } },
+                            )
+                        }
                         PayMethod.Agent -> ReferenceRow(
                             title = stringResource(R.string.merchant_agent_info),
                             code = referenceCode,
@@ -332,6 +368,16 @@ fun FundPlotScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     SelectedPaymentCard(methodLabel)
                     Spacer(modifier = Modifier.height(12.dp))
+                    if (needsYapeCode) {
+                        YapeApprovalCard(
+                            code = approvalCode,
+                            onCodeChange = { approvalCode = it.filter(Char::isDigit).take(APPROVAL_CODE_LENGTH) },
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    } else if (method == PayMethod.Wallet) {
+                        WalletNoteCard(stringResource(R.string.merchant_plin_confirm_note))
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                     DisbursementCard(total = PlotFinance.parseAmount(amount))
                     Spacer(modifier = Modifier.height(12.dp))
                     EscrowRulesCard(amount)
@@ -371,15 +417,15 @@ fun FundPlotScreen(
                         .fillMaxWidth()
                         .height(60.dp)
                         .clip(CardShape)
-                        .background(if (stage == FundingStage.Payment && !canContinue) MuyuTermsBg else MuyuOlive)
+                        .background(if (buttonEnabled) MuyuOlive else MuyuTermsBg)
                         .border(1.dp, Color.Black, CardShape)
-                        .clickable(enabled = stage != FundingStage.Payment || canContinue) {
+                        .clickable(enabled = buttonEnabled) {
                             when (stage) {
                                 FundingStage.Summary -> stage = FundingStage.Payment
                                 FundingStage.Payment -> when {
                                     methodReady -> stage = FundingStage.Review
-                                    method == PayMethod.Wallet -> onAddWallet(DigitalWalletProvider.Yape)
-                                    else -> onAddCard()
+                                    method == PayMethod.Wallet -> openWalletSetup(DigitalWalletProvider.Yape)
+                                    else -> openCardSetup()
                                 }
                                 FundingStage.Review -> {
                                     if (funding) return@clickable
@@ -423,7 +469,9 @@ fun FundPlotScreen(
                         text = when {
                             funding -> stringResource(R.string.muyu_funding_processing)
                             stage == FundingStage.Summary -> stringResource(R.string.merchant_continue)
+                            stage == FundingStage.Review && !codeReady -> stringResource(R.string.merchant_enter_approval_code)
                             stage == FundingStage.Review -> stringResource(R.string.merchant_confirm_and_pay, amount)
+                            accepted && blockedByLimit -> stringResource(R.string.merchant_choose_other_method)
                             accepted && !methodReady && method == PayMethod.Wallet -> stringResource(R.string.merchant_link_wallet)
                             accepted && !methodReady -> stringResource(R.string.merchant_register_card)
                             accepted -> stringResource(R.string.merchant_continue)
@@ -433,7 +481,7 @@ fun FundPlotScreen(
                             fontFamily = UrbanistExtraBold,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 20.sp,
-                            color = if (stage == FundingStage.Payment && !canContinue) Muted else Color.White,
+                            color = if (buttonEnabled) Color.White else Muted,
                         ),
                     )
                 }
@@ -820,6 +868,81 @@ private fun WalletRow(
                 style = TextStyle(fontFamily = UrbanistBold, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MuyuOlive),
             )
         }
+    }
+}
+
+private const val WALLET_DAILY_LIMIT = 2000.0
+private const val APPROVAL_CODE_LENGTH = 6
+
+@Composable
+private fun WalletLimitRow(amount: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(MuyuPendingBg)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        MuyuMascot(mood = MascotMood.Sad, size = 52.dp)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = stringResource(R.string.merchant_wallet_limit, amount),
+            style = TextStyle(fontFamily = UrbanistMedium, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MuyuPendingText),
+        )
+    }
+}
+
+@Composable
+private fun YapeApprovalCard(code: String, onCodeChange: (String) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(Color.White)
+            .border(1.dp, MuyuForest, CardShape)
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painter = painterResource(R.drawable.yape_logo),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)),
+                contentScale = ContentScale.Crop,
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = stringResource(R.string.merchant_yape_code_title),
+                style = TextStyle(fontFamily = UrbanistBold, fontWeight = FontWeight.Bold, fontSize = 16.sp),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.merchant_yape_code_body),
+            style = TextStyle(fontFamily = UrbanistRegular, fontSize = 13.sp, color = Muted),
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = code,
+            onValueChange = onCodeChange,
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            placeholder = { Text(stringResource(R.string.merchant_yape_code_hint)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            shape = RoundedCornerShape(12.dp),
+        )
+    }
+}
+
+@Composable
+private fun WalletNoteCard(text: String) {
+    Box(
+        modifier = Modifier.fillMaxWidth().clip(CardShape).background(MuyuEscrowInfo).padding(14.dp),
+    ) {
+        Text(
+            text = text,
+            style = TextStyle(fontFamily = UrbanistSemiBold, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MuyuEscrowText),
+        )
     }
 }
 
