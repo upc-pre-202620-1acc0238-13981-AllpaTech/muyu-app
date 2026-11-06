@@ -991,4 +991,9 @@
     <string name="farmer_harvest_received_body">%1$s confirmó la recepción el %2$s. El acuerdo quedó cerrado.</string>
     <string name="farmer_harvest_incident_title">El comerciante reportó una incidencia en la entrega</string>
     <string name="farmer_harvest_incident_body">%1$s: %2$s</string>
+    <string name="weather_measures_pending">Pendiente de atención</string>
+    <string name="weather_measures_attended">Alerta atendida</string>
+    <string name="weather_measures_hint">Marca las recomendaciones que ya aplicaste para proteger tu cultivo.</string>
+    <string name="weather_measures_attended_body">Registraste estas medidas el %1$s.</string>
+    <string name="weather_measures_confirm">Confirmar medidas tomadas</string>
 </resources>

@@ -991,4 +991,9 @@
     <string name="farmer_harvest_received_body">%1$s confirmed the receipt on %2$s. The agreement is closed.</string>
     <string name="farmer_harvest_incident_title">The merchant reported a delivery incident</string>
     <string name="farmer_harvest_incident_body">%1$s: %2$s</string>
+    <string name="weather_measures_pending">Pending attention</string>
+    <string name="weather_measures_attended">Alert attended</string>
+    <string name="weather_measures_hint">Mark the recommendations you already applied to protect your crop.</string>
+    <string name="weather_measures_attended_body">You registered these measures on %1$s.</string>
+    <string name="weather_measures_confirm">Confirm measures taken</string>
 </resources>
