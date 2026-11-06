@@ -597,6 +597,13 @@
     <string name="payment_funds_released">Fondos\nliberados</string>
     <string name="payment_received">Pago\nrecibido</string>
     <string name="payment_download_pdf">Descargar recibo PDF</string>
+    <string name="payment_label_amount">Monto</string>
+    <string name="payment_release_pending">En espera de aprobación</string>
+    <string name="payment_no_card">Sin tarjeta registrada</string>
+    <string name="payment_receipt_title">Comprobante de pago por hito</string>
+    <string name="payment_receipt_footer">Los fondos estuvieron en Escrow y se liberaron al aprobarse el hito.</string>
+    <string name="payment_receipt_saved">Comprobante guardado</string>
+    <string name="payment_receipt_failed">No se pudo guardar el comprobante. Inténtalo otra vez.</string>
     <string name="payment_back_history">Volver al historial de pagos</string>
     <string name="merchant_payments_total_released">TOTAL LIBERADO EN 2026</string>
     <string name="merchant_pay_released">Liberado</string>

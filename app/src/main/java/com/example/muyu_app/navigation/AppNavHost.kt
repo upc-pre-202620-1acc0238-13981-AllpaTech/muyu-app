@@ -719,6 +719,19 @@ fun AppNavHost() {
             PaymentDetailsScreen(
                 onBack = { step = WalkthroughStep.PaymentHistory },
                 onTabSelected = selectTab,
+                isMerchant = isMerchant,
+                // El comerciante conserva su propia barra de navegación.
+                bottomBar = if (isMerchant) {
+                    {
+                        MerchantBottomBar(
+                            selectedTab = MerchantTab.Payments,
+                            onTabSelected = selectMerchantTab,
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                        )
+                    }
+                } else {
+                    null
+                },
             )
         }
         WalkthroughStep.MerchantCatalog -> MerchantCatalogScreen(

@@ -597,6 +597,13 @@
     <string name="payment_funds_released">Funds\nreleased</string>
     <string name="payment_received">Payment\nreceived</string>
     <string name="payment_download_pdf">Download PDF receipt</string>
+    <string name="payment_label_amount">Amount</string>
+    <string name="payment_release_pending">Awaiting approval</string>
+    <string name="payment_no_card">No card registered</string>
+    <string name="payment_receipt_title">Milestone payment receipt</string>
+    <string name="payment_receipt_footer">Funds were held in Escrow and released after the milestone was approved.</string>
+    <string name="payment_receipt_saved">Receipt saved</string>
+    <string name="payment_receipt_failed">The receipt could not be saved. Try again.</string>
     <string name="payment_back_history">Back to payment history</string>
     <string name="merchant_payments_total_released">TOTAL RELEASED IN 2026</string>
     <string name="merchant_pay_released">Released</string>
