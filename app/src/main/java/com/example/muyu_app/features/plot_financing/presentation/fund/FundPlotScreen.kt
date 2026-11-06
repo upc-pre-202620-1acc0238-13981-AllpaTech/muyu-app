@@ -128,7 +128,8 @@ fun FundPlotScreen(
     val savedCard = container.savedBankCard
     val cardLabel = savedCard?.let(::bankCardSummary).orEmpty()
     val methodReady = method != PayMethod.Card || savedCard != null
-    val canContinue = accepted && methodReady
+    // Con los términos aceptados el botón avanza o, si falta la tarjeta, abre su registro.
+    val canContinue = accepted
     val methodLabel = payMethodLabel(method, cardLabel)
 
     val stageBack: () -> Unit = {
@@ -350,7 +351,7 @@ fun FundPlotScreen(
                         .clickable(enabled = stage != FundingStage.Payment || canContinue) {
                             when (stage) {
                                 FundingStage.Summary -> stage = FundingStage.Payment
-                                FundingStage.Payment -> stage = FundingStage.Review
+                                FundingStage.Payment -> if (methodReady) stage = FundingStage.Review else onAddCard()
                                 FundingStage.Review -> {
                                     if (funding) return@clickable
                                     funding = true
@@ -394,7 +395,7 @@ fun FundPlotScreen(
                             funding -> stringResource(R.string.muyu_funding_processing)
                             stage == FundingStage.Summary -> stringResource(R.string.merchant_continue)
                             stage == FundingStage.Review -> stringResource(R.string.merchant_confirm_and_pay, amount)
-                            !methodReady -> stringResource(R.string.merchant_register_card)
+                            accepted && !methodReady -> stringResource(R.string.merchant_register_card)
                             accepted -> stringResource(R.string.merchant_continue)
                             else -> stringResource(R.string.merchant_accept_first)
                         },

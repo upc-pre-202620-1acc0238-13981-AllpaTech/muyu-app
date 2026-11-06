@@ -39,6 +39,7 @@ class PlotRepositoryImpl(
             Result.failure(Exception(response.message()))
         }
     } catch (e: Exception) {
+        android.util.Log.w("PlotRepository", "Could not fetch plot $id", e)
         Result.failure(e)
     }
 

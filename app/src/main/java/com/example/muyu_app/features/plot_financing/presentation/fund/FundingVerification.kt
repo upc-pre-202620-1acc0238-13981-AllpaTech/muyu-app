@@ -44,7 +44,7 @@ fun AppContainer.clearPendingFunding(plotId: Int) {
 suspend fun AppContainer.checkPendingFunding(plotId: Int): FundingCheck {
     val me = currentUserEmail().orEmpty()
     val remote = fetchRemotePlot(plotId).getOrElse { return FundingCheck.StillUnknown }
-        ?: return FundingCheck.TakenByOther
+        ?: return FundingCheck.NotPaid.also { clearPendingFunding(plotId) }
     val result = when {
         remote.status == "funded" && remote.fundedByEmail.equals(me, ignoreCase = true) -> FundingCheck.Funded
         remote.status == "funded" -> FundingCheck.TakenByOther
