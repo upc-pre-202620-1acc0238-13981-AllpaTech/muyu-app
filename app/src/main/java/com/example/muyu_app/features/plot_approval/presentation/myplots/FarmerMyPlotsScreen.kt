@@ -180,7 +180,7 @@ fun FarmerMyPlotsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(SectionBg)
+                    .background(MuyuBackground)
                     .padding(horizontal = 28.dp)
                     .padding(top = 12.dp, bottom = 14.dp),
             ) {
