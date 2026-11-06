@@ -18,7 +18,9 @@ import com.example.muyu_app.features.user_management.application.RegisterUseCase
 import com.example.muyu_app.features.user_management.presentation.incident.IncidentDraft
 import com.example.muyu_app.features.user_management.presentation.profile.SavedBankCard
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import com.example.muyu_app.core.storage.UserPreferences
 import androidx.compose.runtime.setValue
 import com.example.muyu_app.features.user_management.infrastructure.remote.AuthService
 import com.example.muyu_app.features.user_management.infrastructure.repositories.AuthRepositoryImpl
@@ -61,7 +63,26 @@ class AppContainer(
     val fakeStore = FakeApiStore(context?.let { FakeApiPersistence(it) })
     val plotDraft = PlotDraft()
     val incidentDraft = IncidentDraft()
-    var savedBankCard by mutableStateOf(SavedBankCard())
+    val userPreferences = context?.let { UserPreferences(it) }
+
+    // La tarjeta pertenece al usuario de la sesión. Una cuenta nueva empieza sin tarjeta.
+    private var bankCardVersion by mutableIntStateOf(0)
+    private val bankCardCache = mutableMapOf<String, SavedBankCard?>()
+    var savedBankCard: SavedBankCard?
+        get() {
+            bankCardVersion
+            val email = currentUserEmail() ?: return null
+            return bankCardCache.getOrPut(email) { userPreferences?.loadBankCard(email) }
+        }
+        set(value) {
+            val email = currentUserEmail() ?: return
+            bankCardCache[email] = value
+            userPreferences?.saveBankCard(email, value)
+            bankCardVersion++
+        }
+
+    fun currentUserEmail(): String? =
+        fakeStore.currentUser?.email?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
     val languages = LanguagePreferences()
     var selectedPlot: Plot? = null
     var selectedMilestoneKey: String = "fertilization"

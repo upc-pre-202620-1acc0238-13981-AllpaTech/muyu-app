@@ -449,6 +449,13 @@
     <string name="bank_account_digital_wallets">Billeteras digitales</string>
     <string name="bank_account_yape">Yape</string>
     <string name="bank_account_yape_linked">Vinculado a 987 *** 721</string>
+    <string name="bank_account_replace_card">Cambiar tarjeta</string>
+    <string name="bank_account_no_card_title">Sin tarjeta registrada</string>
+    <string name="bank_account_no_card_body">Agrega una tarjeta de débito o crédito para recibir tus desembolsos.</string>
+    <string name="bank_account_no_details">Registra una tarjeta para ver dónde llegan tus pagos.</string>
+    <string name="bank_account_holder_label">Titular</string>
+    <string name="bank_account_card_label">Tarjeta</string>
+    <string name="bank_account_wallet_not_linked">Sin vincular</string>
     <string name="bank_account_plin">Plin</string>
     <string name="bank_account_default_wallet">Cuenta predeterminada</string>
     <string name="bank_account_save_changes">Guardar cuenta</string>

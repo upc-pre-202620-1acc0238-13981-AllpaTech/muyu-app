@@ -449,6 +449,13 @@
     <string name="bank_account_digital_wallets">Digital wallets</string>
     <string name="bank_account_yape">Yape</string>
     <string name="bank_account_yape_linked">Linked to 987 *** 721</string>
+    <string name="bank_account_replace_card">Replace card</string>
+    <string name="bank_account_no_card_title">No card registered</string>
+    <string name="bank_account_no_card_body">Add a debit or credit card to receive your disbursements.</string>
+    <string name="bank_account_no_details">Register a card to see where your payments arrive.</string>
+    <string name="bank_account_holder_label">Holder</string>
+    <string name="bank_account_card_label">Card</string>
+    <string name="bank_account_wallet_not_linked">Not linked yet</string>
     <string name="bank_account_plin">Plin</string>
     <string name="bank_account_default_wallet">Default account</string>
     <string name="bank_account_save_changes">Save account</string>
