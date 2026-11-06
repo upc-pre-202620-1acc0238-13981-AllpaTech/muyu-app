@@ -41,7 +41,7 @@
     <string name="register_have_account">¿Ya tienes una cuenta?</string>
     <string name="register_accept_terms">He leído y acepto los términos y condiciones</string>
     <string name="register_name_invalid">Ingresa un nombre válido de 2 a 60 letras.</string>
-    <string name="register_email_invalid">Ingresa un correo electrónico válido.</string>
+    <string name="register_email_invalid">Ingresa un correo válido.</string>
     <string name="register_phone_invalid">Ingresa un número válido.</string>
     <string name="register_birthdate_required">Selecciona tu fecha de nacimiento.</string>
     <string name="register_birthdate_invalid">Debes tener entre 18 y 90 años.</string>
@@ -52,8 +52,10 @@
     <string name="register_rule_length">Mínimo 8 caracteres</string>
     <string name="register_rule_uppercase">Una letra mayúscula</string>
     <string name="register_rule_lowercase">Una letra minúscula</string>
+    <string name="register_rule_letter_case">Mayúsculas y minúsculas</string>
     <string name="register_rule_number">Un número</string>
     <string name="register_rule_special">Un carácter especial, como * ! @ #</string>
+    <string name="register_rule_number_and_special">Al menos un número y un símbolo</string>
     <string name="register_rule_no_spaces">Sin espacios</string>
     <string name="register_rule_met">Cumplida</string>
     <string name="register_rule_missing">Pendiente</string>

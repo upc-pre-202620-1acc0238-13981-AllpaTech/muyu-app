@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -82,6 +83,20 @@ private const val MAXIMUM_AGE = 90L
 private val EMAIL_PATTERN = Regex(
     "^[A-Za-z0-9](?:[A-Za-z0-9._%+-]{0,62}[A-Za-z0-9])?@" +
         "[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z]{2,})+$",
+)
+private val ALLOWED_EMAIL_DOMAINS = setOf(
+    "gmail.com",
+    "outlook.com",
+    "outlook.es",
+    "hotmail.com",
+    "hotmail.es",
+    "yahoo.com",
+    "yahoo.es",
+    "icloud.com",
+    "live.com",
+    "msn.com",
+    "proton.me",
+    "protonmail.com",
 )
 private val NAME_PATTERN = Regex("^[\\p{L}][\\p{L} .'-]{1,59}$")
 private val PHONE_PATTERN = Regex("^9\\d{8}$")
@@ -123,6 +138,7 @@ fun RegisterScreen(
     var acceptedTerms by rememberSaveable { mutableStateOf(false) }
     var passwordHidden by rememberSaveable { mutableStateOf(true) }
     var confirmHidden by rememberSaveable { mutableStateOf(true) }
+    var passwordFocused by remember { mutableStateOf(false) }
     var validationError by rememberSaveable {
         mutableStateOf<RegistrationValidationError?>(null)
     }
@@ -220,8 +236,11 @@ fun RegisterScreen(
                 onToggleVisibility = { passwordHidden = !passwordHidden },
                 error = messageFor(RegistrationValidationError.PASSWORD),
                 bottomSpacing = 8.dp,
+                modifier = Modifier.onFocusChanged { passwordFocused = it.hasFocus },
             )
-            PasswordChecklist(password = password)
+            if (passwordFocused) {
+                PasswordChecklist(password = password)
+            }
             Spacer(modifier = Modifier.height(12.dp))
             AuthFieldBlock(
                 label = stringResource(R.string.register_confirm_password),
@@ -329,7 +348,7 @@ private fun validateRegistration(
     acceptedTerms: Boolean,
 ): RegistrationValidationError? {
     if (!NAME_PATTERN.matches(name)) return RegistrationValidationError.NAME
-    if (!EMAIL_PATTERN.matches(email)) return RegistrationValidationError.EMAIL
+    if (!isAcceptedEmail(email)) return RegistrationValidationError.EMAIL
     if (!PHONE_PATTERN.matches(phone)) return RegistrationValidationError.PHONE
     if (birthDate == null) return RegistrationValidationError.BIRTHDATE_REQUIRED
 
@@ -345,6 +364,12 @@ private fun validateRegistration(
     if (password != confirmPassword) return RegistrationValidationError.PASSWORD_MISMATCH
     if (!acceptedTerms) return RegistrationValidationError.TERMS
     return null
+}
+
+private fun isAcceptedEmail(email: String): Boolean {
+    if (!EMAIL_PATTERN.matches(email)) return false
+    val domain = email.substringAfterLast('@').lowercase(Locale.ROOT)
+    return domain in ALLOWED_EMAIL_DOMAINS
 }
 
 private fun RegistrationValidationError.messageResource(): Int = when (this) {
@@ -381,7 +406,7 @@ private fun PasswordChecklist(password: String) {
     val metLabel = stringResource(R.string.register_rule_met)
     val missingLabel = stringResource(R.string.register_rule_missing)
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        passwordRules(password).forEach { rule ->
+        passwordChecklistRules(password).forEach { rule ->
             val label = stringResource(rule.label)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -405,6 +430,23 @@ private fun PasswordChecklist(password: String) {
         }
     }
 }
+
+private fun passwordChecklistRules(password: String): List<PasswordRule> = listOf(
+    PasswordRule(R.string.register_rule_length, password.length >= 8),
+    PasswordRule(
+        R.string.register_rule_letter_case,
+        password.any(Char::isUpperCase) && password.any(Char::isLowerCase),
+    ),
+    PasswordRule(
+        R.string.register_rule_number_and_special,
+        password.any(Char::isDigit) &&
+            password.any { !it.isLetterOrDigit() && !it.isWhitespace() },
+    ),
+    PasswordRule(
+        R.string.register_rule_no_spaces,
+        password.isNotEmpty() && password.none(Char::isWhitespace),
+    ),
+)
 
 @Composable
 private fun TermsCheckbox(
@@ -471,6 +513,7 @@ private fun AuthFieldBlock(
     onToggleVisibility: (() -> Unit)? = null,
     error: String? = null,
     bottomSpacing: Dp = 12.dp,
+    modifier: Modifier = Modifier,
     onValueChange: (String) -> Unit,
 ) {
     AuthLabel(text = label)
@@ -480,6 +523,7 @@ private fun AuthFieldBlock(
         onValueChange = onValueChange,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         isError = error != null,
+        modifier = modifier,
         visualTransformation = if (hidden == true) {
             PasswordVisualTransformation()
         } else {

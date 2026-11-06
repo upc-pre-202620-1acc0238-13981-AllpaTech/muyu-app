@@ -41,7 +41,7 @@
     <string name="register_have_account">Do you have an account?</string>
     <string name="register_accept_terms">I have read and accept the terms and conditions</string>
     <string name="register_name_invalid">Enter a valid name using 2 to 60 letters.</string>
-    <string name="register_email_invalid">Enter a valid email address.</string>
+    <string name="register_email_invalid">Enter a valid email.</string>
     <string name="register_phone_invalid">Enter a valid number.</string>
     <string name="register_birthdate_required">Select your date of birth.</string>
     <string name="register_birthdate_invalid">You must be between 18 and 90 years old.</string>
@@ -52,8 +52,10 @@
     <string name="register_rule_length">At least 8 characters</string>
     <string name="register_rule_uppercase">One uppercase letter</string>
     <string name="register_rule_lowercase">One lowercase letter</string>
+    <string name="register_rule_letter_case">Uppercase and lowercase letters</string>
     <string name="register_rule_number">One number</string>
     <string name="register_rule_special">One special character, such as * ! @ #</string>
+    <string name="register_rule_number_and_special">At least one number and symbol</string>
     <string name="register_rule_no_spaces">No spaces</string>
     <string name="register_rule_met">Met</string>
     <string name="register_rule_missing">Missing</string>
