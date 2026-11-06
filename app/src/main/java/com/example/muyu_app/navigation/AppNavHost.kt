@@ -42,7 +42,6 @@ import com.example.muyu_app.features.labor_execution.presentation.evidence.Selec
 import com.example.muyu_app.features.plot_financing.presentation.visit.VisitOutcomeScreen
 import com.example.muyu_app.features.plot_financing.presentation.visit.MerchantVisitRequestScreen
 import com.example.muyu_app.features.plot_financing.presentation.visit.MerchantVisitSentScreen
-import com.example.muyu_app.features.labor_execution.presentation.sync.SyncConnectedScreen
 import com.example.muyu_app.features.labor_execution.presentation.sync.SyncScreen
 import com.example.muyu_app.features.plot_approval.presentation.home.FarmerHomeScreen
 import com.example.muyu_app.features.plot_approval.presentation.myplots.FarmerMyPlotsScreen
@@ -125,7 +124,6 @@ private enum class WalkthroughStep {
     RecordEvidence,
     WeatherAlert,
     Sync,
-    SyncConnected,
     Profile,
     BankAccount,
     AddBankCard,
@@ -304,7 +302,6 @@ fun AppNavHost() {
         WalkthroughStep.RecordEvidence,
         WalkthroughStep.WeatherAlert,
         WalkthroughStep.Sync,
-        WalkthroughStep.SyncConnected,
         WalkthroughStep.Profile,
         WalkthroughStep.BankAccount,
         WalkthroughStep.AddBankCard,
@@ -623,12 +620,6 @@ fun AppNavHost() {
             )
         }
         WalkthroughStep.Sync -> TabOrContent(currentTab, selectTab) {
-            SyncScreen(
-                onBack = { step = WalkthroughStep.FarmerHome },
-                onTabSelected = selectTab,
-            )
-        }
-        WalkthroughStep.SyncConnected -> TabOrContent(currentTab, selectTab) {
             SyncScreen(
                 onBack = { step = WalkthroughStep.FarmerHome },
                 onTabSelected = selectTab,
