@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.rating
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -29,7 +30,7 @@ import com.example.muyu_app.ui.theme.*
 fun RatingSubmittedScreen(rating: Int, comment: String, farmerName: String,
                           onBackToProfile: () -> Unit) {
     var showContract by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().background(MuyuPageGray).navigationBarsPadding()) {
+    Column(Modifier.fillMaxSize().background(MuyuBackground).navigationBarsPadding()) {
         GreenTitleHeader(stringResource(R.string.rating_submitted_title), onBackToProfile)
         // Los frames 329 y 330 comparten este contenido desplazable y los botones inferiores.
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp),
@@ -56,7 +57,7 @@ fun RatingSubmittedScreen(rating: Int, comment: String, farmerName: String,
                 comment.ifBlank { stringResource(R.string.rating_no_comment) }, color = Color.Gray)
             RatingText(stringResource(R.string.rating_preview_notice), size = 12, color = Color.Gray)
         }
-        Column(Modifier.fillMaxWidth().background(MuyuPageGray).padding(horizontal = 24.dp)
+        Column(Modifier.fillMaxWidth().background(MuyuBackground).padding(horizontal = 24.dp)
             .padding(top = 8.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             RatingButton(stringResource(R.string.rating_view_contract), { showContract = true })
             RatingButton(stringResource(R.string.rating_back_profile), onBackToProfile, outlined = true)

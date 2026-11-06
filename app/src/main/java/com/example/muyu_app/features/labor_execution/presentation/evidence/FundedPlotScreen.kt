@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.labor_execution.presentation.evidence
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuNavBar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -98,7 +99,7 @@ fun FundedPlotScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFEAF9E9)),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             FundedPlotHeader(

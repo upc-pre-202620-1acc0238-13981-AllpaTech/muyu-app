@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.labor_execution.presentation.sync
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -41,7 +42,6 @@ import com.example.muyu_app.core.designsystem.components.MuyuTab
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
 
 private val CardShape = RoundedCornerShape(20.dp)
@@ -67,7 +67,7 @@ fun SyncConnectedScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(

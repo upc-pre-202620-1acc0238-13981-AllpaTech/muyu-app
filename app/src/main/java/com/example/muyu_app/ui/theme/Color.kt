@@ -2,7 +2,7 @@ package com.example.muyu_app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val MuyuBackground = Color(0xFFEAFBE2)
+val MuyuBackground = Color(0xFFEAFAE9)
 val MuyuForest = Color(0xFF213D09)
 val MuyuField = Color(0xFFFFFEFE)
 val MuyuLime = Color(0xFF8FDA51)

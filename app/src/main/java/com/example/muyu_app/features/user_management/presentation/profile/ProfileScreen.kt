@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.profile
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import android.content.Intent
 import android.net.Uri
 import androidx.annotation.DrawableRes
@@ -54,7 +55,6 @@ import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.ui.theme.MuyuNavBar
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
 
 private enum class FarmerAlertChannel { Call, Push, WhatsApp }
@@ -142,7 +142,7 @@ fun ProfileScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Box(

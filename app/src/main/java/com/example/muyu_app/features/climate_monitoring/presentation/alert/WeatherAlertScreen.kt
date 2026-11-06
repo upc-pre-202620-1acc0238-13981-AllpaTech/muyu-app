@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.climate_monitoring.presentation.alert
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
@@ -52,7 +53,6 @@ import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.climate_monitoring.data.OpenMeteoWeatherClient
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuStatCard
 import com.example.muyu_app.ui.theme.MuyuWeatherCard
 import com.example.muyu_app.ui.theme.MuyuappTheme
@@ -106,7 +106,7 @@ fun WeatherAlertScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(

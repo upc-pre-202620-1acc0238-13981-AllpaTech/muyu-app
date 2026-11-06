@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.escrow_custody.presentation.payments
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -58,7 +59,6 @@ import com.example.muyu_app.ui.theme.MuyuApprovedBg
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuNearText
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuPendingBg
 import com.example.muyu_app.ui.theme.MuyuPendingText
 import com.example.muyu_app.ui.theme.MuyuSkip
@@ -146,7 +146,7 @@ fun PaymentHistoryScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(

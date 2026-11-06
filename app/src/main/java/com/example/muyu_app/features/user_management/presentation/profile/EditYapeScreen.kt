@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.user_management.presentation.profile
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,7 +49,6 @@ import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.GreenTitleHeader
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistRegular
 
@@ -89,7 +89,7 @@ fun EditDigitalWalletScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         GreenTitleHeader(
             title = stringResource(editTitleRes),

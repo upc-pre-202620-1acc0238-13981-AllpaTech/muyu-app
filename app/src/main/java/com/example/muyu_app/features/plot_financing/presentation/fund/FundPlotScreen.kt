@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.fund
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import java.util.Locale
@@ -62,7 +63,6 @@ import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuFundBanner
 import com.example.muyu_app.ui.theme.MuyuGrayChip
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuSkip
 import com.example.muyu_app.ui.theme.MuyuTermsBg
 import com.example.muyu_app.ui.theme.MuyuappTheme
@@ -119,7 +119,7 @@ fun FundPlotScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         GreenTitleHeader(
             title = stringResource(

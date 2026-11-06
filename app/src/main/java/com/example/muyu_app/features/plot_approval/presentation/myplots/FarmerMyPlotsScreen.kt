@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_approval.presentation.myplots
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuNavBar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -57,7 +58,6 @@ import com.example.muyu_app.ui.theme.MuyuFinancedBg
 import com.example.muyu_app.ui.theme.MuyuFinancedText
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuHeader
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
@@ -110,7 +110,7 @@ fun FarmerMyPlotsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
