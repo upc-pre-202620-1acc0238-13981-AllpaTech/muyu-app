@@ -44,5 +44,6 @@ class UserPreferences(context: Context) {
         const val KEY_ALERT_CHANNEL = "alert_channel"
         const val KEY_SYNC_WIFI_ONLY = "sync_wifi_only"
         const val KEY_NEW_PLOT_ALERTS = "new_plot_alerts"
+        const val KEY_LAST_ROLE = "last_role"
     }
 }

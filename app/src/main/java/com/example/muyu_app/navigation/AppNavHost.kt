@@ -85,6 +85,7 @@ import com.example.muyu_app.features.user_management.presentation.rating.RateBuy
 import com.example.muyu_app.features.user_management.presentation.rating.RatingSubmittedScreen
 import androidx.compose.ui.res.stringResource
 import com.example.muyu_app.R
+import com.example.muyu_app.core.storage.UserPreferences
 import com.example.muyu_app.ui.splash.SplashScreen
 import kotlinx.coroutines.delay
 
@@ -161,6 +162,9 @@ private val PublicSteps = setOf(
     WalkthroughStep.SafetyPin,
     WalkthroughStep.Terms,
 )
+
+private const val ROLE_FARMER = "farmer"
+private const val ROLE_MERCHANT = "merchant"
 
 @Composable
 fun AppNavHost() {
@@ -351,19 +355,32 @@ fun AppNavHost() {
     }
     if (needsLogin) return@ProvideAppLocale
 
-    val afterSplash = if (container.fakeStore.currentUser != null) {
-        WalkthroughStep.Role
-    } else {
-        WalkthroughStep.Login
+    // Con sesión guardada vuelve al inicio del último rol elegido por ese usuario.
+    val sessionEmail = container.currentUserEmail()
+    val lastRole = sessionEmail?.let {
+        container.userPreferences?.loadString(it, UserPreferences.KEY_LAST_ROLE, "")
+    }.orEmpty()
+    val afterSplash = when {
+        sessionEmail == null -> WalkthroughStep.Login
+        lastRole == ROLE_FARMER -> WalkthroughStep.FarmerHome
+        lastRole == ROLE_MERCHANT -> WalkthroughStep.MerchantCatalog
+        else -> WalkthroughStep.Role
+    }
+    val leaveSplash = {
+        isMerchant = lastRole == ROLE_MERCHANT
+        step = afterSplash
+    }
+    val rememberRole: (String) -> Unit = { role ->
+        sessionEmail?.let { container.userPreferences?.saveString(it, UserPreferences.KEY_LAST_ROLE, role) }
     }
 
     when (step) {
         WalkthroughStep.Splash -> {
             LaunchedEffect(Unit) {
                 delay(1500)
-                step = afterSplash
+                leaveSplash()
             }
-            SplashScreen(onContinue = { step = afterSplash })
+            SplashScreen(onContinue = leaveSplash)
         }
         WalkthroughStep.Login -> LoginScreen(
             onLoginSuccess = { step = WalkthroughStep.Loading },
@@ -436,12 +453,13 @@ fun AppNavHost() {
             onBack = { step = WalkthroughStep.OnboardingEscrow },
         )
         WalkthroughStep.Role -> RoleSelectionScreen(
-            onNext = { step = WalkthroughStep.PlotDetail },
             onFarmerSelected = {
+                rememberRole(ROLE_FARMER)
                 isMerchant = false
                 step = WalkthroughStep.FarmerHome
             },
             onMerchantSelected = {
+                rememberRole(ROLE_MERCHANT)
                 isMerchant = true
                 step = WalkthroughStep.MerchantCatalog
             },
