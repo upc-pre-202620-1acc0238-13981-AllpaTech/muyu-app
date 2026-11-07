@@ -92,7 +92,7 @@ import com.example.muyu_app.features.user_management.presentation.profile.saveMe
 import com.example.muyu_app.features.user_management.presentation.profile.merchantWallet
 import com.example.muyu_app.features.user_management.presentation.profile.MerchantWallet
 import com.example.muyu_app.features.user_management.presentation.profile.DigitalWalletAccount
-import com.example.muyu_app.core.storage.UserPreferences
+import com.example.muyu_app.core.storage.BackendPreferences
 import com.example.muyu_app.ui.splash.SplashScreen
 import kotlinx.coroutines.delay
 
@@ -369,7 +369,7 @@ fun AppNavHost() {
         language = appLanguage,
         onToggle = { languages.toggle(isMerchant) },
     ) {
-    val needsLogin = step !in PublicSteps && container.fakeStore.currentUser == null
+    val needsLogin = step !in PublicSteps && container.backendStore.currentUser == null
     LaunchedEffect(needsLogin) {
         if (needsLogin) {
             tab = null
@@ -382,7 +382,7 @@ fun AppNavHost() {
     // Con sesión guardada vuelve al inicio del último rol elegido por ese usuario.
     val sessionEmail = container.currentUserEmail()
     val lastRole = sessionEmail?.let {
-        container.userPreferences?.loadString(it, UserPreferences.KEY_LAST_ROLE, "")
+        container.userPreferences?.loadString(it, BackendPreferences.KEY_LAST_ROLE, "")
     }.orEmpty()
     val afterSplash = when {
         sessionEmail == null -> WalkthroughStep.Login
@@ -395,7 +395,7 @@ fun AppNavHost() {
         step = afterSplash
     }
     val rememberRole: (String) -> Unit = { role ->
-        sessionEmail?.let { container.userPreferences?.saveString(it, UserPreferences.KEY_LAST_ROLE, role) }
+        sessionEmail?.let { container.userPreferences?.saveString(it, BackendPreferences.KEY_LAST_ROLE, role) }
     }
 
     when (step) {
@@ -445,6 +445,7 @@ fun AppNavHost() {
                 step = if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.SafetyPin
             },
             onContinue = { step = WalkthroughStep.PasswordFlowComplete },
+            onChangePassword = container::changePassword,
         )
         WalkthroughStep.ChangePin -> ChangePinScreen(
             onBack = { step = WalkthroughStep.Profile },
@@ -762,12 +763,17 @@ fun AppNavHost() {
             rating = buyerRating, comment = buyerRatingComment,
             onRatingChange = { buyerRating = it }, onCommentChange = { buyerRatingComment = it },
             onBack = { step = WalkthroughStep.Profile },
-            // Envía únicamente a la confirmación visual; la integración remota queda pendiente.
-            onSubmit = { if (buyerRating in 1..5) step = WalkthroughStep.RatingSubmitted },
+            // Stores the rating in the authenticated backend state before showing confirmation.
+            onSubmit = {
+                if (buyerRating in 1..5) {
+                    container.backendStore.addRating(buyerRating, buyerRatingComment)
+                    step = WalkthroughStep.RatingSubmitted
+                }
+            },
         )
         WalkthroughStep.RatingSubmitted -> RatingSubmittedScreen(
             rating = buyerRating, comment = buyerRatingComment.trim(),
-            farmerName = container.fakeStore.currentUser?.displayName?.takeIf { it.isNotBlank() }
+            farmerName = container.backendStore.currentUser?.displayName?.takeIf { it.isNotBlank() }
                 ?: stringResource(R.string.rating_farmer_preview),
             onBackToProfile = { step = WalkthroughStep.Profile },
         )
@@ -795,9 +801,9 @@ fun AppNavHost() {
             provider = DigitalWalletProvider.Yape,
             account = container.yapeAccount,
             holderName = container.yapeAccount?.holderName?.takeIf(String::isNotBlank)
-                ?: container.fakeStore.currentUser?.displayName?.takeIf(String::isNotBlank)
+                ?: container.backendStore.currentUser?.displayName?.takeIf(String::isNotBlank)
                 .orEmpty(),
-            initialPhone = container.fakeStore.currentUser?.phone.orEmpty(),
+            initialPhone = container.backendStore.currentUser?.phone.orEmpty(),
             onBack = { step = WalkthroughStep.BankAccount },
             onSave = { account ->
                 container.yapeAccount = account
@@ -815,9 +821,9 @@ fun AppNavHost() {
             provider = DigitalWalletProvider.Plin,
             account = container.plinAccount,
             holderName = container.plinAccount?.holderName?.takeIf(String::isNotBlank)
-                ?: container.fakeStore.currentUser?.displayName?.takeIf(String::isNotBlank)
+                ?: container.backendStore.currentUser?.displayName?.takeIf(String::isNotBlank)
                 .orEmpty(),
-            initialPhone = container.fakeStore.currentUser?.phone.orEmpty(),
+            initialPhone = container.backendStore.currentUser?.phone.orEmpty(),
             onBack = { step = WalkthroughStep.BankAccount },
             onSave = { account ->
                 container.plinAccount = account
@@ -928,8 +934,8 @@ fun AppNavHost() {
                 provider = merchantWalletProvider,
                 account = saved?.let { DigitalWalletAccount(phone = it.phone, holderName = it.holderName) },
                 holderName = saved?.holderName?.takeIf(String::isNotBlank)
-                    ?: container.fakeStore.currentUser?.displayName.orEmpty(),
-                initialPhone = container.fakeStore.currentUser?.phone.orEmpty(),
+                    ?: container.backendStore.currentUser?.displayName.orEmpty(),
+                initialPhone = container.backendStore.currentUser?.phone.orEmpty(),
                 onBack = leave,
                 onSave = { account ->
                     container.saveMerchantWallet(

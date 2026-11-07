@@ -169,7 +169,7 @@ fun HarvestReceiptScreen(
             saving = true
             scope.launch {
                 val merchant = container.currentUserEmail().orEmpty()
-                container.fakeStore.confirmHarvestReceived(current.id, merchant)
+                container.backendStore.confirmHarvestReceived(current.id, merchant)
                 plot = container.syncFollowUp(current.id)
                 justConfirmed = true
                 saving = false
@@ -299,7 +299,7 @@ fun HarvestIncidentScreen(
             saving = true
             scope.launch {
                 val now = System.currentTimeMillis()
-                container.fakeStore.reportHarvestIncident(
+                container.backendStore.reportHarvestIncident(
                     plot.id,
                     HarvestIncident(
                         reason = reason,
@@ -322,12 +322,12 @@ fun HarvestIncidentScreen(
 /** Lee la versión guardada de la parcela seleccionada. */
 internal fun AppContainer.liveSelectedPlot(): Plot? {
     val id = selectedPlot?.id ?: return selectedPlot
-    return fakeStore.plotById(id)?.let { fakeStore.toDomain(it) } ?: selectedPlot
+    return backendStore.plotById(id)?.let { backendStore.toDomain(it) } ?: selectedPlot
 }
 
 /** Guarda el seguimiento localmente y lo envía al servidor cuando hay conexión. */
 internal suspend fun AppContainer.syncFollowUp(plotId: Int): Plot? {
-    val local = fakeStore.plotById(plotId)?.let { fakeStore.toDomain(it) } ?: return null
+    val local = backendStore.plotById(plotId)?.let { backendStore.toDomain(it) } ?: return null
     selectedPlot = local
     syncPlot(local).onSuccess { selectedPlot = it }
     return selectedPlot

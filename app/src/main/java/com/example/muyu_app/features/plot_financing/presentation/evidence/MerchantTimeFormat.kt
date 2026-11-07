@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.example.muyu_app.R
 import com.example.muyu_app.core.network.MerchantNotificationRecord
-import com.example.muyu_app.core.network.FakeApiStore
+import com.example.muyu_app.core.network.BackendStateStore
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import java.text.DateFormat
@@ -86,7 +86,7 @@ fun isSameCalendarDay(millis: Long, nowMillis: Long = System.currentTimeMillis()
 fun resolveMilestoneSubmittedAt(
     milestone: MilestoneState?,
     plotId: Int?,
-    store: FakeApiStore,
+    store: BackendStateStore,
     merchantEmail: String,
 ): Long {
     milestone?.submittedAtMillis?.takeIf { it > 0L }?.let { return it }

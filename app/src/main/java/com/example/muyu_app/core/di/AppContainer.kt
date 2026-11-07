@@ -3,8 +3,8 @@ package com.example.muyu_app.core.di
 import android.content.Context
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.example.muyu_app.core.i18n.LanguagePreferences
-import com.example.muyu_app.core.network.FakeApiPersistence
-import com.example.muyu_app.core.network.FakeApiStore
+import com.example.muyu_app.core.network.BackendStateStore
+import com.example.muyu_app.core.network.MobileStateService
 import com.example.muyu_app.features.plot_approval.application.CreatePlotUseCase
 import com.example.muyu_app.features.plot_approval.application.DeletePlotUseCase
 import com.example.muyu_app.features.plot_financing.application.FundPlotUseCase
@@ -14,8 +14,6 @@ import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotDraft
 import com.example.muyu_app.features.plot_approval.domain.PlotVisit
 import com.example.muyu_app.features.plot_approval.domain.PlotVisitRepository
-import com.example.muyu_app.features.plot_approval.infrastructure.remote.PlotService
-import com.example.muyu_app.features.plot_approval.infrastructure.remote.VisitService
 import com.example.muyu_app.features.plot_approval.infrastructure.repositories.PlotRepositoryImpl
 import com.example.muyu_app.features.plot_approval.infrastructure.repositories.PlotVisitRepositoryImpl
 import com.example.muyu_app.features.user_management.application.LoginUseCase
@@ -26,11 +24,19 @@ import com.example.muyu_app.features.user_management.presentation.profile.Digita
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import com.example.muyu_app.core.storage.UserPreferences
 import androidx.compose.runtime.setValue
 import com.example.muyu_app.features.user_management.infrastructure.remote.AuthService
+import com.example.muyu_app.features.user_management.infrastructure.remote.ChangePasswordRequestDto
 import com.example.muyu_app.features.user_management.infrastructure.repositories.AuthRepositoryImpl
 import com.example.muyu_app.core.designsystem.components.MerchantTab
+import com.google.gson.Gson
+import com.example.muyu_app.core.storage.BackendPreferences
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 enum class MerchantEvidenceOrigin {
     Alerts,
@@ -67,10 +73,14 @@ data class MerchantVisitRequest(
 class AppContainer(
     context: Context? = null,
 ) {
-    val fakeStore = FakeApiStore(context?.let { FakeApiPersistence(it) })
+    // Runtime cache only. The backend is the sole persistent source of truth.
+    val backendStore = BackendStateStore()
     val plotDraft = PlotDraft()
     val incidentDraft = IncidentDraft()
-    val userPreferences = context?.let { UserPreferences(it) }
+    private val gson = Gson()
+    private val networkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val syncMutex = Mutex()
+    val userPreferences = BackendPreferences(backendStore)
 
     // La tarjeta pertenece al usuario de la sesión. Una cuenta nueva empieza sin tarjeta.
     private var bankCardVersion by mutableIntStateOf(0)
@@ -79,17 +89,24 @@ class AppContainer(
         get() {
             bankCardVersion
             val email = currentUserEmail() ?: return null
-            return bankCardCache.getOrPut(email) { userPreferences?.loadBankCard(email) }
+            return bankCardCache.getOrPut(email) {
+                backendStore.preferences[preferenceKey(email, KEY_BANK_CARD)]
+                    ?.takeIf(String::isNotBlank)
+                    ?.let { gson.fromJson(it, SavedBankCard::class.java) }
+            }
         }
         set(value) {
             val email = currentUserEmail() ?: return
             bankCardCache[email] = value
-            userPreferences?.saveBankCard(email, value)
+            val key = preferenceKey(email, KEY_BANK_CARD)
+            if (value == null) backendStore.preferences.remove(key)
+            else backendStore.preferences[key] = gson.toJson(value)
+            backendStore.persist()
             bankCardVersion++
         }
 
     fun currentUserEmail(): String? =
-        fakeStore.currentUser?.email?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
+        backendStore.currentUser?.email?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
 
     // Yape y Plin del agricultor: se guardan por usuario y una cuenta nueva empieza sin billeteras.
     private var walletVersion by mutableIntStateOf(0)
@@ -103,7 +120,7 @@ class AppContainer(
     private fun loadWallet(name: String): DigitalWalletAccount? {
         walletVersion
         val email = currentUserEmail() ?: return null
-        val parts = userPreferences?.loadString(email, name, "").orEmpty().split(WALLET_SEPARATOR)
+        val parts = backendStore.preferences[preferenceKey(email, name)].orEmpty().split(WALLET_SEPARATOR)
         val phone = parts.getOrNull(0).orEmpty()
         if (phone.isBlank()) return null
         return DigitalWalletAccount(
@@ -120,7 +137,9 @@ class AppContainer(
             listOf(it.phone, it.holderName, if (it.isPrimary) "1" else "0", if (it.isVerified) "1" else "0")
                 .joinToString(WALLET_SEPARATOR)
         }.orEmpty()
-        userPreferences?.saveString(email, name, value)
+        val key = preferenceKey(email, name)
+        if (value.isBlank()) backendStore.preferences.remove(key) else backendStore.preferences[key] = value
+        backendStore.persist()
         walletVersion++
     }
     val languages = LanguagePreferences()
@@ -152,14 +171,35 @@ class AppContainer(
         }
     }
 
-    private val retrofit = NetworkModule.provideRetrofit(fakeStore)
+    private val retrofit = NetworkModule.provideRetrofit(backendStore)
 
     val authService: AuthService = retrofit.create(AuthService::class.java)
-    val plotService: PlotService = retrofit.create(PlotService::class.java)
-    private val visitService: VisitService = retrofit.create(VisitService::class.java)
+    private val mobileStateService: MobileStateService = retrofit.create(MobileStateService::class.java)
 
-    private val authRepository = AuthRepositoryImpl(authService, fakeStore)
-    private val plotRepository = PlotRepositoryImpl(plotService, fakeStore)
+    private val authRepository = AuthRepositoryImpl(authService, backendStore, mobileStateService)
+    private val plotRepository = PlotRepositoryImpl(backendStore, mobileStateService)
+
+    init {
+        backendStore.onPersist = { snapshot ->
+            if (!backendStore.token.isNullOrBlank()) {
+                networkScope.launch {
+                    syncMutex.withLock {
+                        val privateSnapshot = snapshot.copy(plots = emptyList(), visits = emptyList())
+                        val stateResponse = mobileStateService.putState(privateSnapshot)
+                        check(stateResponse.isSuccessful) { "Backend state sync failed: ${stateResponse.code()}" }
+                        snapshot.plots.forEach { plot ->
+                            val response = mobileStateService.putPlot(plot.id, plot)
+                            check(response.isSuccessful) { "Plot ${plot.id} sync failed: ${response.code()}" }
+                        }
+                        snapshot.visits.forEach { visit ->
+                            val response = mobileStateService.putVisit(visit.id, visit)
+                            check(response.isSuccessful) { "Visit ${visit.id} sync failed: ${response.code()}" }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     val loginUseCase = LoginUseCase(authRepository)
     val registerUseCase = RegisterUseCase(authRepository)
@@ -168,14 +208,21 @@ class AppContainer(
     val updatePlotUseCase = UpdatePlotUseCase(plotRepository)
     val fundPlotUseCase = FundPlotUseCase(plotRepository)
     val deletePlotUseCase = DeletePlotUseCase(plotRepository)
-    val plotVisits: PlotVisitRepository = PlotVisitRepositoryImpl(visitService)
+    val plotVisits: PlotVisitRepository = PlotVisitRepositoryImpl(backendStore)
 
     suspend fun syncPlot(plot: Plot): Result<Plot> = plotRepository.syncPlot(plot)
 
     suspend fun fetchRemotePlot(id: Int): Result<Plot?> = plotRepository.fetchRemotePlot(id)
 
+    suspend fun changePassword(currentPassword: String, newPassword: String): Result<Unit> = runCatching {
+        val response = authService.changePassword(ChangePasswordRequestDto(currentPassword, newPassword))
+        if (!response.isSuccessful) {
+            throw IllegalStateException(response.errorBody()?.string() ?: "Password change failed (${response.code()})")
+        }
+    }
+
     fun clearSession() {
-        fakeStore.endSession()
+        backendStore.endSession()
         selectedPlot = null
         selectedVisit = null
         // Limpia los destinos anteriores para no heredarlos en otra sesión.
@@ -198,4 +245,7 @@ val LocalAppContainer = staticCompositionLocalOf<AppContainer> {
 
 private const val KEY_YAPE = "farmer_yape"
 private const val KEY_PLIN = "farmer_plin"
+private const val KEY_BANK_CARD = "merchant_bank_card"
 private const val WALLET_SEPARATOR = "\u001F"
+
+private fun preferenceKey(email: String, name: String): String = "${email.lowercase()}:$name"

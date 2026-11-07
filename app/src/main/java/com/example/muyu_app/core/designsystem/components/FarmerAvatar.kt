@@ -40,7 +40,7 @@ fun FarmerAvatar(
     val container = LocalAppContainer.current
     val avatarUri = remember(email) {
         email?.let { mail ->
-            container.fakeStore.users.find { it.email.equals(mail, ignoreCase = true) }?.avatarUri
+            container.backendStore.users.find { it.email.equals(mail, ignoreCase = true) }?.avatarUri
         }.orEmpty()
     }
     var failed by remember(avatarUri) { mutableStateOf(false) }

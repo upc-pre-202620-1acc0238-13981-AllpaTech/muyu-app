@@ -8,5 +8,6 @@ interface AuthRepository {
         phone: String,
         birthdate: String,
         password: String,
+        dni: String,
     ): Result<User>
 }

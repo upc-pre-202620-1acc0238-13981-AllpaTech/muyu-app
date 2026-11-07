@@ -44,7 +44,7 @@ fun FarmerHarvestNotice(plot: Plot, modifier: Modifier = Modifier) {
     if (state != HarvestDeliveryState.Received && state != HarvestDeliveryState.WithIncident) return
     val container = LocalAppContainer.current
     val merchant = plot.harvestReceivedBy.ifBlank { plot.fundedByEmail.orEmpty() }
-        .let { email -> container.fakeStore.ownerName(email).ifBlank { email } }
+        .let { email -> container.backendStore.ownerName(email).ifBlank { email } }
     val received = state == HarvestDeliveryState.Received
     val title = stringResource(
         if (received) R.string.farmer_harvest_received_title else R.string.farmer_harvest_incident_title,

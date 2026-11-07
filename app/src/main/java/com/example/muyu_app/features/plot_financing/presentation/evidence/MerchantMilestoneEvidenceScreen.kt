@@ -92,8 +92,8 @@ fun MerchantMilestoneEvidenceScreen(
     val milestone = plot?.milestoneForEvidence(milestoneKey)
     val farmerName = plot?.ownerName?.ifBlank { null }.orEmpty()
     val farmerFirst = farmerName.substringBefore(" ").ifBlank { farmerName }
-    val merchantEmail = container.fakeStore.currentUser?.email.orEmpty()
-    val sentAt = resolveMilestoneSubmittedAt(milestone, plot?.id, container.fakeStore, merchantEmail)
+    val merchantEmail = container.backendStore.currentUser?.email.orEmpty()
+    val sentAt = resolveMilestoneSubmittedAt(milestone, plot?.id, container.backendStore, merchantEmail)
     val locale = context.resources.configuration.locales[0]
     val sentSubtitle = when {
         sentAt <= 0L -> stringResource(R.string.merchant_sent_at_unknown, plot?.name.orEmpty())

@@ -6,6 +6,7 @@ import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
+import com.example.muyu_app.features.plot_approval.domain.PlotVisit
 import com.example.muyu_app.features.plot_approval.domain.WeatherMeasure
 import java.util.Calendar
 import java.util.UUID
@@ -76,14 +77,18 @@ data class PlotUpdatePayload(
     val accuracyMeters: Int? = null,
 )
 
-class FakeApiStore(
-    private val persistence: FakeApiPersistence? = null,
-) {
+class BackendStateStore {
     val users = CopyOnWriteArrayList<UserRecord>()
     val plots = CopyOnWriteArrayList<PlotRecord>()
     val merchantNotifications = CopyOnWriteArrayList<MerchantNotificationRecord>()
     val syncHistory = CopyOnWriteArrayList<SyncHistoryRecord>()
     val farmerNotifications = CopyOnWriteArrayList<FarmerNotificationRecord>()
+    val preferences = java.util.concurrent.ConcurrentHashMap<String, String>()
+    val visits = CopyOnWriteArrayList<PlotVisit>()
+    val ratings = CopyOnWriteArrayList<RatingRecord>()
+
+    @Volatile
+    var onPersist: ((BackendSnapshot) -> Unit)? = null
 
     @Volatile
     var token: String? = null
@@ -91,66 +96,57 @@ class FakeApiStore(
     @Volatile
     var currentUser: UserRecord? = null
 
-    init {
-        val snapshot = persistence?.load()
-        if (snapshot != null) {
-            users.addAll(snapshot.users.map { it.normalized() })
-            plots.addAll(snapshot.plots.map { it.normalized() })
-            merchantNotifications.addAll(snapshot.merchantNotifications.map { it.normalized() })
-            syncHistory.addAll(snapshot.syncHistory)
-            farmerNotifications.addAll(snapshot.farmerNotifications.orEmpty())
-            migrateMerchantNotificationIds()
-            seedCredentialsIfMissing()
-            if (persistence.shouldApplyPlotReset()) {
-                plots.clear()
-                merchantNotifications.clear()
-                farmerNotifications.clear()
-                persistence.markPlotResetApplied()
-            }
-            stripSeedPlots()
-            if (plots.isNotEmpty()) {
-                realignSeedOwners()
-                syncMerchantNotificationsFromPlots()
-            }
-            persist()
-        } else {
-            users.addAll(seedUsers())
-            persist()
-        }
-        restoreSession()
-    }
-
     fun startSession(user: UserRecord, sessionToken: String) {
         currentUser = user
         token = sessionToken
-        persistence?.saveSession(user.email, sessionToken)
     }
 
     fun endSession() {
         currentUser = null
         token = null
-        persistence?.clearSession()
-    }
-
-    private fun restoreSession() {
-        val (email, savedToken) = persistence?.loadSession() ?: return
-        val user = users.find { it.email.equals(email, ignoreCase = true) }
-        if (user == null) {
-            persistence?.clearSession()
-            return
-        }
-        currentUser = user
-        token = savedToken
     }
 
     fun persist() {
-        persistence?.save(
-            users.toList(),
-            plots.toList(),
-            merchantNotifications.toList(),
-            syncHistory.toList(),
-            farmerNotifications.toList(),
-        )
+        val snapshot = snapshot()
+        onPersist?.invoke(snapshot)
+    }
+
+    /** Builds the payload persisted by the backend without ever uploading passwords. */
+    fun snapshot(): BackendSnapshot = BackendSnapshot(
+        users = users.map { it.copy(password = "") },
+        plots = plots.toList(),
+        merchantNotifications = merchantNotifications.toList(),
+        syncHistory = syncHistory.toList(),
+        farmerNotifications = farmerNotifications.toList(),
+        preferences = preferences.toMap(),
+        visits = visits.toList(),
+        ratings = ratings.toList(),
+    )
+
+    /** Replaces the in-memory cache with the authoritative server response. */
+    fun replaceWith(snapshot: BackendSnapshot) {
+        users.clear()
+        plots.clear()
+        merchantNotifications.clear()
+        syncHistory.clear()
+        farmerNotifications.clear()
+        preferences.clear()
+        visits.clear()
+        ratings.clear()
+        users.addAll(snapshot.users.map { it.normalized() })
+        plots.addAll(snapshot.plots.map { it.normalized() })
+        merchantNotifications.addAll(snapshot.merchantNotifications.map { it.normalized() })
+        syncHistory.addAll(snapshot.syncHistory)
+        farmerNotifications.addAll(snapshot.farmerNotifications.orEmpty())
+        preferences.putAll(snapshot.preferences)
+        visits.addAll(snapshot.visits)
+        ratings.addAll(snapshot.ratings)
+    }
+
+    fun addRating(score: Int, comment: String) {
+        val email = currentUser?.email ?: return
+        ratings.add(RatingRecord(email, score.coerceIn(1, 5), comment.trim(), System.currentTimeMillis()))
+        persist()
     }
 
     fun syncHistoryForOwner(ownerEmail: String): List<SyncHistoryRecord> =
@@ -747,159 +743,4 @@ class FakeApiStore(
 
     fun newToken(): String = UUID.randomUUID().toString()
 
-    private fun stripSeedPlots() {
-        val seedNames = seedPlots().map { it.name.lowercase() }.toSet()
-        val plotsToRemove = plots.filter { it.name.lowercase() in seedNames }
-        val alertsToRemove = merchantNotifications.filter { it.plotName.lowercase() in seedNames }
-        val removedPlots = plotsToRemove.isNotEmpty() && plots.removeAll(plotsToRemove.toSet())
-        val removedAlerts = alertsToRemove.isNotEmpty() && merchantNotifications.removeAll(alertsToRemove.toSet())
-        if (removedPlots || removedAlerts) persist()
-    }
-
-    private fun realignSeedOwners() {
-        val index = plots.indexOfFirst {
-            it.name.contains("Álamos", ignoreCase = true) ||
-                it.name.contains("Alamos", ignoreCase = true)
-        }
-        if (index >= 0 && plots[index].ownerEmail.equals(Environment.DemoCredentials.FARMER_EMAIL, true)) {
-            plots[index] = plots[index].copy(
-                ownerEmail = "carlos.mamani@muyu.pe",
-                ownerName = "Carlos Mamani",
-            )
-            persist()
-        }
-    }
-
-    private fun seedCredentialsIfMissing() {
-        seedUsers().forEach { demo ->
-            if (users.none { it.email.equals(demo.email, ignoreCase = true) }) {
-                users.add(demo)
-            }
-        }
-        persist()
-    }
-
-    private fun seedUsers() = listOf(
-        UserRecord(
-            email = Environment.DemoCredentials.FARMER_EMAIL,
-            password = Environment.DemoCredentials.PASSWORD,
-            firstName = "María",
-            lastName = "Quispe",
-            role = "farmer",
-            phone = "987654321",
-            birthdate = "12 Mar 1988",
-        ),
-        UserRecord(
-            email = Environment.DemoCredentials.MERCHANT_EMAIL,
-            password = Environment.DemoCredentials.PASSWORD,
-            firstName = "José",
-            lastName = "Arturo",
-            role = "merchant",
-            phone = "912345678",
-            birthdate = "04 Jul 1990",
-            companyName = "Distribuidora La Cosecha SAC",
-            companyActivity = "",
-            ruc = "20123456789",
-            location = "Lima",
-            companyEmail = "contacto@lacosecha.pe",
-        ),
-        UserRecord(
-            email = "carlos.mamani@muyu.pe",
-            password = Environment.DemoCredentials.PASSWORD,
-            firstName = "Carlos",
-            lastName = "Mamani",
-            role = "farmer",
-            phone = "999111222",
-            birthdate = "22 Sep 1985",
-        ),
-    )
-
-    private fun seedPlots() = listOf(
-        PlotRecord(
-            id = 1,
-            name = "El Rosal Plot",
-            crop = "Coffee",
-            area = "2.5 ha",
-            harvestDate = "15 Feb 2027",
-            place = "Chachapoyas",
-            stage = "Fertilization",
-            progress = 65,
-            status = "funded",
-            amount = "S/ 8,500",
-            cycle = "6 months",
-            milestones = "4",
-            imageUri = null,
-            ownerEmail = Environment.DemoCredentials.FARMER_EMAIL,
-            ownerName = "María Quispe",
-            fundedByEmail = Environment.DemoCredentials.MERCHANT_EMAIL,
-        ),
-        PlotRecord(
-            id = 2,
-            name = "Huayco Plot",
-            crop = "Yellow corn",
-            area = "1.2 ha",
-            harvestDate = "10 Mar 2027",
-            place = "Cuzco",
-            stage = "Planting",
-            progress = 20,
-            status = "approved",
-            amount = "S/ 4,200",
-            cycle = "6 months",
-            milestones = "4",
-            imageUri = null,
-            ownerEmail = Environment.DemoCredentials.FARMER_EMAIL,
-            ownerName = "María Quispe",
-        ),
-        PlotRecord(
-            id = 3,
-            name = "Molinos Farm",
-            crop = "Quinoa",
-            area = "1.2 ha",
-            harvestDate = "01 Apr 2027",
-            place = "Apurímac",
-            stage = "Published",
-            progress = 5,
-            status = "pending",
-            amount = "S/ 3,800",
-            cycle = "3 months",
-            milestones = "3",
-            imageUri = null,
-            ownerEmail = Environment.DemoCredentials.FARMER_EMAIL,
-            ownerName = "María Quispe",
-        ),
-        PlotRecord(
-            id = 4,
-            name = "Esperanza Plot",
-            crop = "Huayro potato",
-            area = "3.5 ha",
-            harvestDate = "15 Feb 2027",
-            place = "Cuzco",
-            stage = "Available",
-            progress = 0,
-            status = "available",
-            amount = "S/ 8,500",
-            cycle = "6 months",
-            milestones = "4",
-            imageUri = null,
-            ownerEmail = Environment.DemoCredentials.FARMER_EMAIL,
-            ownerName = "María Quispe",
-        ),
-        PlotRecord(
-            id = 5,
-            name = "Los Álamos Plot",
-            crop = "Purple corn",
-            area = "2 ha",
-            harvestDate = "20 Mar 2027",
-            place = "Apurímac",
-            stage = "Available",
-            progress = 0,
-            status = "available",
-            amount = "S/ 4,200",
-            cycle = "6 months",
-            milestones = "4",
-            imageUri = null,
-            ownerEmail = "carlos.mamani@muyu.pe",
-            ownerName = "Carlos Mamani",
-        ),
-    )
 }

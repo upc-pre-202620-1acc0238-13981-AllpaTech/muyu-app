@@ -38,7 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
-import com.example.muyu_app.core.storage.UserPreferences
+import com.example.muyu_app.core.storage.BackendPreferences
 import androidx.compose.runtime.LaunchedEffect
 import com.example.muyu_app.core.designsystem.components.MerchantBottomBar
 import com.example.muyu_app.core.designsystem.components.MerchantTab
@@ -98,7 +98,7 @@ fun MerchantProfileScreen(
     modifier: Modifier = Modifier,
 ) {
     val container = LocalAppContainer.current
-    val currentUser = container.fakeStore.currentUser
+    val currentUser = container.backendStore.currentUser
     // Sin datos de ejemplo: una cuenta nueva parte de su nombre y su correo.
     val defaultCompany = currentUser?.displayName.orEmpty()
     val defaultActivity = ""
@@ -109,14 +109,14 @@ fun MerchantProfileScreen(
     var notificationPref by remember(preferencesEmail) {
         mutableStateOf(
             preferences
-                ?.loadString(preferencesEmail, UserPreferences.KEY_ALERT_CHANNEL, MerchantAlertChannel.Call.name)
+                ?.loadString(preferencesEmail, BackendPreferences.KEY_ALERT_CHANNEL, MerchantAlertChannel.Call.name)
                 ?.let { saved -> MerchantAlertChannel.entries.firstOrNull { it.name == saved } }
                 ?: MerchantAlertChannel.Call,
         )
     }
     LaunchedEffect(preferencesEmail, notificationPref) {
         if (preferencesEmail.isBlank()) return@LaunchedEffect
-        preferences?.saveString(preferencesEmail, UserPreferences.KEY_ALERT_CHANNEL, notificationPref.name)
+        preferences?.saveString(preferencesEmail, BackendPreferences.KEY_ALERT_CHANNEL, notificationPref.name)
     }
     var editingContact by rememberSaveable { mutableStateOf(false) }
     var companyName by rememberSaveable {
@@ -246,7 +246,7 @@ fun MerchantProfileScreen(
                             )
                             ContactEditActions(
                                 onSave = {
-                                    container.fakeStore.updateContact(
+                                    container.backendStore.updateContact(
                                         companyName = companyName.trim(),
                                         companyActivity = companyActivity.trim(),
                                         ruc = ruc.trim(),
@@ -256,7 +256,7 @@ fun MerchantProfileScreen(
                                     editingContact = false
                                 },
                                 onCancel = {
-                                    val user = container.fakeStore.currentUser
+                                    val user = container.backendStore.currentUser
                                     companyName = user?.companyName?.ifBlank { null } ?: defaultCompany
                                     companyActivity = user?.companyActivity?.ifBlank { null } ?: defaultActivity
                                     ruc = user?.ruc?.ifBlank { null } ?: ""

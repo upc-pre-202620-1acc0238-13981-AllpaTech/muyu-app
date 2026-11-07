@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
 private val CardShape = RoundedCornerShape(20.dp)
 private val ButtonShape = RoundedCornerShape(14.dp)
 
-// Las visitas viven en el fake-api: el agricultor responde aquí lo que el
+// Visits are loaded from the backend: the farmer responds here to what the
 // comerciante solicitó desde su propio teléfono.
 @Composable
 fun VisitRequestsScreen(

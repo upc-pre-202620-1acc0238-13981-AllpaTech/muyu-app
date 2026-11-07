@@ -69,7 +69,7 @@ fun PublishSuccessScreen(
 ) {
     val container = LocalAppContainer.current
     val plot = container.selectedPlot
-    val farmer = container.fakeStore.currentUser?.displayName
+    val farmer = container.backendStore.currentUser?.displayName
         ?: plot?.ownerName.orEmpty()
     val name = plot?.name.orEmpty()
     val crop = plot?.crop.orEmpty()

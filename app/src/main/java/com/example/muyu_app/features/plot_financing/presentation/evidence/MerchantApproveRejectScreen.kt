@@ -75,8 +75,8 @@ fun MerchantApproveRejectScreen(
     val farmerName = plot?.ownerName.orEmpty()
     val milestone = plot?.milestoneForEvidence(milestoneKey)
     val plotId = plot?.id
-    val merchantEmail = container.fakeStore.currentUser?.email.orEmpty()
-    val submittedAt = resolveMilestoneSubmittedAt(milestone, plotId, container.fakeStore, merchantEmail)
+    val merchantEmail = container.backendStore.currentUser?.email.orEmpty()
+    val submittedAt = resolveMilestoneSubmittedAt(milestone, plotId, container.backendStore, merchantEmail)
     val evidenceBadge = if (submittedAt > 0L) {
         stringResource(
             R.string.merchant_evidence_submitted_badge,
@@ -86,7 +86,7 @@ fun MerchantApproveRejectScreen(
     } else {
         stringResource(R.string.merchant_sent_at_unknown, plotName)
     }
-    val releaseAmount = plotId?.let { container.fakeStore.milestoneReleaseAmountFor(it, milestoneKey) }.orEmpty()
+    val releaseAmount = plotId?.let { container.backendStore.milestoneReleaseAmountFor(it, milestoneKey) }.orEmpty()
     val releaseLabel = releaseAmount.ifBlank { "S/ 0" }
     val escrow = plot?.let { computeEscrowSummary(it, milestoneKey) }
     val escrowBalance = escrow?.balanceLabel ?: releaseLabel

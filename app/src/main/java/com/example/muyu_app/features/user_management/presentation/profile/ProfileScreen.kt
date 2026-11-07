@@ -45,7 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
-import com.example.muyu_app.core.storage.UserPreferences
+import com.example.muyu_app.core.storage.BackendPreferences
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
@@ -82,7 +82,7 @@ fun ProfileScreen(
 ) {
     val context = LocalContext.current
     val container = LocalAppContainer.current
-    val currentUser = container.fakeStore.currentUser
+    val currentUser = container.backendStore.currentUser
     val supportPhone = stringResource(R.string.profile_support_phone)
 
     val farmerName = currentUser?.displayName.orEmpty()
@@ -98,20 +98,20 @@ fun ProfileScreen(
     var notificationPref by remember(preferencesEmail) {
         mutableStateOf(
             preferences
-                ?.loadString(preferencesEmail, UserPreferences.KEY_ALERT_CHANNEL, FarmerAlertChannel.Call.name)
+                ?.loadString(preferencesEmail, BackendPreferences.KEY_ALERT_CHANNEL, FarmerAlertChannel.Call.name)
                 ?.let { saved -> FarmerAlertChannel.entries.firstOrNull { it.name == saved } }
                 ?: FarmerAlertChannel.Call,
         )
     }
     var syncWifiOnly by remember(preferencesEmail) {
         mutableStateOf(
-            preferences?.loadBoolean(preferencesEmail, UserPreferences.KEY_SYNC_WIFI_ONLY, true) ?: true,
+            preferences?.loadBoolean(preferencesEmail, BackendPreferences.KEY_SYNC_WIFI_ONLY, true) ?: true,
         )
     }
     LaunchedEffect(preferencesEmail, notificationPref, syncWifiOnly) {
         if (preferencesEmail.isBlank()) return@LaunchedEffect
-        preferences?.saveString(preferencesEmail, UserPreferences.KEY_ALERT_CHANNEL, notificationPref.name)
-        preferences?.saveBoolean(preferencesEmail, UserPreferences.KEY_SYNC_WIFI_ONLY, syncWifiOnly)
+        preferences?.saveString(preferencesEmail, BackendPreferences.KEY_ALERT_CHANNEL, notificationPref.name)
+        preferences?.saveBoolean(preferencesEmail, BackendPreferences.KEY_SYNC_WIFI_ONLY, syncWifiOnly)
     }
 
     LaunchedEffect(farmerEmail) {
@@ -120,8 +120,8 @@ fun ProfileScreen(
                 .filter { it.ownerEmail.equals(farmerEmail, ignoreCase = true) }
                 .map { plot ->
                     if (plot.status != "funded") return@map plot
-                    container.fakeStore.ensureMilestones(plot.id)
-                        ?.let(container.fakeStore::toDomain)
+                    container.backendStore.ensureMilestones(plot.id)
+                        ?.let(container.backendStore::toDomain)
                         ?: plot
                 }
         }
@@ -238,15 +238,15 @@ fun ProfileScreen(
                             )
                             ContactEditActions(
                                 onSave = {
-                                    container.fakeStore.updateContact(
+                                    container.backendStore.updateContact(
                                         phone = phoneDraft,
                                         email = emailDraft,
                                     )
                                     editingContact = false
                                 },
                                 onCancel = {
-                                    phoneDraft = localPhoneDigits(container.fakeStore.currentUser?.phone.orEmpty())
-                                    emailDraft = container.fakeStore.currentUser?.email.orEmpty()
+                                    phoneDraft = localPhoneDigits(container.backendStore.currentUser?.phone.orEmpty())
+                                    emailDraft = container.backendStore.currentUser?.email.orEmpty()
                                     editingContact = false
                                 },
                             )

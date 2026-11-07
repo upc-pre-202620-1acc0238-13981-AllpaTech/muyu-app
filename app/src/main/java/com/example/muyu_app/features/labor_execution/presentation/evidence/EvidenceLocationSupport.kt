@@ -41,7 +41,8 @@ fun isEvidenceLocationValid(
 }
 
 fun saveEvidenceBitmap(context: Context, bitmap: Bitmap): String {
-    val folder = File(context.filesDir, "evidence").apply { mkdirs() }
+    // Camera output is temporary; the resulting evidence is synchronized to the backend.
+    val folder = File(context.cacheDir, "evidence-upload").apply { mkdirs() }
     val file = File(folder, "evidence_${System.currentTimeMillis()}.jpg")
     FileOutputStream(file).use { stream ->
         bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)

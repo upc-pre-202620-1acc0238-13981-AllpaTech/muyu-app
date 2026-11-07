@@ -74,8 +74,8 @@ fun MerchantAlertsScreen(
     var items by remember { mutableStateOf<List<MerchantNotificationRecord>>(emptyList()) }
     val lifecycleState = LocalLifecycleOwner.current.lifecycle.currentStateAsState()
     fun reloadNotifications() {
-        val email = container.fakeStore.currentUser?.email.orEmpty()
-        items = container.fakeStore.notificationsForMerchant(email)
+        val email = container.backendStore.currentUser?.email.orEmpty()
+        items = container.backendStore.notificationsForMerchant(email)
     }
 
     LaunchedEffect(lifecycleState.value) {
@@ -117,8 +117,8 @@ fun MerchantAlertsScreen(
                         NotificationCard(
                             item = item,
                             onClick = {
-                                container.fakeStore.ensureMilestones(item.plotId)?.let { record ->
-                                    container.selectedPlot = container.fakeStore.toDomain(record)
+                                container.backendStore.ensureMilestones(item.plotId)?.let { record ->
+                                    container.selectedPlot = container.backendStore.toDomain(record)
                                     if (item.type == MerchantNotificationRecord.TYPE_EVIDENCE &&
                                         item.milestoneKey.isNotBlank()
                                     ) {

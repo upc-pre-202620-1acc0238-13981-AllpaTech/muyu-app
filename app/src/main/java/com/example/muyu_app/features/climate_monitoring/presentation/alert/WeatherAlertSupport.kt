@@ -43,10 +43,10 @@ data class WeatherAlertContent(
 
 fun AppContainer.farmerPlotForWeather(): Plot? {
     selectedPlot?.let { return it }
-    val email = fakeStore.currentUser?.email.orEmpty()
-    val records = fakeStore.plots.filter { it.ownerEmail.equals(email, ignoreCase = true) }
+    val email = backendStore.currentUser?.email.orEmpty()
+    val records = backendStore.plots.filter { it.ownerEmail.equals(email, ignoreCase = true) }
     val withGps = records.firstOrNull { it.latitude != null && it.longitude != null }
-    return (withGps ?: records.firstOrNull())?.let { fakeStore.toDomain(it) }
+    return (withGps ?: records.firstOrNull())?.let { backendStore.toDomain(it) }
 }
 
 suspend fun Context.resolveWeatherLocation(plot: Plot?): Location? {

@@ -54,15 +54,15 @@ fun MerchantMilestoneApprovedScreen(
     val milestoneTitle = stringResource(definition.titleRes)
     val milestone = plot?.milestoneForEvidence(milestoneKey)
     val locale = context.resources.configuration.locales[0]
-    val merchantEmail = container.fakeStore.currentUser?.email.orEmpty()
+    val merchantEmail = container.backendStore.currentUser?.email.orEmpty()
     val reviewedAt = container.reviewCompletedAt.takeIf { it > 0L }
-        ?: resolveMilestoneSubmittedAt(milestone, plot?.id, container.fakeStore, merchantEmail)
+        ?: resolveMilestoneSubmittedAt(milestone, plot?.id, container.backendStore, merchantEmail)
     val dateLabel = formatEvidenceLongDateTime(reviewedAt, locale)
     val farmerName = plot?.ownerName.orEmpty()
     val farmerFirst = farmerName.substringBefore(" ").ifBlank { farmerName }
     val escrow = plot?.let { computeEscrowSummary(it, milestoneKey) }
     val releaseLabel = escrow?.releaseLabel
-        ?: plot?.id?.let { container.fakeStore.milestoneReleaseAmountFor(it, milestoneKey) }.orEmpty()
+        ?: plot?.id?.let { container.backendStore.milestoneReleaseAmountFor(it, milestoneKey) }.orEmpty()
         .ifBlank { "S/ 0" }
     val totals = plot?.let { computeEscrowTotals(it) }
     val depositDate = plot?.publishedAt?.ifBlank { null } ?: PlotFinance.publishedToday()

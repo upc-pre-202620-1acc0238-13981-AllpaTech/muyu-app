@@ -185,7 +185,7 @@ fun RequestExtensionScreen(
                             if (selectedDate.isBefore(minimumDate)) return@clickable
                             val id = plot?.id ?: return@clickable
                             val key = current?.key ?: container.selectedMilestoneKey
-                            container.fakeStore.requestExtension(
+                            container.backendStore.requestExtension(
                                 id,
                                 key,
                                 selectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yy", Locale.ENGLISH)),

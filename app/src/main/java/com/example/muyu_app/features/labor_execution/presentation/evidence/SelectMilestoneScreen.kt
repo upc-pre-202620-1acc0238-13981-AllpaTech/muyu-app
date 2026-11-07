@@ -61,8 +61,8 @@ fun SelectMilestoneScreen(
     val selectedPlotId = container.selectedPlot?.id
     val plot = remember(selectedPlotId) {
         selectedPlotId
-            ?.let(container.fakeStore::plotById)
-            ?.let(container.fakeStore::toDomain)
+            ?.let(container.backendStore::plotById)
+            ?.let(container.backendStore::toDomain)
     }
     val states = plot?.milestoneStates.orEmpty()
     val year = PlotFinance.seasonYear(plot?.harvestDate.orEmpty())

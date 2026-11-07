@@ -84,7 +84,7 @@ fun WeatherMeasuresCard(
     val keyOf: (Int) -> String = { id -> context.resources.getResourceEntryName(id) }
     var attended by remember(alertKey) {
         mutableStateOf(
-            container.fakeStore.plotById(plot.id)?.weatherMeasures?.find { it.alertKey == alertKey },
+            container.backendStore.plotById(plot.id)?.weatherMeasures?.find { it.alertKey == alertKey },
         )
     }
     var selected by rememberSaveable(alertKey) { mutableStateOf(emptyList<String>()) }
@@ -185,9 +185,9 @@ fun WeatherMeasuresCard(
                                 attendedAtMillis = System.currentTimeMillis(),
                                 attendedBy = container.currentUserEmail().orEmpty(),
                             )
-                            container.fakeStore.recordWeatherMeasures(plot.id, measure)
-                            container.fakeStore.plotById(plot.id)?.let { record ->
-                                container.syncPlot(container.fakeStore.toDomain(record))
+                            container.backendStore.recordWeatherMeasures(plot.id, measure)
+                            container.backendStore.plotById(plot.id)?.let { record ->
+                                container.syncPlot(container.backendStore.toDomain(record))
                             }
                             attended = measure
                             saving = false

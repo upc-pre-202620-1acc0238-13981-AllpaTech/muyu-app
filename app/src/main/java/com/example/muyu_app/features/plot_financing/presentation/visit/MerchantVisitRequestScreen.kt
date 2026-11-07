@@ -143,7 +143,7 @@ fun MerchantVisitRequestScreen(
                     val visitDate = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                     sending = true
                     sendError = null
-                    // La visita se guarda en el fake-api para que el agricultor la vea en su teléfono.
+                    // The visit is persisted remotely so the farmer sees it on another device.
                     scope.launch {
                         container.plotVisits
                             .requestVisit(plot.id, visitDate, time.trim(), message.trim())
@@ -182,7 +182,7 @@ fun MerchantVisitSentScreen(
     var request by remember { mutableStateOf(container.merchantVisitRequest) }
     val confirmed = request?.confirmed == true
 
-    // Refresca la confirmación desde el fake-api: el agricultor responde desde su teléfono.
+    // Refreshes the confirmation from the backend after the farmer responds.
     LaunchedEffect(request?.id) {
         val current = request ?: return@LaunchedEffect
         if (current.id == 0) return@LaunchedEffect

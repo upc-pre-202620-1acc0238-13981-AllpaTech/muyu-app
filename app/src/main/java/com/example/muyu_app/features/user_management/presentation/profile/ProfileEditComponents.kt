@@ -64,7 +64,7 @@ internal fun EditableProfileAvatar(
     @DrawableRes fallbackRes: Int?,
 ) {
     val context = LocalContext.current
-    val store = LocalAppContainer.current.fakeStore
+    val store = LocalAppContainer.current.backendStore
     val avatarUri = store.currentUser?.avatarUri.orEmpty()
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),

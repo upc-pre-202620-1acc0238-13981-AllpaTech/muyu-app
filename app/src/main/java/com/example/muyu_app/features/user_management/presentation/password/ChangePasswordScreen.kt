@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,15 +50,29 @@ import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import com.example.muyu_app.ui.theme.UrbanistSemiBold
+import kotlinx.coroutines.launch
 
 @Composable
-fun ChangePasswordScreen(onBack: () -> Unit, onContinue: () -> Unit, modifier: Modifier = Modifier) {
-    // Conserva las claves únicamente en memoria durante esta vista previa.
+fun ChangePasswordScreen(
+    onBack: () -> Unit,
+    onContinue: () -> Unit,
+    onChangePassword: suspend (String, String) -> Result<Unit> = { _, _ -> Result.failure(IllegalStateException()) },
+    modifier: Modifier = Modifier,
+) {
+    var currentPassword by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
     var showMismatch by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var submitting by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     PasswordFlowScaffold(stringResource(R.string.password_new_title), onBack, modifier) {
+        PasswordPreviewField(stringResource(R.string.password_current), currentPassword) {
+            currentPassword = it
+            error = null
+        }
+        Spacer(Modifier.height(12.dp))
         PasswordPreviewField(stringResource(R.string.login_password), password) {
             password = it
             showMismatch = false
@@ -71,11 +86,14 @@ fun ChangePasswordScreen(onBack: () -> Unit, onContinue: () -> Unit, modifier: M
             Text(stringResource(R.string.password_mismatch), color = Color(0xFFFFC7C7),
                 fontFamily = UrbanistSemiBold, modifier = Modifier.padding(top = 8.dp))
         }
+        error?.let {
+            Text(it, color = Color(0xFFFFC7C7), fontFamily = UrbanistSemiBold,
+                modifier = Modifier.padding(top = 8.dp))
+        }
         Spacer(Modifier.height(16.dp))
         Text(stringResource(R.string.password_rules_title), color = Color.White,
             fontFamily = UrbanistSemiBold, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
         Spacer(Modifier.height(6.dp))
-        // Muestra las sugerencias de Figma sin implementar aún las reglas del servidor.
         listOf(R.string.password_rule_length, R.string.password_rule_number, R.string.password_rule_uppercase).forEach {
             Text("· " + stringResource(it), color = Color.White.copy(alpha = 0.85f),
                 fontFamily = UrbanistRegular, fontSize = 14.sp)
@@ -84,20 +102,25 @@ fun ChangePasswordScreen(onBack: () -> Unit, onContinue: () -> Unit, modifier: M
         Text(stringResource(R.string.password_confirmation_hint), color = Color.White,
             fontFamily = UrbanistRegular, fontSize = 14.sp)
         Spacer(Modifier.height(20.dp))
-        Text(stringResource(R.string.password_demo_notice), color = Color.White.copy(alpha = 0.8f),
-            fontFamily = UrbanistRegular, fontSize = 12.sp)
-        Spacer(Modifier.height(20.dp))
         AuthPrimaryButton(
             text = stringResource(R.string.profile_change_password),
-            enabled = password.isNotBlank() && confirmation.isNotBlank(),
+            enabled = !submitting && currentPassword.isNotBlank() && password.length >= 8 && confirmation.isNotBlank(),
             onClick = {
                 if (password != confirmation) {
                     showMismatch = true
                 } else {
-                    // Completa solo la navegación; no guarda claves ni llama a la API.
-                    password = ""
-                    confirmation = ""
-                    onContinue()
+                    submitting = true
+                    scope.launch {
+                        onChangePassword(currentPassword, password)
+                            .onSuccess {
+                                currentPassword = ""
+                                password = ""
+                                confirmation = ""
+                                onContinue()
+                            }
+                            .onFailure { error = it.message }
+                        submitting = false
+                    }
                 }
             },
         )

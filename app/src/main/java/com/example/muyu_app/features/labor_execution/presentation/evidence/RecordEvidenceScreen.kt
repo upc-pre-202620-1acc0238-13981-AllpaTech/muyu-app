@@ -242,12 +242,11 @@ fun RecordEvidenceScreen(
     val canSave = photoUri.isNotBlank() && inputUsed.isNotBlank() && amount.isNotBlank()
     val hasGpsFix = latitude != null && longitude != null
     val locationReady = !locating && (
-        !online ||
             locationCheck == LocationCheck.Matching ||
             locationCheck == LocationCheck.Recorded ||
             hasGpsFix
         )
-    val continueEnabled = canSave && locationReady
+    val continueEnabled = online && canSave && locationReady
 
     if (cameraDenied) {
         val lat = latitude
@@ -582,9 +581,8 @@ fun RecordEvidenceScreen(
                                     latitude = latitude,
                                     longitude = longitude,
                                     accuracy = accuracy,
-                                    online = online,
                                 )
-                                queued = !online
+                                queued = false
                                 onSaved()
                             }
                         },
@@ -592,7 +590,7 @@ fun RecordEvidenceScreen(
                 ) {
                     Text(
                         text = stringResource(
-                            if (online) R.string.evidence_continue else R.string.evidence_save_queue,
+                            R.string.evidence_continue,
                         ),
                         style = TextStyle(
                             fontFamily = UrbanistBold,
@@ -624,16 +622,16 @@ private suspend fun persistEvidence(
     latitude: Double?,
     longitude: Double?,
     accuracy: Int?,
-    online: Boolean,
 ) {
     val previous = plot.milestoneStates.find { it.key == key } ?: MilestoneState(key = key)
     val submittedAt = System.currentTimeMillis()
-    val status = if (online) MilestoneState.STATUS_SUBMITTED else MilestoneState.STATUS_QUEUED
-    container.fakeStore.updateMilestone(
+    val portablePhoto = imageUriToPortableDataUrl(context, photoUri).orEmpty()
+    runCatching { java.io.File(java.net.URI(photoUri)).delete() }
+    container.backendStore.updateMilestone(
         plot.id,
         previous.copy(
-            status = status,
-            photoUri = imageUriToPortableDataUrl(context, photoUri).orEmpty(),
+            status = MilestoneState.STATUS_SUBMITTED,
+            photoUri = portablePhoto,
             inputUsed = inputUsed,
             amountApplied = amount,
             notes = notes,
@@ -645,11 +643,9 @@ private suspend fun persistEvidence(
         ),
     )
     container.refreshSelectedPlot()
-    if (online) {
-        container.selectedPlot?.let { updated ->
-            container.syncPlot(updated).onSuccess { remote ->
-                container.selectedPlot = remote
-            }
+    container.selectedPlot?.let { updated ->
+        container.syncPlot(updated).onSuccess { remote ->
+            container.selectedPlot = remote
         }
     }
 }

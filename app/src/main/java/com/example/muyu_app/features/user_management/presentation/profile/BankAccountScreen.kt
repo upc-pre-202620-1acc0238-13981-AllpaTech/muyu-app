@@ -81,7 +81,7 @@ fun BankAccountScreen(
 
     LaunchedEffect(lifecycleState.value) {
         if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
-        val farmerEmail = container.fakeStore.currentUser?.email.orEmpty()
+        val farmerEmail = container.backendStore.currentUser?.email.orEmpty()
         balance = if (farmerEmail.isBlank()) {
             0.0
         } else {
@@ -91,8 +91,8 @@ fun BankAccountScreen(
                     plot.ownerEmail.equals(farmerEmail, ignoreCase = true) && plot.status == "funded"
                 }
                 .map { plot ->
-                    container.fakeStore.ensureMilestones(plot.id)
-                        ?.let(container.fakeStore::toDomain)
+                    container.backendStore.ensureMilestones(plot.id)
+                        ?.let(container.backendStore::toDomain)
                         ?: plot
                 }
                 .sumOf(Plot::releasedBalance)

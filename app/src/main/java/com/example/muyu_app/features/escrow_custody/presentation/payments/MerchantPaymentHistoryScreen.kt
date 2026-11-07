@@ -103,7 +103,7 @@ fun MerchantPaymentHistoryScreen(
 
     LaunchedEffect(lifecycleState.value) {
         if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
-        val email = container.fakeStore.currentUser?.email.orEmpty()
+        val email = container.backendStore.currentUser?.email.orEmpty()
         if (email.isBlank()) {
             releases = emptyList()
             return@LaunchedEffect
@@ -112,7 +112,7 @@ fun MerchantPaymentHistoryScreen(
             releases = all
                 .filter { it.fundedByEmail.equals(email, ignoreCase = true) && it.status == "funded" }
                 .map { plot ->
-                    container.fakeStore.ensureMilestones(plot.id)?.let { container.fakeStore.toDomain(it) } ?: plot
+                    container.backendStore.ensureMilestones(plot.id)?.let { container.backendStore.toDomain(it) } ?: plot
                 }
                 .flatMap { it.toReleases() }
         }

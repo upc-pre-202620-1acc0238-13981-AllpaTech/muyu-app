@@ -77,8 +77,8 @@ fun MerchantRejectionReasonScreen(
     val milestoneTitle = stringResource(definition.titleRes)
     val milestone = plot?.milestoneForEvidence(milestoneKey)
     val locale = context.resources.configuration.locales[0]
-    val merchantEmail = container.fakeStore.currentUser?.email.orEmpty()
-    val submittedAt = resolveMilestoneSubmittedAt(milestone, plot?.id, container.fakeStore, merchantEmail)
+    val merchantEmail = container.backendStore.currentUser?.email.orEmpty()
+    val submittedAt = resolveMilestoneSubmittedAt(milestone, plot?.id, container.backendStore, merchantEmail)
     val photoUri = milestone?.photoUri?.takeIf { it.isNotBlank() }
     val lat = milestone?.latitude
     val lng = milestone?.longitude
@@ -92,7 +92,7 @@ fun MerchantRejectionReasonScreen(
     val farmerFirst = farmerName.substringBefore(" ").ifBlank { farmerName }
     val escrow = plot?.let { computeEscrowSummary(it, milestoneKey) }
     val releaseLabel = escrow?.releaseLabel
-        ?: plot?.id?.let { container.fakeStore.milestoneReleaseAmountFor(it, milestoneKey) }.orEmpty()
+        ?: plot?.id?.let { container.backendStore.milestoneReleaseAmountFor(it, milestoneKey) }.orEmpty()
         .ifBlank { "S/ 0" }
     val sentLabel = if (submittedAt > 0L) {
         formatEvidenceLongDateTime(submittedAt, locale)
@@ -333,7 +333,7 @@ fun MerchantRejectionReasonScreen(
                     container.rejectionCorrection = correction
                     val plotId = plot?.id
                     if (plotId != null) {
-                        container.fakeStore.reviewMilestone(plotId, milestoneKey, approved = false)
+                        container.backendStore.reviewMilestone(plotId, milestoneKey, approved = false)
                         container.refreshSelectedPlot()
                     }
                     container.reviewCompletedAt = System.currentTimeMillis()

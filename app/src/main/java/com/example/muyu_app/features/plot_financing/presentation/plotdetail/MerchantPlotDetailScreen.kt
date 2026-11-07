@@ -105,8 +105,8 @@ fun MerchantPlotDetailScreen(
     var plot by remember { mutableStateOf(container.selectedPlot) }
     LaunchedEffect(container.selectedPlot?.id) {
         val current = container.selectedPlot ?: return@LaunchedEffect
-        val withMilestones = container.fakeStore.ensureMilestones(current.id)
-            ?.let { container.fakeStore.toDomain(it) } ?: current
+        val withMilestones = container.backendStore.ensureMilestones(current.id)
+            ?.let { container.backendStore.toDomain(it) } ?: current
         plot = withMilestones
         container.selectedPlot = withMilestones
     }
@@ -147,7 +147,7 @@ fun MerchantPlotDetailScreen(
                     FundedPlotBody(
                         plot = current,
                         statusLabel = statusLabel,
-                        funderName = container.fakeStore.currentUser?.displayName
+                        funderName = container.backendStore.currentUser?.displayName
                             ?.ifBlank { null }
                             ?: stringResource(R.string.merchant_default_name),
                         companyName = stringResource(R.string.merchant_company_name),

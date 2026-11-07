@@ -92,7 +92,7 @@ fun MerchantCatalogScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf(CatalogFilter.All) }
     val languages = container.languages
-    val registeredName = container.fakeStore.currentUser?.displayName
+    val registeredName = container.backendStore.currentUser?.displayName
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
         ?: stringResource(R.string.merchant_company_name)

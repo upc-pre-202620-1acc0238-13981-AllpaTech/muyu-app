@@ -100,11 +100,13 @@ private val ALLOWED_EMAIL_DOMAINS = setOf(
 )
 private val NAME_PATTERN = Regex("^[\\p{L}][\\p{L} .'-]{1,59}$")
 private val PHONE_PATTERN = Regex("^9\\d{8}$")
+private val DNI_PATTERN = Regex("^\\d{8}$")
 
 private enum class RegistrationValidationError {
     NAME,
     EMAIL,
     PHONE,
+    DNI,
     BIRTHDATE_REQUIRED,
     BIRTHDATE_INVALID,
     PASSWORD,
@@ -124,6 +126,7 @@ fun RegisterScreen(
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
+    var dni by rememberSaveable { mutableStateOf("") }
     val birthDateSaver = remember {
         Saver<LocalDate?, String>(
             save = { it?.toString().orEmpty() },
@@ -205,6 +208,15 @@ fun RegisterScreen(
                 phone = it.filter(Char::isDigit).take(9)
                 clearError()
             }
+            AuthFieldBlock(
+                label = stringResource(R.string.register_dni),
+                value = dni,
+                keyboardType = KeyboardType.Number,
+                error = messageFor(RegistrationValidationError.DNI),
+            ) {
+                dni = it.filter(Char::isDigit).take(8)
+                clearError()
+            }
             MuyuDatePickerField(
                 label = stringResource(R.string.register_birthdate),
                 selectedDate = birthDate,
@@ -279,6 +291,7 @@ fun RegisterScreen(
                             name = normalizedName,
                             email = normalizedEmail,
                             phone = normalizedPhone,
+                            dni = dni,
                             birthDate = birthDate,
                             password = password,
                             confirmPassword = confirmPassword,
@@ -298,6 +311,7 @@ fun RegisterScreen(
                             normalizedPhone,
                             formattedBirthDate,
                             password,
+                            dni,
                         )
                             .onSuccess { onRegister() }
                             .onFailure {
@@ -342,6 +356,7 @@ private fun validateRegistration(
     name: String,
     email: String,
     phone: String,
+    dni: String,
     birthDate: LocalDate?,
     password: String,
     confirmPassword: String,
@@ -350,6 +365,7 @@ private fun validateRegistration(
     if (!NAME_PATTERN.matches(name)) return RegistrationValidationError.NAME
     if (!isAcceptedEmail(email)) return RegistrationValidationError.EMAIL
     if (!PHONE_PATTERN.matches(phone)) return RegistrationValidationError.PHONE
+    if (!DNI_PATTERN.matches(dni)) return RegistrationValidationError.DNI
     if (birthDate == null) return RegistrationValidationError.BIRTHDATE_REQUIRED
 
     val today = LocalDate.now()
@@ -376,6 +392,7 @@ private fun RegistrationValidationError.messageResource(): Int = when (this) {
     RegistrationValidationError.NAME -> R.string.register_name_invalid
     RegistrationValidationError.EMAIL -> R.string.register_email_invalid
     RegistrationValidationError.PHONE -> R.string.register_phone_invalid
+    RegistrationValidationError.DNI -> R.string.register_dni_invalid
     RegistrationValidationError.BIRTHDATE_REQUIRED -> R.string.register_birthdate_required
     RegistrationValidationError.BIRTHDATE_INVALID -> R.string.register_birthdate_invalid
     RegistrationValidationError.PASSWORD -> R.string.register_password_invalid

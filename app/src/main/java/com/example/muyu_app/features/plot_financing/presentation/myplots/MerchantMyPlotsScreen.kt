@@ -93,12 +93,12 @@ fun MerchantMyPlotsScreen(
 
     LaunchedEffect(lifecycleState.value) {
         if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
-        val email = container.fakeStore.currentUser?.email.orEmpty()
+        val email = container.backendStore.currentUser?.email.orEmpty()
         container.getPlotsUseCase().onSuccess { all ->
             plots = all
                 .filter { it.fundedByEmail.equals(email, ignoreCase = true) && it.status == "funded" }
                 .mapNotNull { plot ->
-                    container.fakeStore.ensureMilestones(plot.id)?.let { container.fakeStore.toDomain(it) }
+                    container.backendStore.ensureMilestones(plot.id)?.let { container.backendStore.toDomain(it) }
                 }
         }
     }

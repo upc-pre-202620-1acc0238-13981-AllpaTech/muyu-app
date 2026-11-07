@@ -59,7 +59,7 @@ private val ErrorText = Color(0xFF9E2F2F)
 
 /**
  * El agricultor registra el resultado de una visita confirmada. Se guarda en el
- * fake-api para que el comerciante y la parcela reflejen el mismo resultado.
+ * backend so the merchant and plot reflect the same result.
  */
 @Composable
 fun VisitOutcomeScreen(
