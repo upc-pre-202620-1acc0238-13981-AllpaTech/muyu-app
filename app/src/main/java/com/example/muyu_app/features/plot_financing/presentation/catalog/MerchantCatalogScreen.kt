@@ -74,7 +74,7 @@ import com.example.muyu_app.ui.theme.UrbanistSemiBold
 private val CardShape = RoundedCornerShape(20.dp)
 private val ChipShape = RoundedCornerShape(100.dp)
 private val SearchShape = RoundedCornerShape(100.dp)
-private val MutedFooter = Color.Black.copy(alpha = 0.4f)
+private val MutedFooter = Color(0xFF5F675F)
 
 private enum class CatalogFilter { All, Near, Recommended }
 
@@ -92,6 +92,10 @@ fun MerchantCatalogScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf(CatalogFilter.All) }
     val languages = container.languages
+    val registeredName = container.fakeStore.currentUser?.displayName
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: stringResource(R.string.merchant_company_name)
 
     LaunchedEffect(Unit) {
         container.getPlotsUseCase().onSuccess { all ->
@@ -127,7 +131,7 @@ fun MerchantCatalogScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             CatalogHeader(
-                companyName = stringResource(R.string.merchant_company_name),
+                companyName = registeredName,
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
                 language = languages.merchant,
