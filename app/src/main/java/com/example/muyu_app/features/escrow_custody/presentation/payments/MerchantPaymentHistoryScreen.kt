@@ -1,6 +1,5 @@
 package com.example.muyu_app.features.escrow_custody.presentation.payments
 
-import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -67,6 +66,7 @@ private val PurpleChipBg = Color(0xFFB5C0EC)
 private val PurpleChipText = Color(0xFF23255A)
 private val MethodChipBg = Color(0xFFE0E0E0)
 private val IconBgColor = Color(0xFFBBE395)
+private val MerchantPaymentsBackground = Color(0xFFDDF3DC)
 
 private data class MerchantRelease(
     val plot: Plot,
@@ -121,7 +121,7 @@ fun MerchantPaymentHistoryScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuBackground),
+            .background(MerchantPaymentsBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -287,19 +287,21 @@ private fun MerchantPaymentCard(
                     fontSize = 12.sp,
                     color = Color.Gray,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(ChipShape)
-                        .background(MethodChipBg)
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        text = paymentMethod,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.DarkGray,
-                    )
+                if (paymentMethod.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(ChipShape)
+                            .background(MethodChipBg)
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = paymentMethod,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.DarkGray,
+                        )
+                    }
                 }
             }
 
