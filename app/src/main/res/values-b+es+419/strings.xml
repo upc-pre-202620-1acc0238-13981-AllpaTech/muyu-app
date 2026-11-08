@@ -42,7 +42,7 @@
     <string name="register_have_account">¿Ya tienes una cuenta?</string>
     <string name="register_accept_terms">He leído y acepto los términos y condiciones</string>
     <string name="register_name_invalid">Ingresa un nombre válido de 2 a 60 letras.</string>
-    <string name="register_email_invalid">Ingresa un correo válido.</string>
+    <string name="register_email_invalid">Ingresa un correo de Gmail válido.</string>
     <string name="register_phone_invalid">Ingresa un número válido.</string>
     <string name="register_dni_invalid">Ingresa un DNI válido de 8 dígitos.</string>
     <string name="register_birthdate_required">Selecciona tu fecha de nacimiento.</string>
