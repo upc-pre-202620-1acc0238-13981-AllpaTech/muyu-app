@@ -67,6 +67,7 @@ import com.example.muyu_app.core.di.AppContainer
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
+import com.example.muyu_app.features.user_management.domain.EmailAlreadyRegisteredException
 import com.example.muyu_app.ui.theme.FredokaSemiBold
 import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuField
@@ -92,6 +93,7 @@ private val DNI_PATTERN = Regex("^\\d{8}$")
 private enum class RegistrationValidationError {
     NAME,
     EMAIL,
+    EMAIL_TAKEN,
     PHONE,
     DNI,
     BIRTHDATE_REQUIRED,
@@ -133,6 +135,7 @@ fun RegisterScreen(
         mutableStateOf<RegistrationValidationError?>(null)
     }
     var registrationFailed by rememberSaveable { mutableStateOf(false) }
+    var submitting by remember { mutableStateOf(false) }
 
     fun clearError() {
         validationError = null
@@ -181,7 +184,7 @@ fun RegisterScreen(
                 label = stringResource(R.string.login_email),
                 value = email,
                 keyboardType = KeyboardType.Email,
-                error = messageFor(RegistrationValidationError.EMAIL),
+                error = messageFor(RegistrationValidationError.EMAIL, RegistrationValidationError.EMAIL_TAKEN),
             ) {
                 email = it
                 clearError()
@@ -269,42 +272,51 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(16.dp))
             AuthPrimaryButton(
                 text = stringResource(R.string.register_button),
+                enabled = !submitting,
                 onClick = {
-                    scope.launch {
-                        val normalizedName = name.trim()
-                        val normalizedEmail = email.trim()
-                        val normalizedPhone = phone.trim()
-                        val error = validateRegistration(
-                            name = normalizedName,
-                            email = normalizedEmail,
-                            phone = normalizedPhone,
-                            dni = dni,
-                            birthDate = birthDate,
-                            password = password,
-                            confirmPassword = confirmPassword,
-                            acceptedTerms = acceptedTerms,
-                        )
-                        if (error != null) {
-                            validationError = error
-                            registrationFailed = false
-                            return@launch
-                        }
+                    val normalizedName = name.trim()
+                    val normalizedEmail = email.trim()
+                    val normalizedPhone = phone.trim()
+                    val error = validateRegistration(
+                        name = normalizedName,
+                        email = normalizedEmail,
+                        phone = normalizedPhone,
+                        dni = dni,
+                        birthDate = birthDate,
+                        password = password,
+                        confirmPassword = confirmPassword,
+                        acceptedTerms = acceptedTerms,
+                    )
+                    if (error != null) {
+                        validationError = error
+                        registrationFailed = false
+                    } else if (!submitting) {
+                        // Set before launching so a quick second tap cannot send it twice.
+                        submitting = true
                         val formattedBirthDate = checkNotNull(birthDate).let {
                             it.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH))
                         }
-                        container.registerUseCase(
-                            normalizedName,
-                            normalizedEmail,
-                            normalizedPhone,
-                            formattedBirthDate,
-                            password,
-                            dni,
-                        )
-                            .onSuccess { onRegister() }
-                            .onFailure {
-                                validationError = null
-                                registrationFailed = true
-                            }
+                        scope.launch {
+                            container.registerUseCase(
+                                normalizedName,
+                                normalizedEmail,
+                                normalizedPhone,
+                                formattedBirthDate,
+                                password,
+                                dni,
+                            )
+                                .onSuccess { onRegister() }
+                                .onFailure { failure ->
+                                    if (failure is EmailAlreadyRegisteredException) {
+                                        validationError = RegistrationValidationError.EMAIL_TAKEN
+                                        registrationFailed = false
+                                    } else {
+                                        validationError = null
+                                        registrationFailed = true
+                                    }
+                                }
+                            submitting = false
+                        }
                     }
                 },
             )
@@ -378,6 +390,7 @@ private fun isAcceptedEmail(email: String): Boolean {
 private fun RegistrationValidationError.messageResource(): Int = when (this) {
     RegistrationValidationError.NAME -> R.string.register_name_invalid
     RegistrationValidationError.EMAIL -> R.string.register_email_invalid
+    RegistrationValidationError.EMAIL_TAKEN -> R.string.register_email_taken
     RegistrationValidationError.PHONE -> R.string.register_phone_invalid
     RegistrationValidationError.DNI -> R.string.register_dni_invalid
     RegistrationValidationError.BIRTHDATE_REQUIRED -> R.string.register_birthdate_required

@@ -19,6 +19,7 @@
     <string name="login_facebook">Facebook</string>
     <string name="login_invalid">Invalid email or password</string>
     <string name="register_error">Could not create the account</string>
+    <string name="register_email_taken">This email is already registered. Log in instead.</string>
     <string name="publish_crop_potato">Potato</string>
     <string name="publish_crop_coffee">Coffee</string>
     <string name="publish_crop_corn">Yellow corn</string>

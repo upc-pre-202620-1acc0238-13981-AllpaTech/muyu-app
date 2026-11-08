@@ -1,10 +1,13 @@
 package com.example.muyu_app.core.di
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.example.muyu_app.core.i18n.LanguagePreferences
+import com.example.muyu_app.core.network.BackendSnapshot
 import com.example.muyu_app.core.network.BackendStateStore
 import com.example.muyu_app.core.network.MobileStateService
+import com.example.muyu_app.core.network.isSyncableBy
 import com.example.muyu_app.features.plot_approval.application.CreatePlotUseCase
 import com.example.muyu_app.features.plot_approval.application.DeletePlotUseCase
 import com.example.muyu_app.features.plot_financing.application.FundPlotUseCase
@@ -31,12 +34,16 @@ import com.example.muyu_app.features.user_management.infrastructure.repositories
 import com.example.muyu_app.core.designsystem.components.MerchantTab
 import com.google.gson.Gson
 import com.example.muyu_app.core.storage.BackendPreferences
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import retrofit2.Response
+
+private const val SYNC_LOG_TAG = "MuyuSync"
 
 enum class MerchantEvidenceOrigin {
     Alerts,
@@ -182,22 +189,34 @@ class AppContainer(
     init {
         backendStore.onPersist = { snapshot ->
             if (!backendStore.token.isNullOrBlank()) {
+                val email = backendStore.currentUser?.email.orEmpty()
                 networkScope.launch {
-                    syncMutex.withLock {
-                        val privateSnapshot = snapshot.copy(plots = emptyList(), visits = emptyList())
-                        val stateResponse = mobileStateService.putState(privateSnapshot)
-                        check(stateResponse.isSuccessful) { "Backend state sync failed: ${stateResponse.code()}" }
-                        snapshot.plots.forEach { plot ->
-                            val response = mobileStateService.putPlot(plot.id, plot)
-                            check(response.isSuccessful) { "Plot ${plot.id} sync failed: ${response.code()}" }
-                        }
-                        snapshot.visits.forEach { visit ->
-                            val response = mobileStateService.putVisit(visit.id, visit)
-                            check(response.isSuccessful) { "Visit ${visit.id} sync failed: ${response.code()}" }
-                        }
-                    }
+                    syncMutex.withLock { pushSnapshot(snapshot, email) }
                 }
             }
+        }
+    }
+
+    private suspend fun pushSnapshot(snapshot: BackendSnapshot, email: String) {
+        val privateSnapshot = snapshot.copy(plots = emptyList(), visits = emptyList())
+        pushRecord("Backend state") { mobileStateService.putState(privateSnapshot) }
+        snapshot.plots.filter { it.isSyncableBy(email) }.forEach { plot ->
+            pushRecord("Plot ${plot.id}") { mobileStateService.putPlot(plot.id, plot) }
+        }
+        snapshot.visits.filter { it.isSyncableBy(email) }.forEach { visit ->
+            pushRecord("Visit ${visit.id}") { mobileStateService.putVisit(visit.id, visit) }
+        }
+    }
+
+    /** A rejected or failed background sync must never close the app. */
+    private suspend fun pushRecord(label: String, send: suspend () -> Response<Unit>) {
+        try {
+            val response = send()
+            if (!response.isSuccessful) Log.w(SYNC_LOG_TAG, "$label sync failed: ${response.code()}")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(SYNC_LOG_TAG, "$label sync failed", e)
         }
     }
 

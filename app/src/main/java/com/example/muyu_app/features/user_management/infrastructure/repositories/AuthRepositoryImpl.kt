@@ -4,11 +4,14 @@ import com.example.muyu_app.core.network.BackendStateStore
 import com.example.muyu_app.core.network.UserRecord
 import com.example.muyu_app.core.network.MobileStateService
 import com.example.muyu_app.features.user_management.domain.AuthRepository
+import com.example.muyu_app.features.user_management.domain.EmailAlreadyRegisteredException
 import com.example.muyu_app.features.user_management.domain.User
 import com.example.muyu_app.features.user_management.infrastructure.remote.AuthService
 import com.example.muyu_app.features.user_management.infrastructure.remote.LoginRequestDto
 import com.example.muyu_app.features.user_management.infrastructure.remote.LoginResponseDto
 import com.example.muyu_app.features.user_management.infrastructure.remote.RegisterRequestDto
+
+private const val HTTP_CONFLICT = 409
 
 class AuthRepositoryImpl(
     private val service: AuthService,
@@ -45,7 +48,18 @@ class AuthRepositoryImpl(
                 RegisterRequestDto(name, email, phone, birthdate, password, dni),
             )
             if (response.isSuccessful) {
-                login(email, password)
+                // The register screen sends the user to Login, so no session starts here.
+                Result.success(
+                    User(
+                        email = email,
+                        firstName = name.substringBefore(" "),
+                        lastName = name.substringAfter(" ", ""),
+                        role = response.body()?.role.orEmpty(),
+                        token = "",
+                    ),
+                )
+            } else if (response.code() == HTTP_CONFLICT) {
+                Result.failure(EmailAlreadyRegisteredException())
             } else {
                 Result.failure(Exception(response.errorBody()?.string() ?: response.message()))
             }
