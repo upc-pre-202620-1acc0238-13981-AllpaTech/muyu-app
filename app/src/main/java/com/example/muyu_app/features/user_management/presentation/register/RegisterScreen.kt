@@ -84,20 +84,7 @@ private val EMAIL_PATTERN = Regex(
     "^[A-Za-z0-9](?:[A-Za-z0-9._%+-]{0,62}[A-Za-z0-9])?@" +
         "[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z]{2,})+$",
 )
-private val ALLOWED_EMAIL_DOMAINS = setOf(
-    "gmail.com",
-    "outlook.com",
-    "outlook.es",
-    "hotmail.com",
-    "hotmail.es",
-    "yahoo.com",
-    "yahoo.es",
-    "icloud.com",
-    "live.com",
-    "msn.com",
-    "proton.me",
-    "protonmail.com",
-)
+private const val ALLOWED_EMAIL_DOMAIN = "gmail.com"
 private val NAME_PATTERN = Regex("^[\\p{L}][\\p{L} .'-]{1,59}$")
 private val PHONE_PATTERN = Regex("^9\\d{8}$")
 private val DNI_PATTERN = Regex("^\\d{8}$")
@@ -385,7 +372,7 @@ private fun validateRegistration(
 private fun isAcceptedEmail(email: String): Boolean {
     if (!EMAIL_PATTERN.matches(email)) return false
     val domain = email.substringAfterLast('@').lowercase(Locale.ROOT)
-    return domain in ALLOWED_EMAIL_DOMAINS
+    return domain == ALLOWED_EMAIL_DOMAIN
 }
 
 private fun RegistrationValidationError.messageResource(): Int = when (this) {
