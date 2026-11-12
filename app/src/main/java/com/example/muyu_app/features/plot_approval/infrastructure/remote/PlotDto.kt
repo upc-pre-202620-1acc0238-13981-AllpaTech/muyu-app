@@ -24,6 +24,11 @@ data class PlotDto(
     val milestoneStates: List<com.example.muyu_app.features.plot_approval.domain.MilestoneState> = emptyList(),
     val visitOutcome: String = "",
     val visitDate: String = "",
+    val agreedPrice: String? = "",
+    val harvestReceivedAt: String? = "",
+    val harvestReceivedBy: String? = "",
+    val harvestIncidents: List<com.example.muyu_app.features.plot_approval.domain.HarvestIncident>? = emptyList(),
+    val weatherMeasures: List<com.example.muyu_app.features.plot_approval.domain.WeatherMeasure>? = emptyList(),
 )
 
 data class PlotsResponseDto(

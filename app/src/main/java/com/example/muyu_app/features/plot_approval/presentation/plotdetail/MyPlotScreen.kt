@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_approval.presentation.plotdetail
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,7 +48,6 @@ import com.example.muyu_app.features.plot_approval.presentation.publish.FarmerCo
 import com.example.muyu_app.features.plot_approval.presentation.publish.StatusAvailable
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuSoftGreen
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBold
@@ -70,7 +70,7 @@ fun MyPlotScreen(
 ) {
     val container = LocalAppContainer.current
     val plot = container.selectedPlot
-    val farmer = container.fakeStore.currentUser?.displayName
+    val farmer = container.backendStore.currentUser?.displayName
         ?: plot?.ownerName.orEmpty()
     val name = plot?.name.orEmpty()
     val crop = plot?.crop.orEmpty()
@@ -91,7 +91,7 @@ fun MyPlotScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFEAF9E9)),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             FarmerContextHeader(

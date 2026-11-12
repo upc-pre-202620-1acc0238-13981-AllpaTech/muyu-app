@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.labor_execution.presentation.evidence
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,7 +42,6 @@ import com.example.muyu_app.core.plot.refreshSelectedPlot
 import com.example.muyu_app.features.plot_approval.domain.currentMilestone
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistRegular
 import java.time.LocalDate
@@ -64,7 +64,7 @@ fun RequestExtensionScreen(
     val current = plot?.currentMilestone()
     val definition = MilestoneCatalog.definition(current?.key ?: container.selectedMilestoneKey)
     val milestoneTitle = stringResource(definition.titleRes)
-    val currentDeadline = current?.dueLabel?.ifBlank { null } ?: "03 Oct 2026"
+    val currentDeadline = current?.dueLabel.orEmpty()
     val minimumDate = remember(currentDeadline) {
         val today = LocalDate.now()
         maxOf(today, parseExtensionDate(currentDeadline) ?: today)
@@ -78,7 +78,7 @@ fun RequestExtensionScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -103,7 +103,7 @@ fun RequestExtensionScreen(
                 ) {
                     Column {
                         Text(
-                            text = "$milestoneTitle · ${plot?.name ?: "El Rosal Plot"}",
+                            text = "$milestoneTitle · ${plot?.name.orEmpty()}",
                             style = TextStyle(
                                 fontFamily = UrbanistBold,
                                 fontWeight = FontWeight.Bold,
@@ -185,7 +185,7 @@ fun RequestExtensionScreen(
                             if (selectedDate.isBefore(minimumDate)) return@clickable
                             val id = plot?.id ?: return@clickable
                             val key = current?.key ?: container.selectedMilestoneKey
-                            container.fakeStore.requestExtension(
+                            container.backendStore.requestExtension(
                                 id,
                                 key,
                                 selectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yy", Locale.ENGLISH)),

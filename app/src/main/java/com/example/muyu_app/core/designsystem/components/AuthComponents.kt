@@ -1,5 +1,6 @@
 package com.example.muyu_app.core.designsystem.components
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +36,8 @@ import com.example.muyu_app.ui.theme.UrbanistSemiBold
 
 val AuthSheetShape = RoundedCornerShape(topStart = 63.dp, topEnd = 63.dp)
 val AuthFieldShape = RoundedCornerShape(10.dp)
+val AuthErrorBorder = Color(0xFFE5484D)
+val AuthErrorText = Color(0xFFFFC7C7)
 
 @Composable
 fun AuthSheet(
@@ -79,6 +82,8 @@ fun AuthTextField(
     trailing: @Composable (() -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    // Marca el campo en rojo cuando su valor no pasa la validación.
+    isError: Boolean = false,
 ) {
     Row(
         modifier = modifier
@@ -86,7 +91,11 @@ fun AuthTextField(
             .height(50.dp)
             .clip(AuthFieldShape)
             .background(MuyuField)
-            .border(1.dp, Color.Black, AuthFieldShape)
+            .border(
+                width = if (isError) 2.dp else 1.dp,
+                color = if (isError) AuthErrorBorder else Color.Black,
+                shape = AuthFieldShape,
+            )
             .padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -117,14 +126,17 @@ fun AuthPrimaryButton(
     background: Color = MuyuLime,
     contentColor: Color = Color.Black,
     height: Dp = 56.dp,
+    enabled: Boolean = true,
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
             .clip(AuthFieldShape)
-            .background(background)
-            .clickable(onClick = onClick),
+            // El estado deshabilitado se pinta con colores atenuados, sin capa de alpha,
+            // para que el fondo del botón siempre se dibuje.
+            .background(if (enabled) background else background.copy(alpha = 0.5f))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -133,7 +145,7 @@ fun AuthPrimaryButton(
                 fontFamily = UrbanistBold,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
-                color = contentColor,
+                color = if (enabled) contentColor else contentColor.copy(alpha = 0.5f),
             ),
         )
     }

@@ -13,6 +13,8 @@ import com.example.muyu_app.ui.theme.MuyuappTheme
 fun EscrowOnboardingScreen(
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
+    onSkip: () -> Unit = onNext,
+    onBack: () -> Unit = {},
 ) {
     OnboardingScaffold(
         illustration = R.drawable.onboarding_escrow,
@@ -23,6 +25,9 @@ fun EscrowOnboardingScreen(
         pageIndex = 1,
         primaryLabel = stringResource(R.string.onboarding_next),
         onPrimary = onNext,
+        onSkip = onSkip,
+        onBack = onBack,
+        onSwipeNext = onNext,
         skipLabel = stringResource(R.string.onboarding_skip),
         illustrationContentDescription = stringResource(R.string.onboarding_escrow_image),
         modifier = modifier,

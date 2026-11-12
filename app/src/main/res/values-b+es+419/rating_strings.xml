@@ -1,0 +1,30 @@
+<resources>
+    <string name="rating_title">Calificar al comprador</string>
+    <string name="rating_section">Calificación</string>
+    <string name="rating_cycle_date">15 feb 2027</string>
+    <string name="rating_contract_ended">Contrato finalizado · %1$s</string>
+    <string name="rating_buyer">Comprador: %1$s</string>
+    <string name="rating_question">¿Cómo calificarías la experiencia?</string>
+    <string name="rating_selected">Tu calificación: %1$d de 5</string>
+    <string name="rating_comment_title">Comentario (opcional)</string>
+    <string name="rating_comment_hint">Escribe un comentario sobre tu experiencia...</string>
+    <string name="rating_submit">Enviar calificación</string>
+    <string name="rating_star_description">%1$d de 5 estrellas</string>
+    <string name="rating_preview_notice">Solo demostración. Esta calificación no se envía al servidor.</string>
+    <string name="rating_submitted_title">Calificación enviada</string>
+    <string name="rating_later_stage">Etapa final · %1$s · Ciclo terminado</string>
+    <string name="rating_thanks">Gracias por tu calificación</string>
+    <string name="rating_thanks_body">Tu calificación de %1$s fue enviada.</string>
+    <string name="rating_submitted_value">Calificación enviada: %1$d de 5</string>
+    <string name="rating_completed">Contrato completado</string>
+    <string name="rating_plot_label">Parcela</string>
+    <string name="rating_closure_label">Cierre del ciclo</string>
+    <string name="rating_milestones">4/4 hitos · Ciclo completado</string>
+    <string name="rating_submitted_by">Enviado por %1$s a %2$s de %3$s.</string>
+    <string name="rating_no_comment">Sin comentarios adicionales.</string>
+    <string name="rating_view_contract">Ver contrato</string>
+    <string name="rating_back_profile">Volver al perfil</string>
+    <string name="rating_contract_title">Contrato completado</string>
+    <string name="rating_close">Cerrar</string>
+    <string name="rating_farmer_preview">Miguel Quispe</string>
+</resources>

@@ -18,5 +18,6 @@ data class MerchantNotificationRecord(
         const val TYPE_EVIDENCE = "evidence"
         const val TYPE_EXTENSION = "extension"
         const val TYPE_HARVEST = "harvest"
+        const val TYPE_WEATHER = "weather"
     }
 }

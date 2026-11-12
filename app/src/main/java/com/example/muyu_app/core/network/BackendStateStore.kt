@@ -1,10 +1,13 @@
 package com.example.muyu_app.core.network
 
 import com.example.muyu_app.core.environment.Environment
+import com.example.muyu_app.features.plot_approval.domain.HarvestIncident
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
+import com.example.muyu_app.features.plot_approval.domain.PlotVisit
+import com.example.muyu_app.features.plot_approval.domain.WeatherMeasure
 import java.util.Calendar
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
@@ -17,6 +20,12 @@ data class UserRecord(
     val role: String,
     val phone: String = "",
     val birthdate: String = "",
+    val avatarUri: String = "",
+    val companyName: String = "",
+    val companyActivity: String = "",
+    val ruc: String = "",
+    val location: String = "",
+    val companyEmail: String = "",
 ) {
     val displayName: String
         get() = listOf(firstName, lastName).filter { it.isNotBlank() }.joinToString(" ")
@@ -46,6 +55,11 @@ data class PlotRecord(
     val milestoneStates: List<MilestoneState> = emptyList(),
     val visitOutcome: String = "",
     val visitDate: String = "",
+    val agreedPrice: String = "",
+    val harvestReceivedAt: String = "",
+    val harvestReceivedBy: String = "",
+    val harvestIncidents: List<HarvestIncident> = emptyList(),
+    val weatherMeasures: List<WeatherMeasure> = emptyList(),
 )
 
 data class PlotUpdatePayload(
@@ -63,13 +77,18 @@ data class PlotUpdatePayload(
     val accuracyMeters: Int? = null,
 )
 
-class FakeApiStore(
-    private val persistence: FakeApiPersistence? = null,
-) {
+class BackendStateStore {
     val users = CopyOnWriteArrayList<UserRecord>()
     val plots = CopyOnWriteArrayList<PlotRecord>()
     val merchantNotifications = CopyOnWriteArrayList<MerchantNotificationRecord>()
     val syncHistory = CopyOnWriteArrayList<SyncHistoryRecord>()
+    val farmerNotifications = CopyOnWriteArrayList<FarmerNotificationRecord>()
+    val preferences = java.util.concurrent.ConcurrentHashMap<String, String>()
+    val visits = CopyOnWriteArrayList<PlotVisit>()
+    val ratings = CopyOnWriteArrayList<RatingRecord>()
+
+    @Volatile
+    var onPersist: ((BackendSnapshot) -> Unit)? = null
 
     @Volatile
     var token: String? = null
@@ -77,62 +96,57 @@ class FakeApiStore(
     @Volatile
     var currentUser: UserRecord? = null
 
-    init {
-        val snapshot = persistence?.load()
-        if (snapshot != null) {
-            users.addAll(snapshot.users.map { it.normalized() })
-            plots.addAll(snapshot.plots.map { it.normalized() })
-            merchantNotifications.addAll(snapshot.merchantNotifications.map { it.normalized() })
-            syncHistory.addAll(snapshot.syncHistory)
-            migrateMerchantNotificationIds()
-            seedCredentialsIfMissing()
-            if (persistence.shouldApplyPlotReset()) {
-                plots.clear()
-                merchantNotifications.clear()
-                persistence.markPlotResetApplied()
-            }
-            if (plots.isNotEmpty()) {
-                realignSeedOwners()
-                syncMerchantNotificationsFromPlots()
-            }
-            persist()
-        } else {
-            users.addAll(seedUsers())
-            persist()
-        }
-        restoreSession()
-    }
-
     fun startSession(user: UserRecord, sessionToken: String) {
         currentUser = user
         token = sessionToken
-        persistence?.saveSession(user.email, sessionToken)
     }
 
     fun endSession() {
         currentUser = null
         token = null
-        persistence?.clearSession()
-    }
-
-    private fun restoreSession() {
-        val (email, savedToken) = persistence?.loadSession() ?: return
-        val user = users.find { it.email.equals(email, ignoreCase = true) }
-        if (user == null) {
-            persistence?.clearSession()
-            return
-        }
-        currentUser = user
-        token = savedToken
     }
 
     fun persist() {
-        persistence?.save(
-            users.toList(),
-            plots.toList(),
-            merchantNotifications.toList(),
-            syncHistory.toList(),
-        )
+        val snapshot = snapshot()
+        onPersist?.invoke(snapshot)
+    }
+
+    /** Builds the payload persisted by the backend without ever uploading passwords. */
+    fun snapshot(): BackendSnapshot = BackendSnapshot(
+        users = users.map { it.copy(password = "") },
+        plots = plots.toList(),
+        merchantNotifications = merchantNotifications.toList(),
+        syncHistory = syncHistory.toList(),
+        farmerNotifications = farmerNotifications.toList(),
+        preferences = preferences.toMap(),
+        visits = visits.toList(),
+        ratings = ratings.toList(),
+    )
+
+    /** Replaces the in-memory cache with the authoritative server response. */
+    fun replaceWith(snapshot: BackendSnapshot) {
+        users.clear()
+        plots.clear()
+        merchantNotifications.clear()
+        syncHistory.clear()
+        farmerNotifications.clear()
+        preferences.clear()
+        visits.clear()
+        ratings.clear()
+        users.addAll(snapshot.users.map { it.normalized() })
+        plots.addAll(snapshot.plots.map { it.normalized() })
+        merchantNotifications.addAll(snapshot.merchantNotifications.map { it.normalized() })
+        syncHistory.addAll(snapshot.syncHistory)
+        farmerNotifications.addAll(snapshot.farmerNotifications.orEmpty())
+        preferences.putAll(snapshot.preferences)
+        visits.addAll(snapshot.visits)
+        ratings.addAll(snapshot.ratings)
+    }
+
+    fun addRating(score: Int, comment: String) {
+        val email = currentUser?.email ?: return
+        ratings.add(RatingRecord(email, score.coerceIn(1, 5), comment.trim(), System.currentTimeMillis()))
+        persist()
     }
 
     fun syncHistoryForOwner(ownerEmail: String): List<SyncHistoryRecord> =
@@ -258,6 +272,72 @@ class FakeApiStore(
         }
         replacePlot(plot.copy(milestoneStates = next))
         notifyExtensionRequested(plot, milestoneKey, date, reason)
+    }
+
+    /**
+     * Confirma la recepción de la cosecha (US30). Si ya estaba confirmada no la vuelve
+     * a registrar y devuelve el cierre existente.
+     */
+    fun confirmHarvestReceived(plotId: Int, merchantEmail: String): PlotRecord? {
+        val plot = plotById(plotId) ?: return null
+        if (plot.harvestReceivedAt.isNotBlank()) return plot
+        val updated = plot.copy(
+            harvestReceivedAt = PlotFinance.timestampNow(),
+            harvestReceivedBy = merchantEmail,
+            stage = "Harvest received",
+        )
+        replacePlot(updated)
+        notifyFarmer(
+            FarmerNotificationRecord(
+                id = "harvest_received_${plot.id}",
+                farmerEmail = plot.ownerEmail,
+                type = FarmerNotificationRecord.TYPE_HARVEST_RECEIVED,
+                plotId = plot.id,
+                plotName = plot.name,
+                createdAtMillis = System.currentTimeMillis(),
+            ),
+        )
+        return updated
+    }
+
+    /** Registra una incidencia en la entrega y deja la recepción pendiente (US31). */
+    fun reportHarvestIncident(plotId: Int, incident: HarvestIncident): PlotRecord? {
+        val plot = plotById(plotId) ?: return null
+        if (plot.harvestReceivedAt.isNotBlank()) return plot
+        val updated = plot.copy(harvestIncidents = plot.harvestIncidents + incident)
+        replacePlot(updated)
+        notifyFarmer(
+            FarmerNotificationRecord(
+                id = "harvest_incident_${plot.id}_${incident.reportedAtMillis}",
+                farmerEmail = plot.ownerEmail,
+                type = FarmerNotificationRecord.TYPE_HARVEST_INCIDENT,
+                plotId = plot.id,
+                plotName = plot.name,
+                body = incident.reason,
+                createdAtMillis = incident.reportedAtMillis,
+            ),
+        )
+        return updated
+    }
+
+    /** Guarda las medidas aplicadas ante una alerta climática (US33). */
+    fun recordWeatherMeasures(plotId: Int, measure: WeatherMeasure): PlotRecord? {
+        val plot = plotById(plotId) ?: return null
+        val others = plot.weatherMeasures.filterNot { it.alertKey == measure.alertKey }
+        val updated = plot.copy(weatherMeasures = others + measure)
+        replacePlot(updated)
+        return updated
+    }
+
+    fun notificationsForFarmer(email: String): List<FarmerNotificationRecord> =
+        farmerNotifications
+            .filter { it.farmerEmail.equals(email, ignoreCase = true) }
+            .sortedByDescending { it.createdAtMillis }
+
+    private fun notifyFarmer(record: FarmerNotificationRecord) {
+        if (farmerNotifications.any { it.id == record.id }) return
+        farmerNotifications.add(record)
+        persist()
     }
 
     private fun notifyEvidenceSubmitted(plot: PlotRecord, milestone: MilestoneState) {
@@ -450,6 +530,11 @@ class FakeApiStore(
         milestoneStates = record.milestoneStates,
         visitOutcome = record.visitOutcome,
         visitDate = record.visitDate,
+        agreedPrice = record.agreedPrice,
+        harvestReceivedAt = record.harvestReceivedAt,
+        harvestReceivedBy = record.harvestReceivedBy,
+        harvestIncidents = record.harvestIncidents,
+        weatherMeasures = record.weatherMeasures,
     )
 
     private fun UserRecord.normalized(): UserRecord = UserRecord(
@@ -460,6 +545,12 @@ class FakeApiStore(
         role = role.orEmpty().ifBlank { "farmer" },
         phone = phone.orEmpty(),
         birthdate = birthdate.orEmpty(),
+        avatarUri = avatarUri.orEmpty(),
+        companyName = companyName.orEmpty(),
+        companyActivity = companyActivity.orEmpty(),
+        ruc = ruc.orEmpty(),
+        location = location.orEmpty(),
+        companyEmail = companyEmail.orEmpty(),
     )
 
     private fun MilestoneState.normalized(): MilestoneState {
@@ -517,6 +608,13 @@ class FakeApiStore(
         milestoneStates = (milestoneStates ?: emptyList()).map { it.normalized() },
         visitOutcome = visitOutcome.orEmpty(),
         visitDate = visitDate.orEmpty(),
+        agreedPrice = agreedPrice.orEmpty(),
+        // Gson deja en null los campos que no existen en datos guardados antes.
+        harvestReceivedAt = (harvestReceivedAt as String?).orEmpty(),
+        harvestReceivedBy = (harvestReceivedBy as String?).orEmpty(),
+        harvestIncidents = (harvestIncidents as List<HarvestIncident>?).orEmpty(),
+        weatherMeasures = (weatherMeasures as List<WeatherMeasure>?).orEmpty()
+            .map { it.copy(measures = (it.measures as List<String>?).orEmpty()) },
     )
 
     private fun stageTitle(key: String): String = when (key) {
@@ -532,8 +630,65 @@ class FakeApiStore(
         persist()
     }
 
+    fun updateAvatar(uri: String) {
+        val user = currentUser ?: return
+        replaceUser(user.copy(avatarUri = uri))
+    }
+
+    fun updateContact(
+        phone: String? = null,
+        email: String? = null,
+        companyName: String? = null,
+        companyActivity: String? = null,
+        ruc: String? = null,
+        location: String? = null,
+        companyEmail: String? = null,
+    ) {
+        val user = currentUser ?: return
+        val nextEmail = email?.trim()?.ifBlank { user.email } ?: user.email
+        if (!nextEmail.equals(user.email, ignoreCase = true)) {
+            plots.replaceAll { plot ->
+                if (plot.ownerEmail.equals(user.email, ignoreCase = true)) {
+                    plot.copy(ownerEmail = nextEmail)
+                } else {
+                    plot
+                }
+            }
+        }
+        replaceUser(
+            user.copy(
+                phone = phone ?: user.phone,
+                email = nextEmail,
+                companyName = companyName ?: user.companyName,
+                companyActivity = companyActivity ?: user.companyActivity,
+                ruc = ruc ?: user.ruc,
+                location = location ?: user.location,
+                companyEmail = companyEmail ?: user.companyEmail,
+            ),
+        )
+    }
+
+    private fun replaceUser(updated: UserRecord) {
+        val index = users.indexOfFirst { it.email.equals(currentUser?.email, ignoreCase = true) }
+        if (index >= 0) {
+            users[index] = updated
+        }
+        currentUser = updated
+        persist()
+    }
+
     fun addPlot(plot: PlotRecord) {
         plots.add(0, plot)
+        persist()
+    }
+
+    fun upsertPlot(plot: PlotRecord) {
+        val index = plots.indexOfFirst { it.id == plot.id }
+        if (index >= 0) {
+            plots[index] = plot
+        } else {
+            plots.add(0, plot)
+        }
         persist()
     }
 
@@ -588,145 +743,4 @@ class FakeApiStore(
 
     fun newToken(): String = UUID.randomUUID().toString()
 
-    private fun realignSeedOwners() {
-        val index = plots.indexOfFirst {
-            it.name.contains("Álamos", ignoreCase = true) ||
-                it.name.contains("Alamos", ignoreCase = true)
-        }
-        if (index >= 0 && plots[index].ownerEmail.equals(Environment.DemoCredentials.FARMER_EMAIL, true)) {
-            plots[index] = plots[index].copy(
-                ownerEmail = "carlos.mamani@muyu.pe",
-                ownerName = "Carlos Mamani",
-            )
-            persist()
-        }
-    }
-
-    private fun seedCredentialsIfMissing() {
-        seedUsers().forEach { demo ->
-            if (users.none { it.email.equals(demo.email, ignoreCase = true) }) {
-                users.add(demo)
-            }
-        }
-        persist()
-    }
-
-    private fun seedUsers() = listOf(
-        UserRecord(
-            email = Environment.DemoCredentials.FARMER_EMAIL,
-            password = Environment.DemoCredentials.PASSWORD,
-            firstName = "María",
-            lastName = "Quispe",
-            role = "farmer",
-            phone = "987654321",
-            birthdate = "12 Mar 1988",
-        ),
-        UserRecord(
-            email = Environment.DemoCredentials.MERCHANT_EMAIL,
-            password = Environment.DemoCredentials.PASSWORD,
-            firstName = "José",
-            lastName = "Arturo",
-            role = "merchant",
-            phone = "912345678",
-            birthdate = "04 Jul 1990",
-        ),
-        UserRecord(
-            email = "carlos.mamani@muyu.pe",
-            password = Environment.DemoCredentials.PASSWORD,
-            firstName = "Carlos",
-            lastName = "Mamani",
-            role = "farmer",
-            phone = "999111222",
-            birthdate = "22 Sep 1985",
-        ),
-    )
-
-    private fun seedPlots() = listOf(
-        PlotRecord(
-            id = 1,
-            name = "El Rosal Plot",
-            crop = "Coffee",
-            area = "2.5 ha",
-            harvestDate = "15 Feb 2027",
-            place = "Chachapoyas",
-            stage = "Fertilization",
-            progress = 65,
-            status = "funded",
-            amount = "S/ 8,500",
-            cycle = "6 months",
-            milestones = "4",
-            imageUri = null,
-            ownerEmail = Environment.DemoCredentials.FARMER_EMAIL,
-            ownerName = "María Quispe",
-            fundedByEmail = Environment.DemoCredentials.MERCHANT_EMAIL,
-        ),
-        PlotRecord(
-            id = 2,
-            name = "Huayco Plot",
-            crop = "Yellow corn",
-            area = "1.2 ha",
-            harvestDate = "10 Mar 2027",
-            place = "Cuzco",
-            stage = "Planting",
-            progress = 20,
-            status = "approved",
-            amount = "S/ 4,200",
-            cycle = "6 months",
-            milestones = "4",
-            imageUri = null,
-            ownerEmail = Environment.DemoCredentials.FARMER_EMAIL,
-            ownerName = "María Quispe",
-        ),
-        PlotRecord(
-            id = 3,
-            name = "Molinos Farm",
-            crop = "Quinoa",
-            area = "1.2 ha",
-            harvestDate = "01 Apr 2027",
-            place = "Apurímac",
-            stage = "Published",
-            progress = 5,
-            status = "pending",
-            amount = "S/ 3,800",
-            cycle = "3 months",
-            milestones = "3",
-            imageUri = null,
-            ownerEmail = Environment.DemoCredentials.FARMER_EMAIL,
-            ownerName = "María Quispe",
-        ),
-        PlotRecord(
-            id = 4,
-            name = "Esperanza Plot",
-            crop = "Huayro potato",
-            area = "3.5 ha",
-            harvestDate = "15 Feb 2027",
-            place = "Cuzco",
-            stage = "Available",
-            progress = 0,
-            status = "available",
-            amount = "S/ 8,500",
-            cycle = "6 months",
-            milestones = "4",
-            imageUri = null,
-            ownerEmail = Environment.DemoCredentials.FARMER_EMAIL,
-            ownerName = "María Quispe",
-        ),
-        PlotRecord(
-            id = 5,
-            name = "Los Álamos Plot",
-            crop = "Purple corn",
-            area = "2 ha",
-            harvestDate = "20 Mar 2027",
-            place = "Apurímac",
-            stage = "Available",
-            progress = 0,
-            status = "available",
-            amount = "S/ 4,200",
-            cycle = "6 months",
-            milestones = "4",
-            imageUri = null,
-            ownerEmail = "carlos.mamani@muyu.pe",
-            ownerName = "Carlos Mamani",
-        ),
-    )
 }

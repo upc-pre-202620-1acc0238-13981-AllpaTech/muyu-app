@@ -1,5 +1,7 @@
 package com.example.muyu_app.features.plot_approval.presentation.publish
 
+import com.example.muyu_app.ui.theme.MuyuBackground
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,7 +48,6 @@ import com.example.muyu_app.ui.theme.MuyuApprovedBg
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuHeader
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuPlanBadgeText
 import com.example.muyu_app.ui.theme.MuyuSoftGreen
 import com.example.muyu_app.ui.theme.MuyuappTheme
@@ -68,13 +69,13 @@ fun PublishSuccessScreen(
 ) {
     val container = LocalAppContainer.current
     val plot = container.selectedPlot
-    val farmer = container.fakeStore.currentUser?.displayName
+    val farmer = container.backendStore.currentUser?.displayName
         ?: plot?.ownerName.orEmpty()
     val name = plot?.name.orEmpty()
     val crop = plot?.crop.orEmpty()
     val area = plot?.area.orEmpty()
     val place = plot?.place.orEmpty()
-    val amount = plot?.amount.orEmpty().ifBlank { PlotFinance.formatAmount(8500.0) }
+    val amount = plot?.amount.orEmpty()
     val milestones = plot?.milestones?.ifBlank { "4" } ?: "4"
     val published = plot?.publishedAt?.ifBlank { null } ?: PlotFinance.publishedToday()
     val coords = if (plot?.latitude != null && plot.longitude != null) {
@@ -87,7 +88,7 @@ fun PublishSuccessScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             FarmerContextHeader(
@@ -315,7 +316,8 @@ internal fun FarmerContextHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MuyuHeader)
+            // Unifica el encabezado de la parcela con el verde oscuro de la navegación.
+            .background(MuyuNavBar)
             .statusBarsPadding()
             .padding(horizontal = 24.dp)
             .padding(top = 8.dp, bottom = 14.dp),

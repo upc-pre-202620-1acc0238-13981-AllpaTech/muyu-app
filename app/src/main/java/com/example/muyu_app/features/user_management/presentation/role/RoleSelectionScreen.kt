@@ -30,6 +30,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.Role
+import com.example.muyu_app.ui.theme.MuyuSkip
 import com.example.muyu_app.R
 import com.example.muyu_app.core.designsystem.components.AuthPrimaryButton
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
@@ -42,14 +49,17 @@ import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistLight
 
 private val CardShape = RoundedCornerShape(20.dp)
+private const val ROLE_FARMER = "farmer"
+private const val ROLE_MERCHANT = "merchant"
 
 @Composable
 fun RoleSelectionScreen(
-    onNext: () -> Unit,
     onFarmerSelected: () -> Unit,
     onMerchantSelected: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Elegir una tarjeta solo la marca. "Next" entra con el rol elegido.
+    var selectedRole by rememberSaveable { mutableStateOf<String?>(null) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -98,7 +108,8 @@ fun RoleSelectionScreen(
             imageDescription = stringResource(R.string.role_farmer_image),
             title = stringResource(R.string.role_farmer_title),
             body = stringResource(R.string.role_farmer_body),
-            onClick = onFarmerSelected,
+            selected = selectedRole == ROLE_FARMER,
+            onClick = { selectedRole = ROLE_FARMER },
         )
         Spacer(modifier = Modifier.height(20.dp))
         RoleCard(
@@ -106,12 +117,19 @@ fun RoleSelectionScreen(
             imageDescription = stringResource(R.string.role_merchant_image),
             title = stringResource(R.string.role_merchant_title),
             body = stringResource(R.string.role_merchant_body),
-            onClick = onMerchantSelected,
+            selected = selectedRole == ROLE_MERCHANT,
+            onClick = { selectedRole = ROLE_MERCHANT },
         )
         Spacer(modifier = Modifier.height(24.dp))
         AuthPrimaryButton(
             text = stringResource(R.string.role_next),
-            onClick = onNext,
+            onClick = {
+                when (selectedRole) {
+                    ROLE_FARMER -> onFarmerSelected()
+                    ROLE_MERCHANT -> onMerchantSelected()
+                }
+            },
+            enabled = selectedRole != null,
             background = MuyuAction,
             contentColor = Color.White,
         )
@@ -124,6 +142,7 @@ private fun RoleCard(
     imageDescription: String,
     title: String,
     body: String,
+    selected: Boolean = false,
     onClick: (() -> Unit)? = null,
 ) {
     Column(
@@ -131,9 +150,15 @@ private fun RoleCard(
             .fillMaxWidth()
             .height(220.dp)
             .clip(CardShape)
-            .background(Color.White)
-            .border(1.dp, MuyuForest, CardShape)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .background(if (selected) MuyuSkip else Color.White)
+            .border(if (selected) 3.dp else 1.dp, MuyuForest, CardShape)
+            .then(
+                if (onClick != null) {
+                    Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+                } else {
+                    Modifier
+                },
+            )
             .padding(horizontal = 26.dp, vertical = 18.dp),
     ) {
         Image(
@@ -172,6 +197,6 @@ private fun RoleCard(
 private fun RoleSelectionScreenPreview() {
     InstallMuyuImageLoader()
     MuyuappTheme {
-        RoleSelectionScreen(onNext = {}, onFarmerSelected = {}, onMerchantSelected = {})
+        RoleSelectionScreen(onFarmerSelected = {}, onMerchantSelected = {})
     }
 }

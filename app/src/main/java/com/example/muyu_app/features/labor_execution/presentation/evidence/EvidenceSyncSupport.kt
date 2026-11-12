@@ -13,7 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.example.muyu_app.core.di.AppContainer
-import com.example.muyu_app.core.network.FakeApiStore
+import com.example.muyu_app.core.network.BackendStateStore
 import com.example.muyu_app.core.network.SyncHistoryRecord
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
@@ -31,7 +31,7 @@ data class QueuedEvidenceItem(
     val milestone: MilestoneState,
 )
 
-fun FakeApiStore.queuedEvidenceForOwner(ownerEmail: String): List<QueuedEvidenceItem> {
+fun BackendStateStore.queuedEvidenceForOwner(ownerEmail: String): List<QueuedEvidenceItem> {
     if (ownerEmail.isBlank()) return emptyList()
     return plots
         .filter { it.ownerEmail.equals(ownerEmail, ignoreCase = true) && it.status == "funded" }
@@ -53,7 +53,7 @@ fun FakeApiStore.queuedEvidenceForOwner(ownerEmail: String): List<QueuedEvidence
         .sortedByDescending { it.milestone.submittedAtMillis }
 }
 
-fun FakeApiStore.syncedEvidenceCountForOwner(ownerEmail: String): Int {
+fun BackendStateStore.syncedEvidenceCountForOwner(ownerEmail: String): Int {
     if (ownerEmail.isBlank()) return 0
     return plots
         .filter { it.ownerEmail.equals(ownerEmail, ignoreCase = true) }
@@ -64,7 +64,7 @@ fun FakeApiStore.syncedEvidenceCountForOwner(ownerEmail: String): Int {
         }
 }
 
-fun FakeApiStore.syncQueuedEvidenceForOwner(ownerEmail: String): Int {
+fun BackendStateStore.syncQueuedEvidenceForOwner(ownerEmail: String): Int {
     val pending = queuedEvidenceForOwner(ownerEmail)
     if (pending.isEmpty()) return 0
     val syncedAt = System.currentTimeMillis()
@@ -142,7 +142,7 @@ fun rememberAutoEvidenceSync(
     var syncGeneration by remember { mutableIntStateOf(0) }
     androidx.compose.runtime.LaunchedEffect(online, farmerEmail) {
         if (online && farmerEmail.isNotBlank()) {
-            val synced = container.fakeStore.syncQueuedEvidenceForOwner(farmerEmail)
+            val synced = container.backendStore.syncQueuedEvidenceForOwner(farmerEmail)
             if (synced > 0) {
                 syncGeneration++
                 onSynced()

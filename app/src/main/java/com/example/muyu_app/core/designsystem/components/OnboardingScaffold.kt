@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,21 +20,31 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.muyu_app.R
 import com.example.muyu_app.ui.theme.MuyuAction
+import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuBackground
 import com.example.muyu_app.ui.theme.MuyuSkip
 import com.example.muyu_app.ui.theme.UrbanistBold
@@ -53,16 +64,57 @@ fun OnboardingScaffold(
     skipLabel: String? = null,
     illustrationContentDescription: String? = null,
     modifier: Modifier = Modifier,
+    // Permite omitir la introducción mediante la acción configurada por la pantalla.
+    onSkip: () -> Unit = onPrimary,
+    // Página anterior. Si es null (primera página) no se muestra la flecha.
+    onBack: (() -> Unit)? = null,
+    // Página siguiente al deslizar hacia la izquierda. Si es null no avanza.
+    onSwipeNext: (() -> Unit)? = null,
 ) {
+    val currentOnBack by rememberUpdatedState(onBack)
+    val currentOnSwipeNext by rememberUpdatedState(onSwipeNext)
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MuyuBackground)
+            .pointerInput(Unit) {
+                var dragTotal = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { dragTotal = 0f },
+                    onDragEnd = {
+                        val threshold = 60.dp.toPx()
+                        when {
+                            dragTotal > threshold -> currentOnBack?.invoke()
+                            dragTotal < -threshold -> currentOnSwipeNext?.invoke()
+                        }
+                    },
+                ) { change, amount ->
+                    change.consume()
+                    dragTotal += amount
+                }
+            }
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 30.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Reserva siempre el alto de la barra para que la ilustración no salte entre páginas.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.onboarding_back),
+                        tint = MuyuForest,
+                    )
+                }
+            }
+        }
         Spacer(modifier = Modifier.weight(1f))
         Image(
             painter = painterResource(illustration),
@@ -123,21 +175,22 @@ fun OnboardingScaffold(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 24.dp),
-            horizontalArrangement = if (skipLabel == null) Arrangement.Center else Arrangement.SpaceBetween,
+            // Distribuye el espacio de los botones para que quepan en pantallas pequeñas.
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (skipLabel != null) {
                 OnboardingButton(
                     text = skipLabel,
                     background = MuyuSkip,
                     contentColor = Color.Black.copy(alpha = 0.5f),
-                    modifier = Modifier.width(150.dp),
-                    onClick = {},
+                    modifier = Modifier.weight(1f),
+                    onClick = onSkip,
                 )
                 OnboardingButton(
                     text = primaryLabel,
                     background = MuyuAction,
                     contentColor = Color.White,
-                    modifier = Modifier.width(150.dp),
+                    modifier = Modifier.weight(1f),
                     onClick = onPrimary,
                 )
             } else {
@@ -145,7 +198,7 @@ fun OnboardingScaffold(
                     text = primaryLabel,
                     background = MuyuAction,
                     contentColor = Color.White,
-                    modifier = Modifier.width(291.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = onPrimary,
                 )
             }

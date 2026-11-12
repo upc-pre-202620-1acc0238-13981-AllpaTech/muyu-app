@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.example.muyu_app.R
 import com.example.muyu_app.core.network.MerchantNotificationRecord
-import com.example.muyu_app.core.network.FakeApiStore
+import com.example.muyu_app.core.network.BackendStateStore
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import java.text.DateFormat
@@ -54,6 +54,27 @@ fun formatEvidenceDateTimeLine(millis: Long, locale: Locale = Locale.getDefault(
     return "$date · $time"
 }
 
+fun formatEvidenceTimeCommaDate(millis: Long, locale: Locale = Locale.getDefault()): String {
+    if (millis <= 0L) return "—"
+    val date = SimpleDateFormat("d MMM", locale).format(Date(millis))
+    val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(millis))
+    return "$time, $date"
+}
+
+fun formatEvidenceFullDateTime(millis: Long, locale: Locale = Locale.getDefault()): String {
+    if (millis <= 0L) return "—"
+    val date = SimpleDateFormat("d MMM yyyy", locale).format(Date(millis))
+    val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(millis))
+    return "$date · $time"
+}
+
+fun formatEvidenceLongDateTime(millis: Long, locale: Locale = Locale.getDefault()): String {
+    if (millis <= 0L) return "—"
+    val date = SimpleDateFormat("dd MMMM yyyy", locale).format(Date(millis))
+    val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(millis))
+    return "$date · $time"
+}
+
 fun isSameCalendarDay(millis: Long, nowMillis: Long = System.currentTimeMillis()): Boolean {
     if (millis <= 0L) return false
     val a = Calendar.getInstance().apply { timeInMillis = millis }
@@ -65,7 +86,7 @@ fun isSameCalendarDay(millis: Long, nowMillis: Long = System.currentTimeMillis()
 fun resolveMilestoneSubmittedAt(
     milestone: MilestoneState?,
     plotId: Int?,
-    store: FakeApiStore,
+    store: BackendStateStore,
     merchantEmail: String,
 ): Long {
     milestone?.submittedAtMillis?.takeIf { it > 0L }?.let { return it }

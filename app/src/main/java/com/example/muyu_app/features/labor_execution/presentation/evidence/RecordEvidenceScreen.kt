@@ -1,6 +1,8 @@
 package com.example.muyu_app.features.labor_execution.presentation.evidence
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -24,6 +26,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,6 +57,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.example.muyu_app.R
@@ -59,7 +66,6 @@ import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
 import com.example.muyu_app.core.di.LocalAppContainer
-import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.core.image.imageUriToPortableDataUrl
 import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.MilestoneState
@@ -75,7 +81,6 @@ import com.example.muyu_app.ui.theme.MuyuAction
 import com.example.muyu_app.ui.theme.MuyuAddPhoto
 import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuLocateBg
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuPendingBg
 import com.example.muyu_app.ui.theme.MuyuPendingText
 import com.example.muyu_app.ui.theme.UrbanistBold
@@ -120,6 +125,7 @@ fun RecordEvidenceScreen(
     var locationCheck by remember { mutableStateOf(LocationCheck.Idle) }
     var locating by remember { mutableStateOf(false) }
     var queued by remember { mutableStateOf(false) }
+    var cameraDenied by remember { mutableStateOf(false) }
 
     fun applyLocation(lat: Double, lng: Double, acc: Int?) {
         latitude = lat
@@ -217,29 +223,93 @@ fun RecordEvidenceScreen(
                 )
             }
             photoUri = uri.toString()
+            cameraDenied = false
             afterPhotoCaptured()
         }
     }
     val cameraPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
+        cameraDenied = !granted
         if (granted) cameraLauncher.launch(null)
+    }
+    fun openGallery() {
+        galleryLauncher.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+        )
     }
 
     val canSave = photoUri.isNotBlank() && inputUsed.isNotBlank() && amount.isNotBlank()
     val hasGpsFix = latitude != null && longitude != null
     val locationReady = !locating && (
-        !online ||
             locationCheck == LocationCheck.Matching ||
             locationCheck == LocationCheck.Recorded ||
             hasGpsFix
         )
-    val continueEnabled = canSave && locationReady
+    val continueEnabled = online && canSave && locationReady
+
+    if (cameraDenied) {
+        val lat = latitude
+        val lng = longitude
+        val gps = when {
+            lat == null || lng == null -> EvidenceGpsSummary(
+                title = stringResource(R.string.evidence_gps_pending),
+                detail = stringResource(R.string.evidence_gps_pending_body),
+                valid = false,
+            )
+            else -> {
+                val detail = accuracy?.let {
+                    stringResource(R.string.evidence_gps_detail, PlotFinance.formatCoordinates(lat, lng), it)
+                } ?: PlotFinance.formatCoordinates(lat, lng)
+                when (locationCheck) {
+                    LocationCheck.Mismatch -> EvidenceGpsSummary(
+                        stringResource(R.string.evidence_location_wrong),
+                        detail,
+                        valid = false,
+                    )
+                    LocationCheck.Matching -> EvidenceGpsSummary(
+                        stringResource(R.string.evidence_gps_valid_inside),
+                        detail,
+                        valid = true,
+                    )
+                    else -> EvidenceGpsSummary(
+                        stringResource(R.string.evidence_location_recorded),
+                        detail,
+                        valid = true,
+                    )
+                }
+            }
+        }
+        CameraAccessDeniedContent(
+            plot = plot,
+            online = online,
+            milestoneTitle = stringResource(definition.titleRes),
+            inputUsed = inputUsed,
+            amount = amount,
+            hasPhoto = photoUri.isNotBlank(),
+            gps = gps,
+            onRetry = {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                    PackageManager.PERMISSION_GRANTED
+                ) {
+                    cameraDenied = false
+                    cameraLauncher.launch(null)
+                } else {
+                    cameraPermission.launch(Manifest.permission.CAMERA)
+                }
+            },
+            onOpenSettings = { context.openAppSettings() },
+            onUploadFromGallery = { openGallery() },
+            onBackToDraft = { cameraDenied = false },
+            modifier = modifier,
+        )
+        return
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -260,7 +330,7 @@ fun RecordEvidenceScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "${plot?.name ?: "El Rosal Plot"}\n${plot?.crop ?: "Potato"}",
+                        text = "${plot?.name.orEmpty()}\n${plot?.crop.orEmpty()}",
                         style = TextStyle(
                             fontFamily = UrbanistRegular,
                             fontSize = 15.sp,
@@ -268,7 +338,10 @@ fun RecordEvidenceScreen(
                         ),
                     )
                     Text(
-                        text = "2026 Season",
+                        text = stringResource(
+                            R.string.evidence_season,
+                            PlotFinance.seasonYear(plot?.harvestDate.orEmpty()),
+                        ),
                         style = TextStyle(
                             fontFamily = UrbanistRegular,
                             fontSize = 15.sp,
@@ -346,11 +419,7 @@ fun RecordEvidenceScreen(
                     onTakePhoto = {
                         cameraPermission.launch(Manifest.permission.CAMERA)
                     },
-                    onOpenGallery = {
-                        galleryLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                        )
-                    },
+                    onOpenGallery = { openGallery() },
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -363,11 +432,11 @@ fun RecordEvidenceScreen(
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        MuyuAsset(
-                            fileName = "publish/location.svg",
+                        Icon(
+                            imageVector = Icons.Outlined.LocationOn,
                             contentDescription = null,
-                            width = 20.dp,
-                            height = 20.dp,
+                            tint = Color(0xFF2B5876),
+                            modifier = Modifier.size(20.dp),
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
@@ -512,9 +581,8 @@ fun RecordEvidenceScreen(
                                     latitude = latitude,
                                     longitude = longitude,
                                     accuracy = accuracy,
-                                    online = online,
                                 )
-                                queued = !online
+                                queued = false
                                 onSaved()
                             }
                         },
@@ -522,7 +590,7 @@ fun RecordEvidenceScreen(
                 ) {
                     Text(
                         text = stringResource(
-                            if (online) R.string.evidence_continue else R.string.evidence_save_queue,
+                            R.string.evidence_continue,
                         ),
                         style = TextStyle(
                             fontFamily = UrbanistBold,
@@ -554,16 +622,16 @@ private suspend fun persistEvidence(
     latitude: Double?,
     longitude: Double?,
     accuracy: Int?,
-    online: Boolean,
 ) {
     val previous = plot.milestoneStates.find { it.key == key } ?: MilestoneState(key = key)
     val submittedAt = System.currentTimeMillis()
-    val status = if (online) MilestoneState.STATUS_SUBMITTED else MilestoneState.STATUS_QUEUED
-    container.fakeStore.updateMilestone(
+    val portablePhoto = imageUriToPortableDataUrl(context, photoUri).orEmpty()
+    runCatching { java.io.File(java.net.URI(photoUri)).delete() }
+    container.backendStore.updateMilestone(
         plot.id,
         previous.copy(
-            status = status,
-            photoUri = imageUriToPortableDataUrl(context, photoUri).orEmpty(),
+            status = MilestoneState.STATUS_SUBMITTED,
+            photoUri = portablePhoto,
             inputUsed = inputUsed,
             amountApplied = amount,
             notes = notes,
@@ -575,11 +643,9 @@ private suspend fun persistEvidence(
         ),
     )
     container.refreshSelectedPlot()
-    if (online) {
-        container.selectedPlot?.let { updated ->
-            container.syncPlot(updated).onSuccess { remote ->
-                container.selectedPlot = remote
-            }
+    container.selectedPlot?.let { updated ->
+        container.syncPlot(updated).onSuccess { remote ->
+            container.selectedPlot = remote
         }
     }
 }
@@ -624,11 +690,11 @@ private fun PhotoBox(
             )
             Spacer(modifier = Modifier.height(12.dp))
         } else {
-            MuyuAsset(
-                fileName = "publish/camera.svg",
+            Icon(
+                imageVector = Icons.Outlined.PhotoCamera,
                 contentDescription = null,
-                width = 48.dp,
-                height = 48.dp,
+                tint = MuyuForest,
+                modifier = Modifier.size(48.dp),
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(

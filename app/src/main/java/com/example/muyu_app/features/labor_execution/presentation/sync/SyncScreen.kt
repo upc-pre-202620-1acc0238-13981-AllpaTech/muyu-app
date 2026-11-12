@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.labor_execution.presentation.sync
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -60,7 +61,6 @@ import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.ui.theme.MuyuAction
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
 
 private val CardShape = RoundedCornerShape(20.dp)
@@ -78,7 +78,7 @@ fun SyncScreen(
 ) {
     val container = LocalAppContainer.current
     val online by rememberNetworkOnline()
-    val farmerEmail = container.fakeStore.currentUser?.email.orEmpty()
+    val farmerEmail = container.backendStore.currentUser?.email.orEmpty()
     var queue by remember { mutableStateOf<List<QueuedEvidenceItem>>(emptyList()) }
     var syncedTotal by remember { mutableIntStateOf(0) }
     var uploadingId by remember { mutableStateOf<String?>(null) }
@@ -87,9 +87,9 @@ fun SyncScreen(
     val lifecycleState = LocalLifecycleOwner.current.lifecycle.currentStateAsState()
 
     fun reload() {
-        queue = container.fakeStore.queuedEvidenceForOwner(farmerEmail)
-        syncedTotal = container.fakeStore.syncedEvidenceCountForOwner(farmerEmail)
-        historyItems = container.fakeStore.syncHistoryForOwner(farmerEmail)
+        queue = container.backendStore.queuedEvidenceForOwner(farmerEmail)
+        syncedTotal = container.backendStore.syncedEvidenceCountForOwner(farmerEmail)
+        historyItems = container.backendStore.syncHistoryForOwner(farmerEmail)
     }
 
     rememberAutoEvidenceSync(container, farmerEmail) { reload() }
@@ -103,7 +103,7 @@ fun SyncScreen(
     androidx.compose.runtime.LaunchedEffect(online) {
         if (online && queue.isNotEmpty()) {
             uploadingId = queue.firstOrNull()?.let { "${it.plotId}_${it.milestoneKey}" }
-            container.fakeStore.syncQueuedEvidenceForOwner(farmerEmail)
+            container.backendStore.syncQueuedEvidenceForOwner(farmerEmail)
             reload()
             uploadingId = null
         }
@@ -119,7 +119,7 @@ fun SyncScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -207,7 +207,7 @@ fun SyncScreen(
                             if (online && queue.isNotEmpty()) {
                                 Modifier.clickable {
                                     uploadingId = queue.firstOrNull()?.let { "${it.plotId}_${it.milestoneKey}" }
-                                    container.fakeStore.syncQueuedEvidenceForOwner(farmerEmail)
+                                    container.backendStore.syncQueuedEvidenceForOwner(farmerEmail)
                                     reload()
                                     uploadingId = null
                                 }

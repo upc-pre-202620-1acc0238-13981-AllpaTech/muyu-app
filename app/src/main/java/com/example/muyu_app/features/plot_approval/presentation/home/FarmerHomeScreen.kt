@@ -62,6 +62,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.example.muyu_app.R
+import com.example.muyu_app.features.labor_execution.presentation.evidence.FarmerHarvestNotice
 import com.example.muyu_app.core.designsystem.components.LanguageToggleButton
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
@@ -193,7 +194,7 @@ fun FarmerHomeScreen(
 ) {
     val container = LocalAppContainer.current
     val context = LocalContext.current
-    val farmerName = container.fakeStore.currentUser?.displayName.orEmpty()
+    val farmerName = container.backendStore.currentUser?.displayName.orEmpty()
     var currentTemperature by remember { mutableStateOf<Double?>(null) }
     var plots by remember { mutableStateOf<List<Plot>>(emptyList()) }
     var isLoadingPlots by remember { mutableStateOf(true) }
@@ -219,13 +220,13 @@ fun FarmerHomeScreen(
         if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
         isLoadingPlots = true
         plotsError = null
-        val email = container.fakeStore.currentUser?.email.orEmpty()
+        val email = container.backendStore.currentUser?.email.orEmpty()
         container.getPlotsUseCase()
             .onSuccess { all ->
                 plots = all
                     .filter { it.ownerEmail.equals(email, ignoreCase = true) }
                     .map { plot ->
-                        container.fakeStore.ensureMilestones(plot.id)?.let { container.fakeStore.toDomain(it) }
+                        container.backendStore.ensureMilestones(plot.id)?.let { container.backendStore.toDomain(it) }
                             ?: plot
                     }
             }
@@ -271,6 +272,12 @@ fun FarmerHomeScreen(
                         .padding(start = ScreenPadding, end = 30.dp, bottom = MuyuScrollBottomInset),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
+                    // Avisos del comerciante sobre la entrega de la cosecha.
+                    plots.filter {
+                        it.harvestReceivedAt.isNotBlank() || it.harvestIncidents.isNotEmpty()
+                    }.take(2).forEach { plot ->
+                        FarmerHarvestNotice(plot = plot)
+                    }
                     when {
                         isLoadingPlots && plots.isEmpty() -> Box(
                             modifier = Modifier.fillMaxWidth(),

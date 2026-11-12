@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.labor_execution.presentation.evidence
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,8 +61,8 @@ fun SelectMilestoneScreen(
     val selectedPlotId = container.selectedPlot?.id
     val plot = remember(selectedPlotId) {
         selectedPlotId
-            ?.let(container.fakeStore::plotById)
-            ?.let(container.fakeStore::toDomain)
+            ?.let(container.backendStore::plotById)
+            ?.let(container.backendStore::toDomain)
     }
     val states = plot?.milestoneStates.orEmpty()
     val year = PlotFinance.seasonYear(plot?.harvestDate.orEmpty())
@@ -82,7 +83,7 @@ fun SelectMilestoneScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFEAF9E9)),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(

@@ -1,7 +1,9 @@
 package com.example.muyu_app.features.user_management.presentation.profile
 
+import com.example.muyu_app.ui.theme.MuyuBackground
+import android.content.Intent
+import android.net.Uri
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,11 +17,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
@@ -30,19 +30,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.muyu_app.R
+import com.example.muyu_app.core.storage.BackendPreferences
 import com.example.muyu_app.core.designsystem.components.MuyuBottomBar
 import com.example.muyu_app.core.designsystem.components.MuyuScrollBottomInset
 import com.example.muyu_app.core.designsystem.components.MuyuTab
@@ -51,8 +54,7 @@ import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.plot_approval.domain.Plot
-import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuappTheme
 
 private enum class FarmerAlertChannel { Call, Push, WhatsApp }
@@ -66,34 +68,71 @@ private val RedLogout = Color(0xFFC63939)
 fun ProfileScreen(
     onTabSelected: (MuyuTab) -> Unit,
     modifier: Modifier = Modifier,
-    @DrawableRes avatarRes: Int? = R.drawable.merchant_maria,
+    @DrawableRes avatarRes: Int? = null,
     onChangePassword: () -> Unit = {},
     onChangePin: () -> Unit = {},
     onCallSupport: () -> Unit = {},
     onReportIncidence: () -> Unit = {},
     onRateContract: () -> Unit = {},
     onTerms: () -> Unit = {},
+    onPrivacy: () -> Unit = {},
     onLogout: () -> Unit = {},
+    onBankAccount: () -> Unit = {},
     bottomBar: (@Composable BoxScope.() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     val container = LocalAppContainer.current
-    val currentUser = container.fakeStore.currentUser
+    val currentUser = container.backendStore.currentUser
+    val supportPhone = stringResource(R.string.profile_support_phone)
 
     val farmerName = currentUser?.displayName.orEmpty()
     val farmerEmail = currentUser?.email.orEmpty()
+    var editingContact by rememberSaveable { mutableStateOf(false) }
+    var phoneDraft by rememberSaveable { mutableStateOf(localPhoneDigits(currentUser?.phone.orEmpty())) }
+    var emailDraft by rememberSaveable { mutableStateOf(farmerEmail) }
 
     var plots by remember { mutableStateOf<List<Plot>>(emptyList()) }
-    var notificationPref by remember { mutableStateOf(FarmerAlertChannel.Call) }
-    var syncWifiOnly by remember { mutableStateOf(true) }
+    // Las preferencias se guardan por usuario y se mantienen al salir de la pantalla.
+    val preferences = container.userPreferences
+    val preferencesEmail = container.currentUserEmail().orEmpty()
+    var notificationPref by remember(preferencesEmail) {
+        mutableStateOf(
+            preferences
+                ?.loadString(preferencesEmail, BackendPreferences.KEY_ALERT_CHANNEL, FarmerAlertChannel.Call.name)
+                ?.let { saved -> FarmerAlertChannel.entries.firstOrNull { it.name == saved } }
+                ?: FarmerAlertChannel.Call,
+        )
+    }
+    var syncWifiOnly by remember(preferencesEmail) {
+        mutableStateOf(
+            preferences?.loadBoolean(preferencesEmail, BackendPreferences.KEY_SYNC_WIFI_ONLY, true) ?: true,
+        )
+    }
+    LaunchedEffect(preferencesEmail, notificationPref, syncWifiOnly) {
+        if (preferencesEmail.isBlank()) return@LaunchedEffect
+        preferences?.saveString(preferencesEmail, BackendPreferences.KEY_ALERT_CHANNEL, notificationPref.name)
+        preferences?.saveBoolean(preferencesEmail, BackendPreferences.KEY_SYNC_WIFI_ONLY, syncWifiOnly)
+    }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(farmerEmail) {
         container.getPlotsUseCase().onSuccess { all ->
-            plots = all.filter { it.ownerEmail.equals(farmerEmail, ignoreCase = true) }
+            plots = all
+                .filter { it.ownerEmail.equals(farmerEmail, ignoreCase = true) }
+                .map { plot ->
+                    if (plot.status != "funded") return@map plot
+                    container.backendStore.ensureMilestones(plot.id)
+                        ?.let(container.backendStore::toDomain)
+                        ?: plot
+                }
         }
     }
 
     val plotCount = plots.size
-    val milestoneCount = plots.count { it.status == "approved" || it.status == "funded" }
+    // Cuenta hitos aprobados, no parcelas.
+    val milestoneCount = plots.sumOf { plot -> plot.milestoneStates.count { it.isApproved } }
+    val farmerPlace = plots
+        .map { it.place.trim() }
+        .firstOrNull { it.isNotBlank() && it != "—" }
     val activeCropCount = plots
         .filter { it.status != "pending" }
         .map { it.crop }
@@ -103,35 +142,24 @@ fun ProfileScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MuyuOlive)
+                    // Mantiene el perfil del agricultor con el mismo encabezado oscuro.
+                    .background(MuyuNavBar)
                     .statusBarsPadding()
                     .padding(horizontal = 27.dp)
                     .padding(top = 16.dp, bottom = 24.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (avatarRes != null) {
-                        Image(
-                            painter = painterResource(id = avatarRes),
-                            contentDescription = farmerName,
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop,
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE0E0E0)),
-                        )
-                    }
+                    EditableProfileAvatar(
+                        contentDescription = farmerName,
+                        size = 72.dp,
+                        fallbackRes = avatarRes,
+                    )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(
@@ -142,11 +170,9 @@ fun ProfileScreen(
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = stringResource(
-                                R.string.profile_role_place,
-                                stringResource(R.string.role_farmer_short),
-                                stringResource(R.string.profile_farmer_place),
-                            ),
+                            text = farmerPlace?.let {
+                                stringResource(R.string.profile_role_place, stringResource(R.string.role_farmer_short), it)
+                            } ?: stringResource(R.string.role_farmer_short),
                             fontSize = 13.sp,
                             color = Color.White.copy(alpha = 0.9f),
                         )
@@ -195,31 +221,58 @@ fun ProfileScreen(
                         .border(1.dp, DarkGreenText.copy(alpha = 0.6f), CardShape)
                         .padding(16.dp),
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Text(
-                                text = "+51 987 654 321",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black,
+                    if (editingContact) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            ContactEditField(
+                                value = phoneDraft,
+                                onValueChange = { phoneDraft = it.filter(Char::isDigit).take(9) },
+                                hint = stringResource(R.string.profile_phone_label),
+                                keyboardType = KeyboardType.Phone,
+                                prefix = "+51 ",
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = farmerEmail,
-                                fontSize = 14.sp,
-                                color = Color.Gray,
+                            ContactEditField(
+                                value = emailDraft,
+                                onValueChange = { emailDraft = it },
+                                hint = stringResource(R.string.profile_email_label),
+                                keyboardType = KeyboardType.Email,
+                            )
+                            ContactEditActions(
+                                onSave = {
+                                    container.backendStore.updateContact(
+                                        phone = phoneDraft,
+                                        email = emailDraft,
+                                    )
+                                    editingContact = false
+                                },
+                                onCancel = {
+                                    phoneDraft = localPhoneDigits(container.backendStore.currentUser?.phone.orEmpty())
+                                    emailDraft = container.backendStore.currentUser?.email.orEmpty()
+                                    editingContact = false
+                                },
                             )
                         }
-                        MuyuAsset(
-                            fileName = "publish/edit.svg",
-                            contentDescription = stringResource(R.string.profile_edit_contact),
-                            width = 20.dp,
-                            height = 20.dp,
-                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = formatProfilePhone(phoneDraft).ifBlank { formatProfilePhone(currentUser?.phone.orEmpty()) },
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black,
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = emailDraft.ifBlank { farmerEmail },
+                                    fontSize = 14.sp,
+                                    color = Color.Gray,
+                                )
+                            }
+                            ContactEditIcon(onClick = { editingContact = true })
+                        }
                     }
                 }
 
@@ -316,6 +369,7 @@ fun ProfileScreen(
                         .clip(CardShape)
                         .background(Color.White)
                         .border(1.dp, DarkGreenText.copy(alpha = 0.6f), CardShape)
+                        .clickable(onClick = onBankAccount)
                         .padding(16.dp),
                 ) {
                     Column {
@@ -361,7 +415,13 @@ fun ProfileScreen(
 
                 OutlinedActionButton(
                     text = stringResource(R.string.profile_call_support),
-                    onClick = onCallSupport,
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_DIAL).apply {
+                            data = Uri.fromParts("tel", supportPhone, null)
+                        }
+                        runCatching { context.startActivity(intent) }
+                        onCallSupport()
+                    },
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -399,18 +459,23 @@ fun ProfileScreen(
                         .padding(16.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            text = stringResource(R.string.profile_terms),
-                            modifier = Modifier.clickable { onTerms() },
+                        val legalStyle = TextStyle(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color.Black,
                         )
-                        Text(
-                            text = stringResource(R.string.profile_privacy),
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
+                        LegalTextLink(
+                            text = stringResource(R.string.profile_terms),
+                            onClick = onTerms,
+                            style = legalStyle,
                             color = Color.Black,
+                            pressedColor = DarkGreenText,
+                        )
+                        LegalTextLink(
+                            text = stringResource(R.string.profile_privacy),
+                            onClick = onPrivacy,
+                            style = legalStyle,
+                            color = Color.Black,
+                            pressedColor = DarkGreenText,
                         )
                     }
                 }

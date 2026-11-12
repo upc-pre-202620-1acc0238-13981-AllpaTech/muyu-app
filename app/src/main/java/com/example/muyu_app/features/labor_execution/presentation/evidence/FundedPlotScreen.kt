@@ -1,5 +1,7 @@
 package com.example.muyu_app.features.labor_execution.presentation.evidence
 
+import com.example.muyu_app.ui.theme.MuyuBackground
+import com.example.muyu_app.ui.theme.MuyuNavBar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -97,7 +99,7 @@ fun FundedPlotScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFEAF9E9)),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             FundedPlotHeader(
@@ -172,6 +174,10 @@ fun FundedPlotScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 if (isFunded) {
+                    plot?.let { current ->
+                        FarmerHarvestNotice(plot = current)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                     CycleMilestonesCard(
                         states = states,
                         currentKey = currentKey,
@@ -255,7 +261,8 @@ private fun FundedPlotHeader(title: String, onBack: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MuyuHeader)
+            // Unifica el encabezado de la parcela con el verde oscuro de la navegación.
+            .background(MuyuNavBar)
             .statusBarsPadding()
             .height(56.dp)
             .padding(horizontal = 32.dp),

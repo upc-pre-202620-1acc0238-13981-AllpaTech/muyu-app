@@ -56,7 +56,6 @@ import com.example.muyu_app.features.plot_approval.domain.MilestoneCatalog
 import com.example.muyu_app.features.plot_approval.domain.Plot
 import com.example.muyu_app.features.plot_approval.domain.PlotFinance
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
 
 private val CardShape = RoundedCornerShape(20.dp)
@@ -67,6 +66,7 @@ private val PurpleChipBg = Color(0xFFB5C0EC)
 private val PurpleChipText = Color(0xFF23255A)
 private val MethodChipBg = Color(0xFFE0E0E0)
 private val IconBgColor = Color(0xFFBBE395)
+private val MerchantPaymentsBackground = Color(0xFFDDF3DC)
 
 private data class MerchantRelease(
     val plot: Plot,
@@ -103,7 +103,7 @@ fun MerchantPaymentHistoryScreen(
 
     LaunchedEffect(lifecycleState.value) {
         if (!lifecycleState.value.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
-        val email = container.fakeStore.currentUser?.email.orEmpty()
+        val email = container.backendStore.currentUser?.email.orEmpty()
         if (email.isBlank()) {
             releases = emptyList()
             return@LaunchedEffect
@@ -112,7 +112,7 @@ fun MerchantPaymentHistoryScreen(
             releases = all
                 .filter { it.fundedByEmail.equals(email, ignoreCase = true) && it.status == "funded" }
                 .map { plot ->
-                    container.fakeStore.ensureMilestones(plot.id)?.let { container.fakeStore.toDomain(it) } ?: plot
+                    container.backendStore.ensureMilestones(plot.id)?.let { container.backendStore.toDomain(it) } ?: plot
                 }
                 .flatMap { it.toReleases() }
         }
@@ -121,7 +121,7 @@ fun MerchantPaymentHistoryScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MerchantPaymentsBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -287,19 +287,21 @@ private fun MerchantPaymentCard(
                     fontSize = 12.sp,
                     color = Color.Gray,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(ChipShape)
-                        .background(MethodChipBg)
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        text = paymentMethod,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.DarkGray,
-                    )
+                if (paymentMethod.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(ChipShape)
+                            .background(MethodChipBg)
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = paymentMethod,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.DarkGray,
+                        )
+                    }
                 }
             }
 

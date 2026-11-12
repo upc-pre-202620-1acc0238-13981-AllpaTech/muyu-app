@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.climate_monitoring.presentation.alert
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
@@ -52,7 +53,6 @@ import com.example.muyu_app.core.image.InstallMuyuImageLoader
 import com.example.muyu_app.core.image.MuyuAsset
 import com.example.muyu_app.features.climate_monitoring.data.OpenMeteoWeatherClient
 import com.example.muyu_app.ui.theme.MuyuForest
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuStatCard
 import com.example.muyu_app.ui.theme.MuyuWeatherCard
 import com.example.muyu_app.ui.theme.MuyuappTheme
@@ -78,11 +78,13 @@ fun WeatherAlertScreen(
     var content by remember { mutableStateOf<WeatherAlertContent?>(null) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var weatherPlot by remember { mutableStateOf<com.example.muyu_app.features.plot_approval.domain.Plot?>(null) }
 
     LaunchedEffect(Unit) {
         loading = true
         errorMessage = null
         val plot = container.farmerPlotForWeather()
+        weatherPlot = plot
         val location = withContext(Dispatchers.IO) {
             context.resolveWeatherLocation(plot)
         }
@@ -106,7 +108,7 @@ fun WeatherAlertScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -169,7 +171,17 @@ fun WeatherAlertScreen(
                             ),
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        RecommendationsCard(data.recommendations)
+                        val alertPlot = weatherPlot
+                        // Con una alerta activa el agricultor registra las medidas que aplicó.
+                        if (data.risk != WeatherRisk.Low && alertPlot != null) {
+                            WeatherMeasuresCard(
+                                plot = alertPlot,
+                                risk = data.risk,
+                                recommendationIds = data.recommendations,
+                            )
+                        } else {
+                            RecommendationsCard(data.recommendations)
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         ForecastCard(data.forecastDays)
                     }

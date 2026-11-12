@@ -1,0 +1,15 @@
+<resources>
+    <string name="change_pin_title">New security PIN</string>
+    <string name="change_pin_confirm_title">Confirm PIN</string>
+    <string name="change_pin_heading">Enter your new 4-digit PIN</string>
+    <string name="change_pin_confirm_heading">Enter the same PIN again</string>
+    <string name="change_pin_continue">Continue</string>
+    <string name="change_pin_confirm">Confirm PIN</string>
+    <string name="change_pin_edit">Edit PIN</string>
+    <string name="change_pin_cancel">Cancel</string>
+    <string name="change_pin_mismatch">The PINs do not match. Please try again.</string>
+    <string name="change_pin_digit_label">PIN digit %1$d of 4</string>
+    <string name="change_pin_demo_notice">Flow preview. Your current PIN will not be changed.</string>
+    <string name="change_pin_complete_title">PIN preview complete</string>
+    <string name="change_pin_complete_body">You have completed the PIN change preview. Your current PIN has not been changed.</string>
+</resources>

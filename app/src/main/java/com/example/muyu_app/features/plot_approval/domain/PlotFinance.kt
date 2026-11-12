@@ -23,7 +23,7 @@ object PlotFinance {
 
     fun parseAmount(raw: String): Double {
         val digits = raw.replace(Regex("[^0-9.]"), "")
-        return digits.toDoubleOrNull() ?: 8500.0
+        return digits.toDoubleOrNull() ?: 0.0
     }
 
     fun formatAmount(value: Double): String {
@@ -32,9 +32,7 @@ object PlotFinance {
         return "S/ $grouped"
     }
 
-    fun defaultAmount(draft: PlotDraft): Double {
-        return if (draft.amount.isBlank()) 8500.0 else parseAmount(draft.amount)
-    }
+    fun defaultAmount(draft: PlotDraft): Double = parseAmount(draft.amount)
 
     fun disbursement(total: Double): List<DisbursementStep> {
         val planting = total * 0.2353
@@ -59,6 +57,14 @@ object PlotFinance {
     fun publishedToday(): String {
         val now = Calendar.getInstance()
         return "${now.get(Calendar.DAY_OF_MONTH)} ${monthAbbr(now)} ${now.get(Calendar.YEAR)}"
+    }
+
+    /** Fecha y hora de un registro, por ejemplo "6 Nov 2026, 15:42". */
+    fun timestampNow(): String {
+        val now = Calendar.getInstance()
+        val hour = now.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')
+        val minute = now.get(Calendar.MINUTE).toString().padStart(2, '0')
+        return "${publishedToday()}, $hour:$minute"
     }
 
     fun shortDate(value: String = publishedToday()): String {

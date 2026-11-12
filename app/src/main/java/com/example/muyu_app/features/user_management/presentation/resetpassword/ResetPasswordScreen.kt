@@ -1,5 +1,7 @@
 package com.example.muyu_app.features.user_management.presentation.resetpassword
 
+import com.example.muyu_app.core.designsystem.components.AuthFlowTitle
+import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -50,8 +52,11 @@ import com.example.muyu_app.ui.theme.UrbanistSemiBold
 fun ResetPasswordScreen(
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
+    onEmailEntered: (String) -> Unit = {},
 ) {
     var email by rememberSaveable { mutableStateOf("") }
+    var showEmailError by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -60,20 +65,7 @@ fun ResetPasswordScreen(
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = stringResource(R.string.reset_title),
-            modifier = Modifier
-                .statusBarsPadding()
-                .padding(top = 10.dp)
-                .fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            style = TextStyle(
-                fontFamily = FredokaSemiBold,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 32.sp,
-                color = MuyuForest,
-            ),
-        )
+        AuthFlowTitle(stringResource(R.string.reset_title), onBack)
         Spacer(modifier = Modifier.height(24.dp))
         Image(
             painter = painterResource(R.drawable.reset_hero),
@@ -117,13 +109,31 @@ fun ResetPasswordScreen(
             Spacer(modifier = Modifier.height(10.dp))
             AuthTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it; showEmailError = false },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             )
+            // Explica por qué no se puede avanzar con el correo ingresado.
+            if (showEmailError) {
+                Text(
+                    text = stringResource(R.string.muyu_email_invalid),
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
             Spacer(modifier = Modifier.height(24.dp))
             AuthPrimaryButton(
                 text = stringResource(R.string.reset_next),
-                onClick = onNext,
+                onClick = {
+                    // Valida el formato del correo antes de avanzar en la demostración de recuperación.
+                    if (Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
+                        email = email.trim()
+                        // Transporta únicamente el correo para la pantalla de instrucciones.
+                        onEmailEntered(email)
+                        onNext()
+                    } else {
+                        showEmailError = true
+                    }
+                },
             )
         }
     }

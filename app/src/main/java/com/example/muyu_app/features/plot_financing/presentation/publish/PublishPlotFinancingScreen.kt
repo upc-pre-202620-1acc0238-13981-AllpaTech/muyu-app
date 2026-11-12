@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_financing.presentation.publish
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,10 +19,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -59,7 +63,6 @@ import com.example.muyu_app.features.plot_approval.presentation.publish.draftAmo
 import com.example.muyu_app.features.plot_approval.presentation.publish.publishFlowTitle
 import com.example.muyu_app.ui.theme.MuyuCheckbox
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuPlanBadgeText
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBold
@@ -133,7 +136,7 @@ fun PublishPlotFinancingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -393,11 +396,11 @@ fun PublishPlotFinancingScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        MuyuAsset(
-                            fileName = "publish/shield_check.svg",
+                        Icon(
+                            imageVector = Icons.Outlined.VerifiedUser,
                             contentDescription = null,
-                            width = 24.dp,
-                            height = 24.dp
+                            tint = DarkBlueText,
+                            modifier = Modifier.size(24.dp),
                         )
                         Text(
                             text = stringResource(R.string.publish_funds_held),

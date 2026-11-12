@@ -1,0 +1,15 @@
+<resources>
+    <string name="change_pin_title">Nuevo PIN de seguridad</string>
+    <string name="change_pin_confirm_title">Confirmar PIN</string>
+    <string name="change_pin_heading">Ingresa tu nuevo PIN de 4 cifras</string>
+    <string name="change_pin_confirm_heading">Ingresa el mismo PIN otra vez</string>
+    <string name="change_pin_continue">Continuar</string>
+    <string name="change_pin_confirm">Confirmar PIN</string>
+    <string name="change_pin_edit">Editar PIN</string>
+    <string name="change_pin_cancel">Cancelar</string>
+    <string name="change_pin_mismatch">Los PIN no coinciden. Inténtalo nuevamente.</string>
+    <string name="change_pin_digit_label">Cifra %1$d de 4 del PIN</string>
+    <string name="change_pin_demo_notice">Vista previa del flujo. Tu PIN actual no se modificará.</string>
+    <string name="change_pin_complete_title">Vista previa completada</string>
+    <string name="change_pin_complete_body">Has completado la vista previa del cambio de PIN. Tu PIN actual no ha cambiado.</string>
+</resources>

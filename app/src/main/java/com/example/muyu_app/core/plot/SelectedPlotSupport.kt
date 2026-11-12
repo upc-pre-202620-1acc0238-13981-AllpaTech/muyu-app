@@ -15,16 +15,16 @@ import com.example.muyu_app.features.plot_approval.domain.Plot
 
 fun AppContainer.liveFundedPlot(): Plot? {
     val id = selectedPlot?.id ?: return selectedPlot
-    val record = fakeStore.ensureMilestones(id) ?: return selectedPlot
-    val domain = fakeStore.toDomain(record)
+    val record = backendStore.ensureMilestones(id) ?: return selectedPlot
+    val domain = backendStore.toDomain(record)
     selectedPlot = domain
     return domain
 }
 
 fun AppContainer.refreshSelectedPlot() {
     val id = selectedPlot?.id ?: return
-    val record = fakeStore.ensureMilestones(id) ?: fakeStore.plotById(id) ?: return
-    selectedPlot = fakeStore.toDomain(record)
+    val record = backendStore.ensureMilestones(id) ?: backendStore.plotById(id) ?: return
+    selectedPlot = backendStore.toDomain(record)
 }
 
 @Composable
@@ -47,7 +47,7 @@ fun rememberLiveFundedPlot(): Plot? {
 fun AppContainer.merchantDisplayName(plot: Plot?): String {
     val email = plot?.fundedByEmail.orEmpty()
     if (email.isBlank()) return "AgroAndes"
-    return fakeStore.users.find { it.email.equals(email, ignoreCase = true) }?.displayName
+    return backendStore.users.find { it.email.equals(email, ignoreCase = true) }?.displayName
         ?.ifBlank { null }
         ?: email.substringBefore("@").replaceFirstChar { it.uppercase() }
 }

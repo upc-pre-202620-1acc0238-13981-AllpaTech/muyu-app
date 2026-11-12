@@ -1,5 +1,6 @@
 package com.example.muyu_app.features.plot_approval.presentation.publish
 
+import com.example.muyu_app.ui.theme.MuyuBackground
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -59,7 +60,6 @@ import com.example.muyu_app.ui.theme.MuyuForest
 import com.example.muyu_app.ui.theme.MuyuLocateBg
 import com.example.muyu_app.ui.theme.MuyuNavBar
 import com.example.muyu_app.ui.theme.MuyuOlive
-import com.example.muyu_app.ui.theme.MuyuPageGray
 import com.example.muyu_app.ui.theme.MuyuappTheme
 import com.example.muyu_app.ui.theme.UrbanistBold
 import com.example.muyu_app.ui.theme.UrbanistRegular
@@ -84,15 +84,13 @@ fun PublishPlotLocationScreen(
     val scope = rememberCoroutineScope()
     val sessionKey = draft.editingPlotId ?: 0
     var region by remember(sessionKey) {
-        mutableStateOf(
-            draft.regionName.ifBlank { draft.place.substringAfterLast(", ").ifBlank { "Amazonas" } },
-        )
+        mutableStateOf(draft.regionName.ifBlank { draft.place.substringAfterLast(", ") })
     }
     var province by remember(sessionKey) {
-        mutableStateOf(draft.provinceName.ifBlank { "Chachapoyas" })
+        mutableStateOf(draft.provinceName)
     }
     var district by remember(sessionKey) {
-        mutableStateOf(draft.districtName.ifBlank { "Chachapoyas" })
+        mutableStateOf(draft.districtName)
     }
     var address by remember(sessionKey) { mutableStateOf(draft.addressLine) }
     var provinceMenu by remember { mutableStateOf(false) }
@@ -173,7 +171,7 @@ fun PublishPlotLocationScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MuyuPageGray),
+            .background(MuyuBackground),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             GreenTitleHeader(
@@ -358,6 +356,13 @@ fun PublishPlotLocationScreen(
                         .clip(CardShape)
                         .background(MuyuForest)
                         .clickable {
+                            draft.addressLine = address
+                            draft.districtName = district
+                            draft.provinceName = province
+                            draft.regionName = region
+                            draft.latitude = latitude
+                            draft.longitude = longitude
+                            draft.accuracyMeters = accuracy
                             draft.place = listOf(address, district, province, region)
                                 .filter { it.isNotBlank() }
                                 .joinToString(", ")

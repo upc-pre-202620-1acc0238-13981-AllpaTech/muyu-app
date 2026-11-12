@@ -6,4 +6,12 @@ data class RegisterRequestDto(
     val phone: String,
     val birthdate: String,
     val password: String,
+    val dni: String,
+)
+
+data class RegisterResponseDto(
+    val id: String,
+    val email: String,
+    val displayName: String,
+    val role: String,
 )

@@ -1,5 +1,12 @@
 package com.example.muyu_app.navigation
 
+import com.example.muyu_app.features.user_management.presentation.pin.ChangePinScreen
+import com.example.muyu_app.features.user_management.presentation.pin.PinFlowCompleteScreen
+
+import com.example.muyu_app.features.user_management.presentation.password.ChangePasswordScreen
+import com.example.muyu_app.features.user_management.presentation.password.PasswordInstructionsScreen
+import com.example.muyu_app.features.user_management.presentation.password.PasswordFlowCompleteScreen
+import androidx.activity.compose.BackHandler
 import android.app.Activity
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
@@ -16,6 +23,7 @@ import androidx.core.view.WindowCompat
 import com.example.muyu_app.core.di.FarmerPlotReturn
 import com.example.muyu_app.core.di.LocalAppContainer
 import com.example.muyu_app.core.di.MerchantEvidenceOrigin
+import com.example.muyu_app.core.di.MerchantPlotReturn
 import com.example.muyu_app.core.i18n.ProvideAppLocale
 import com.example.muyu_app.core.designsystem.components.BlankMerchantTabScreen
 import com.example.muyu_app.core.designsystem.components.BlankTabScreen
@@ -32,23 +40,30 @@ import com.example.muyu_app.features.labor_execution.presentation.evidence.Recor
 import com.example.muyu_app.features.labor_execution.presentation.evidence.RequestExtensionScreen
 import com.example.muyu_app.features.labor_execution.presentation.evidence.SelectMilestoneScreen
 import com.example.muyu_app.features.plot_financing.presentation.visit.VisitOutcomeScreen
-import com.example.muyu_app.features.labor_execution.presentation.sync.SyncConnectedScreen
+import com.example.muyu_app.features.plot_financing.presentation.visit.MerchantVisitRequestScreen
+import com.example.muyu_app.features.plot_financing.presentation.visit.MerchantVisitSentScreen
 import com.example.muyu_app.features.labor_execution.presentation.sync.SyncScreen
 import com.example.muyu_app.features.plot_approval.presentation.home.FarmerHomeScreen
 import com.example.muyu_app.features.plot_approval.presentation.myplots.FarmerMyPlotsScreen
 import com.example.muyu_app.features.plot_approval.presentation.onboarding.ListPlotOnboardingScreen
+import com.example.muyu_app.features.plot_approval.presentation.plotdetail.AvailablePlotScreen
 import com.example.muyu_app.features.plot_approval.presentation.plotdetail.MyPlotScreen
-import com.example.muyu_app.features.plot_approval.presentation.plotdetail.PlotDetailScreen
 import com.example.muyu_app.features.plot_approval.presentation.visits.VisitRequestsScreen
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishSuccessScreen
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishPlotInfoScreen
 import com.example.muyu_app.features.plot_approval.presentation.publish.PublishPlotLocationScreen
 import com.example.muyu_app.features.plot_financing.presentation.alerts.MerchantAlertsScreen
 import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantApproveRejectScreen
+import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantConfirmApprovalScreen
+import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantMilestoneApprovedScreen
 import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantMilestoneEvidenceScreen
+import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantRejectionReasonScreen
+import com.example.muyu_app.features.plot_financing.presentation.evidence.MerchantReviewOutcomeScreen
 import com.example.muyu_app.features.plot_financing.presentation.catalog.MerchantCatalogScreen
 import com.example.muyu_app.features.plot_financing.presentation.fund.FundPlotScreen
 import com.example.muyu_app.features.plot_financing.presentation.fund.FundSuccessScreen
+import com.example.muyu_app.features.plot_financing.presentation.harvest.HarvestIncidentScreen
+import com.example.muyu_app.features.plot_financing.presentation.harvest.HarvestReceiptScreen
 import com.example.muyu_app.features.escrow_custody.presentation.payments.MerchantPaymentHistoryScreen
 import com.example.muyu_app.features.plot_financing.presentation.myplots.MerchantMyPlotsScreen
 import com.example.muyu_app.features.plot_financing.presentation.plotdetail.MerchantPlotDetailScreen
@@ -57,26 +72,48 @@ import com.example.muyu_app.features.user_management.presentation.loading.Loadin
 import com.example.muyu_app.features.user_management.presentation.login.LoginScreen
 import com.example.muyu_app.features.user_management.presentation.pin.SafetyPinScreen
 import com.example.muyu_app.features.user_management.presentation.profile.MerchantProfileScreen
+import com.example.muyu_app.features.user_management.presentation.profile.BankAccountScreen
+import com.example.muyu_app.features.user_management.presentation.profile.AddBankCardScreen
+import com.example.muyu_app.features.user_management.presentation.profile.DigitalWalletProvider
+import com.example.muyu_app.features.user_management.presentation.profile.EditDigitalWalletScreen
+import com.example.muyu_app.features.user_management.presentation.incident.ReportIncidentPhotoScreen
+import com.example.muyu_app.features.user_management.presentation.incident.ReportIncidentScreen
 import com.example.muyu_app.features.user_management.presentation.profile.ProfileScreen
 import com.example.muyu_app.features.user_management.presentation.register.RegisterScreen
 import com.example.muyu_app.features.user_management.presentation.resetpassword.ResetPasswordScreen
 import com.example.muyu_app.features.user_management.presentation.role.RoleSelectionScreen
+import com.example.muyu_app.features.user_management.presentation.legal.PrivacyPolicyScreen
 import com.example.muyu_app.features.user_management.presentation.legal.TermsAndConditionsScreen
+import com.example.muyu_app.features.user_management.presentation.rating.RateBuyerScreen
+import com.example.muyu_app.features.user_management.presentation.rating.RatingSubmittedScreen
+import androidx.compose.ui.res.stringResource
+import com.example.muyu_app.R
+import com.example.muyu_app.features.user_management.presentation.profile.saveMerchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.merchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.MerchantWallet
+import com.example.muyu_app.features.user_management.presentation.profile.DigitalWalletAccount
+import com.example.muyu_app.core.storage.BackendPreferences
 import com.example.muyu_app.ui.splash.SplashScreen
 import kotlinx.coroutines.delay
 
 private enum class WalkthroughStep {
+    RateBuyer,
+    RatingSubmitted,
     Splash,
     Login,
     Register,
     ResetPassword,
+    PasswordInstructions,
+    NewPassword,
+    PasswordFlowComplete,
+    ChangePin,
+    PinFlowComplete,
     SafetyPin,
     Loading,
     OnboardingPlot,
     OnboardingEscrow,
     OnboardingWeather,
     Role,
-    PlotDetail,
     FarmerHome,
     FarmerMyPlots,
     PublishInfo,
@@ -84,6 +121,7 @@ private enum class WalkthroughStep {
     PublishFinancing,
     PublishSuccess,
     MyPlot,
+    AvailablePlot,
     VisitRequests,
     FundedPlot,
     VisitOutcome,
@@ -92,29 +130,52 @@ private enum class WalkthroughStep {
     RecordEvidence,
     WeatherAlert,
     Sync,
-    SyncConnected,
     Profile,
+    BankAccount,
+    AddBankCard,
+    EditYape,
+    EditPlin,
+    MerchantWallet,
     PaymentHistory,
     PaymentDetails,
     MerchantCatalog,
     MerchantPlotDetail,
     FundPlot,
     FundSuccess,
+    MerchantVisitRequest,
+    MerchantVisitSent,
     MerchantMyPlots,
     MerchantAlerts,
     MerchantMilestoneEvidence,
     MerchantApproveReject,
+    MerchantConfirmApproval,
+    MerchantMilestoneApproved,
+    MerchantRejectionReason,
+    MerchantReviewOutcome,
+    HarvestReceipt,
+    HarvestIncident,
     Terms,
+    Privacy,
+    ReportIncident,
+    ReportIncidentPhoto,
 }
+
+// Keeps the prototype routes explicit while preserving each merchant flow return destination.
 
 private val PublicSteps = setOf(
     WalkthroughStep.Splash,
     WalkthroughStep.Login,
     WalkthroughStep.Register,
     WalkthroughStep.ResetPassword,
+    WalkthroughStep.PasswordInstructions,
+    WalkthroughStep.NewPassword,
+    WalkthroughStep.PasswordFlowComplete,
     WalkthroughStep.SafetyPin,
     WalkthroughStep.Terms,
 )
+
+private const val ROLE_FARMER = "farmer"
+private const val ROLE_MERCHANT = "merchant"
 
 @Composable
 fun AppNavHost() {
@@ -122,6 +183,17 @@ fun AppNavHost() {
     var tab by rememberSaveable { mutableStateOf<String?>(null) }
     var isMerchant by rememberSaveable { mutableStateOf(false) }
     var termsReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.Register) }
+    // Pantallas a las que vuelven la lista de visitas y el resultado de la visita.
+    var visitsReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.AvailablePlot) }
+    var outcomeReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.AvailablePlot) }
+    var passwordFromProfile by rememberSaveable { mutableStateOf(false) }
+    // Conserva las estrellas y el comentario al girar el dispositivo durante la valoración.
+    var buyerRating by rememberSaveable { mutableStateOf(0) }
+    var buyerRatingComment by rememberSaveable { mutableStateOf("") }
+    var recoveryEmail by rememberSaveable { mutableStateOf("") }
+    // Pantalla a la que vuelve el registro de tarjeta: cuenta bancaria, perfil o financiamiento.
+    var cardReturnStep by rememberSaveable { mutableStateOf(WalkthroughStep.BankAccount) }
+    var merchantWalletProvider by rememberSaveable { mutableStateOf(DigitalWalletProvider.Yape) }
     val container = LocalAppContainer.current
     val languages = container.languages
     val appLanguage = languages.current(isMerchant)
@@ -186,8 +258,49 @@ fun AppNavHost() {
         step = WalkthroughStep.Login
     }
 
+    // Hace que el botón Volver del sistema siga el recorrido de estas pantallas.
+    val reviewBackStep = when (step) {
+        WalkthroughStep.RateBuyer, WalkthroughStep.RatingSubmitted -> WalkthroughStep.Profile
+        WalkthroughStep.Register, WalkthroughStep.ResetPassword -> WalkthroughStep.Login
+        WalkthroughStep.OnboardingEscrow -> WalkthroughStep.OnboardingPlot
+        WalkthroughStep.OnboardingWeather -> WalkthroughStep.OnboardingEscrow
+        WalkthroughStep.PasswordInstructions -> WalkthroughStep.ResetPassword
+        WalkthroughStep.SafetyPin -> WalkthroughStep.PasswordInstructions
+        WalkthroughStep.NewPassword -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.SafetyPin
+        WalkthroughStep.PasswordFlowComplete -> if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
+        WalkthroughStep.ChangePin, WalkthroughStep.PinFlowComplete -> WalkthroughStep.Profile
+        WalkthroughStep.BankAccount -> WalkthroughStep.Profile
+        WalkthroughStep.AddBankCard, WalkthroughStep.MerchantWallet -> cardReturnStep
+        WalkthroughStep.EditYape -> WalkthroughStep.BankAccount
+        WalkthroughStep.EditPlin -> WalkthroughStep.BankAccount
+        WalkthroughStep.ReportIncident -> WalkthroughStep.Profile
+        WalkthroughStep.ReportIncidentPhoto -> WalkthroughStep.ReportIncident
+        WalkthroughStep.Terms, WalkthroughStep.Privacy -> termsReturnStep
+        WalkthroughStep.MerchantApproveReject -> WalkthroughStep.MerchantMilestoneEvidence
+        WalkthroughStep.MerchantConfirmApproval -> WalkthroughStep.MerchantApproveReject
+        WalkthroughStep.MerchantRejectionReason -> WalkthroughStep.MerchantApproveReject
+        WalkthroughStep.MerchantVisitRequest -> WalkthroughStep.MerchantPlotDetail
+        WalkthroughStep.MerchantVisitSent -> WalkthroughStep.MerchantVisitRequest
+        WalkthroughStep.HarvestReceipt, WalkthroughStep.HarvestIncident -> WalkthroughStep.MerchantPlotDetail
+        WalkthroughStep.MerchantMilestoneEvidence,
+        WalkthroughStep.MerchantMilestoneApproved,
+        WalkthroughStep.MerchantReviewOutcome -> when (container.merchantEvidenceOrigin) {
+            MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
+            MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+            MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
+        }
+        else -> null
+    }
+    BackHandler(enabled = currentTab == null && reviewBackStep != null) {
+        step = checkNotNull(reviewBackStep)
+    }
+
     val greenHeader = step in setOf(
-        WalkthroughStep.PlotDetail,
+        WalkthroughStep.RateBuyer, WalkthroughStep.RatingSubmitted,
+        WalkthroughStep.Terms,
+        WalkthroughStep.Privacy,
+        WalkthroughStep.ReportIncident,
+        WalkthroughStep.ReportIncidentPhoto,
         WalkthroughStep.FarmerHome,
         WalkthroughStep.FarmerMyPlots,
         WalkthroughStep.PublishInfo,
@@ -195,6 +308,7 @@ fun AppNavHost() {
         WalkthroughStep.PublishFinancing,
         WalkthroughStep.PublishSuccess,
         WalkthroughStep.MyPlot,
+        WalkthroughStep.AvailablePlot,
         WalkthroughStep.FundedPlot,
         WalkthroughStep.VisitOutcome,
         WalkthroughStep.RequestExtension,
@@ -202,18 +316,30 @@ fun AppNavHost() {
         WalkthroughStep.RecordEvidence,
         WalkthroughStep.WeatherAlert,
         WalkthroughStep.Sync,
-        WalkthroughStep.SyncConnected,
         WalkthroughStep.Profile,
+        WalkthroughStep.BankAccount,
+        WalkthroughStep.AddBankCard,
+        WalkthroughStep.EditYape,
+        WalkthroughStep.EditPlin,
+        WalkthroughStep.MerchantWallet,
         WalkthroughStep.PaymentHistory,
         WalkthroughStep.PaymentDetails,
         WalkthroughStep.MerchantCatalog,
         WalkthroughStep.MerchantPlotDetail,
         WalkthroughStep.FundPlot,
         WalkthroughStep.FundSuccess,
+        WalkthroughStep.MerchantVisitRequest,
+        WalkthroughStep.MerchantVisitSent,
         WalkthroughStep.MerchantMyPlots,
         WalkthroughStep.MerchantAlerts,
         WalkthroughStep.MerchantMilestoneEvidence,
         WalkthroughStep.MerchantApproveReject,
+        WalkthroughStep.MerchantConfirmApproval,
+        WalkthroughStep.MerchantMilestoneApproved,
+        WalkthroughStep.MerchantRejectionReason,
+        WalkthroughStep.MerchantReviewOutcome,
+        WalkthroughStep.HarvestReceipt,
+        WalkthroughStep.HarvestIncident,
     )
 
     val darkSheet = (
@@ -221,6 +347,11 @@ fun AppNavHost() {
                 WalkthroughStep.Login,
                 WalkthroughStep.Register,
                 WalkthroughStep.ResetPassword,
+                WalkthroughStep.PasswordInstructions,
+                WalkthroughStep.NewPassword,
+                WalkthroughStep.PasswordFlowComplete,
+                WalkthroughStep.ChangePin,
+                WalkthroughStep.PinFlowComplete,
                 WalkthroughStep.SafetyPin,
             ) || greenHeader
             ) && currentTab == null
@@ -238,7 +369,7 @@ fun AppNavHost() {
         language = appLanguage,
         onToggle = { languages.toggle(isMerchant) },
     ) {
-    val needsLogin = step !in PublicSteps && container.fakeStore.currentUser == null
+    val needsLogin = step !in PublicSteps && container.backendStore.currentUser == null
     LaunchedEffect(needsLogin) {
         if (needsLogin) {
             tab = null
@@ -248,24 +379,41 @@ fun AppNavHost() {
     }
     if (needsLogin) return@ProvideAppLocale
 
-    val afterSplash = if (container.fakeStore.currentUser != null) {
-        WalkthroughStep.Role
-    } else {
-        WalkthroughStep.Login
+    // Con sesión guardada vuelve al inicio del último rol elegido por ese usuario.
+    val sessionEmail = container.currentUserEmail()
+    val lastRole = sessionEmail?.let {
+        container.userPreferences?.loadString(it, BackendPreferences.KEY_LAST_ROLE, "")
+    }.orEmpty()
+    val afterSplash = when {
+        sessionEmail == null -> WalkthroughStep.Login
+        lastRole == ROLE_FARMER -> WalkthroughStep.FarmerHome
+        lastRole == ROLE_MERCHANT -> WalkthroughStep.MerchantCatalog
+        else -> WalkthroughStep.Role
+    }
+    val leaveSplash = {
+        isMerchant = lastRole == ROLE_MERCHANT
+        step = afterSplash
+    }
+    val rememberRole: (String) -> Unit = { role ->
+        sessionEmail?.let { container.userPreferences?.saveString(it, BackendPreferences.KEY_LAST_ROLE, role) }
     }
 
     when (step) {
         WalkthroughStep.Splash -> {
             LaunchedEffect(Unit) {
                 delay(1500)
-                step = afterSplash
+                leaveSplash()
             }
-            SplashScreen(onContinue = { step = afterSplash })
+            SplashScreen(onContinue = leaveSplash)
         }
         WalkthroughStep.Login -> LoginScreen(
             onLoginSuccess = { step = WalkthroughStep.Loading },
             onRegister = { step = WalkthroughStep.Register },
-            onForgotPassword = { step = WalkthroughStep.ResetPassword },
+            onForgotPassword = {
+                passwordFromProfile = false
+                recoveryEmail = ""
+                step = WalkthroughStep.ResetPassword
+            },
         )
         WalkthroughStep.Register -> RegisterScreen(
             onRegister = goToLogin,
@@ -276,45 +424,82 @@ fun AppNavHost() {
             },
         )
         WalkthroughStep.Terms -> TermsAndConditionsScreen(onBack = { step = termsReturnStep })
+        WalkthroughStep.Privacy -> PrivacyPolicyScreen(onBack = { step = termsReturnStep })
         WalkthroughStep.ResetPassword -> ResetPasswordScreen(
-            onNext = { step = WalkthroughStep.SafetyPin },
+            onNext = { step = WalkthroughStep.PasswordInstructions },
+            onEmailEntered = { recoveryEmail = it },
+            onBack = { step = WalkthroughStep.Login },
+        )
+        WalkthroughStep.PasswordInstructions -> PasswordInstructionsScreen(
+            email = recoveryEmail,
+            onBack = { step = WalkthroughStep.ResetPassword },
+            onContinue = { step = WalkthroughStep.SafetyPin },
         )
         WalkthroughStep.SafetyPin -> SafetyPinScreen(
-            onAccept = goToLogin,
+            // Continúa el prototipo sin verificar el PIN ni modificar credenciales.
+            onAccept = { step = WalkthroughStep.NewPassword },
+            onBack = { step = WalkthroughStep.PasswordInstructions },
+        )
+        WalkthroughStep.NewPassword -> ChangePasswordScreen(
+            onBack = {
+                step = if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.SafetyPin
+            },
+            onContinue = { step = WalkthroughStep.PasswordFlowComplete },
+            onChangePassword = container::changePassword,
+        )
+        WalkthroughStep.ChangePin -> ChangePinScreen(
+            onBack = { step = WalkthroughStep.Profile },
+            onComplete = { step = WalkthroughStep.PinFlowComplete },
+        )
+        WalkthroughStep.PinFlowComplete -> PinFlowCompleteScreen(
+            onBackToProfile = { step = WalkthroughStep.Profile },
+        )
+        WalkthroughStep.PasswordFlowComplete -> PasswordFlowCompleteScreen(
+            fromProfile = passwordFromProfile,
+            onContinue = {
+                recoveryEmail = ""
+                step = if (passwordFromProfile) WalkthroughStep.Profile else WalkthroughStep.Login
+            },
         )
         WalkthroughStep.Loading -> LoadingScreen(
             onFinished = { step = WalkthroughStep.OnboardingPlot },
         )
         WalkthroughStep.OnboardingPlot -> ListPlotOnboardingScreen(
             onNext = { step = WalkthroughStep.OnboardingEscrow },
+            onSkip = { step = WalkthroughStep.Role },
         )
         WalkthroughStep.OnboardingEscrow -> EscrowOnboardingScreen(
             onNext = { step = WalkthroughStep.OnboardingWeather },
+            onSkip = { step = WalkthroughStep.Role },
+            onBack = { step = WalkthroughStep.OnboardingPlot },
         )
         WalkthroughStep.OnboardingWeather -> WeatherOnboardingScreen(
             onStart = { step = WalkthroughStep.Role },
+            onBack = { step = WalkthroughStep.OnboardingEscrow },
         )
         WalkthroughStep.Role -> RoleSelectionScreen(
-            onNext = { step = WalkthroughStep.PlotDetail },
             onFarmerSelected = {
+                rememberRole(ROLE_FARMER)
                 isMerchant = false
                 step = WalkthroughStep.FarmerHome
             },
             onMerchantSelected = {
+                rememberRole(ROLE_MERCHANT)
                 isMerchant = true
                 step = WalkthroughStep.MerchantCatalog
             },
         )
-        WalkthroughStep.PlotDetail -> TabOrContent(currentTab, selectTab) {
-            PlotDetailScreen(onTabSelected = selectTab)
-        }
         WalkthroughStep.FarmerHome -> TabOrContent(currentTab, selectTab) {
             FarmerHomeScreen(
                 onWeather = { step = WalkthroughStep.WeatherAlert },
                 onTabSelected = selectTab,
                 onPlotSelected = {
                     container.farmerPlotReturn = FarmerPlotReturn.Home
-                    step = WalkthroughStep.FundedPlot
+                    step = if (container.selectedPlot?.status == "funded") {
+                        WalkthroughStep.FundedPlot
+                    } else {
+                        WalkthroughStep.AvailablePlot
+                    }
                 },
             )
         }
@@ -334,6 +519,13 @@ fun AppNavHost() {
                     } else {
                         WalkthroughStep.MyPlot
                     }
+                },
+                onEditPlot = { plot ->
+                    container.selectedPlot = plot
+                    container.farmerPlotReturn = FarmerPlotReturn.MyPlots
+                    container.plotDraft.clear()
+                    container.plotDraft.loadFrom(plot)
+                    step = WalkthroughStep.PublishInfo
                 },
             )
         }
@@ -388,13 +580,40 @@ fun AppNavHost() {
                     }
                 },
                 onTabSelected = selectTab,
-                onViewVisitRequests = { step = WalkthroughStep.VisitRequests },
+                onViewVisitRequests = {
+                    visitsReturnStep = WalkthroughStep.MyPlot
+                    step = WalkthroughStep.VisitRequests
+                },
                 fromHome = container.farmerPlotReturn == FarmerPlotReturn.Home,
             )
         }
         WalkthroughStep.VisitRequests -> TabOrContent(currentTab, selectTab) {
             VisitRequestsScreen(
-                onBack = { step = WalkthroughStep.MyPlot },
+                onBack = { step = visitsReturnStep },
+                onTabSelected = selectTab,
+                onRecordOutcome = {
+                    outcomeReturnStep = WalkthroughStep.VisitRequests
+                    step = WalkthroughStep.VisitOutcome
+                },
+                selectedTab = if (visitsReturnStep == WalkthroughStep.MyPlot) MuyuTab.Plot else MuyuTab.Home,
+            )
+        }
+        WalkthroughStep.AvailablePlot -> TabOrContent(currentTab, selectTab) {
+            AvailablePlotScreen(
+                onBack = {
+                    step = when (container.farmerPlotReturn) {
+                        FarmerPlotReturn.Home -> WalkthroughStep.FarmerHome
+                        FarmerPlotReturn.MyPlots -> WalkthroughStep.FarmerMyPlots
+                    }
+                },
+                onViewVisitOutcome = {
+                    outcomeReturnStep = WalkthroughStep.AvailablePlot
+                    step = WalkthroughStep.VisitOutcome
+                },
+                onManageVisits = {
+                    visitsReturnStep = WalkthroughStep.AvailablePlot
+                    step = WalkthroughStep.VisitRequests
+                },
                 onTabSelected = selectTab,
             )
         }
@@ -417,10 +636,10 @@ fun AppNavHost() {
         }
         WalkthroughStep.VisitOutcome -> TabOrContent(currentTab, selectTab) {
             VisitOutcomeScreen(
-                onBack = { step = WalkthroughStep.FundedPlot },
-                onSaved = { step = WalkthroughStep.FundedPlot },
-                onReleased = { step = WalkthroughStep.FarmerHome },
+                onBack = { step = outcomeReturnStep },
+                onSaved = { step = outcomeReturnStep },
                 onTabSelected = selectTab,
+                selectedTab = if (visitsReturnStep == WalkthroughStep.MyPlot) MuyuTab.Plot else MuyuTab.Home,
             )
         }
         WalkthroughStep.RequestExtension -> TabOrContent(currentTab, selectTab) {
@@ -459,33 +678,165 @@ fun AppNavHost() {
                 onTabSelected = selectTab,
             )
         }
-        WalkthroughStep.SyncConnected -> TabOrContent(currentTab, selectTab) {
-            SyncScreen(
-                onBack = { step = WalkthroughStep.FarmerHome },
-                onTabSelected = selectTab,
-            )
-        }
         WalkthroughStep.Profile -> TabOrContent(currentTab, selectTab) {
             if (isMerchant) {
                 MerchantProfileScreen(
                     onTabSelected = selectMerchantTab,
+                    onChangePassword = {
+                        tab = null
+                        passwordFromProfile = true
+                        step = WalkthroughStep.NewPassword
+                    },
+                    onManageCard = {
+                        tab = null
+                        cardReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.AddBankCard
+                    },
+                    onManageWallet = { provider ->
+                        tab = null
+                        merchantWalletProvider = provider
+                        cardReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.MerchantWallet
+                    },
                     onLogout = goToLogin,
                     onTerms = {
                         termsReturnStep = WalkthroughStep.Profile
                         step = WalkthroughStep.Terms
+                    },
+                    onPrivacy = {
+                        termsReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.Privacy
                     },
                 )
             } else {
                 ProfileScreen(
                     onTabSelected = selectTab,
+                    // Abre el cambio de contraseña del agricultor y conserva su destino de regreso.
+                    onChangePassword = {
+                        tab = null
+                        passwordFromProfile = true
+                        step = WalkthroughStep.NewPassword
+                    },
+                    // Conecta el cambio de PIN del perfil con su propio recorrido de demostración.
+                    onChangePin = {
+                        tab = null
+                        step = WalkthroughStep.ChangePin
+                    },
+                    // Abre la valoración desde el perfil del agricultor con un formulario nuevo.
+                    onRateContract = {
+                        tab = null
+                        buyerRating = 0
+                        buyerRatingComment = ""
+                        step = WalkthroughStep.RateBuyer
+                    },
+                    onBankAccount = {
+                        tab = null
+                        step = WalkthroughStep.BankAccount
+                    },
+                    onReportIncidence = {
+                        tab = null
+                        container.incidentDraft.clear()
+                        step = WalkthroughStep.ReportIncident
+                    },
                     onLogout = goToLogin,
                     onTerms = {
                         termsReturnStep = WalkthroughStep.Profile
                         step = WalkthroughStep.Terms
                     },
+                    onPrivacy = {
+                        termsReturnStep = WalkthroughStep.Profile
+                        step = WalkthroughStep.Privacy
+                    },
                 )
             }
         }
+        WalkthroughStep.ReportIncident -> ReportIncidentScreen(
+            onBack = { step = WalkthroughStep.Profile },
+            onAttachPhoto = { step = WalkthroughStep.ReportIncidentPhoto },
+            onSubmitted = { step = WalkthroughStep.Profile },
+        )
+        WalkthroughStep.ReportIncidentPhoto -> ReportIncidentPhotoScreen(
+            onBack = { step = WalkthroughStep.ReportIncident },
+            onContinue = { step = WalkthroughStep.ReportIncident },
+        )
+        WalkthroughStep.RateBuyer -> RateBuyerScreen(
+            rating = buyerRating, comment = buyerRatingComment,
+            onRatingChange = { buyerRating = it }, onCommentChange = { buyerRatingComment = it },
+            onBack = { step = WalkthroughStep.Profile },
+            // Stores the rating in the authenticated backend state before showing confirmation.
+            onSubmit = {
+                if (buyerRating in 1..5) {
+                    container.backendStore.addRating(buyerRating, buyerRatingComment)
+                    step = WalkthroughStep.RatingSubmitted
+                }
+            },
+        )
+        WalkthroughStep.RatingSubmitted -> RatingSubmittedScreen(
+            rating = buyerRating, comment = buyerRatingComment.trim(),
+            farmerName = container.backendStore.currentUser?.displayName?.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.rating_farmer_preview),
+            onBackToProfile = { step = WalkthroughStep.Profile },
+        )
+        WalkthroughStep.BankAccount -> BankAccountScreen(
+            onBack = { step = WalkthroughStep.Profile },
+            onAddCard = {
+                cardReturnStep = WalkthroughStep.BankAccount
+                step = WalkthroughStep.AddBankCard
+            },
+            onYapeClick = { step = WalkthroughStep.EditYape },
+            onPlinClick = { step = WalkthroughStep.EditPlin },
+        )
+        WalkthroughStep.AddBankCard -> AddBankCardScreen(
+            onBack = {
+                container.resumeFundingAtPayment = cardReturnStep == WalkthroughStep.FundPlot
+                step = cardReturnStep
+            },
+            onSave = { card ->
+                container.savedBankCard = card
+                container.resumeFundingAtPayment = cardReturnStep == WalkthroughStep.FundPlot
+                step = cardReturnStep
+            },
+        )
+        WalkthroughStep.EditYape -> EditDigitalWalletScreen(
+            provider = DigitalWalletProvider.Yape,
+            account = container.yapeAccount,
+            holderName = container.yapeAccount?.holderName?.takeIf(String::isNotBlank)
+                ?: container.backendStore.currentUser?.displayName?.takeIf(String::isNotBlank)
+                .orEmpty(),
+            initialPhone = container.backendStore.currentUser?.phone.orEmpty(),
+            onBack = { step = WalkthroughStep.BankAccount },
+            onSave = { account ->
+                container.yapeAccount = account
+                if (account.isPrimary) {
+                    container.plinAccount = container.plinAccount?.copy(isPrimary = false)
+                }
+                step = WalkthroughStep.BankAccount
+            },
+            onUnlink = {
+                container.yapeAccount = null
+                step = WalkthroughStep.BankAccount
+            },
+        )
+        WalkthroughStep.EditPlin -> EditDigitalWalletScreen(
+            provider = DigitalWalletProvider.Plin,
+            account = container.plinAccount,
+            holderName = container.plinAccount?.holderName?.takeIf(String::isNotBlank)
+                ?: container.backendStore.currentUser?.displayName?.takeIf(String::isNotBlank)
+                .orEmpty(),
+            initialPhone = container.backendStore.currentUser?.phone.orEmpty(),
+            onBack = { step = WalkthroughStep.BankAccount },
+            onSave = { account ->
+                container.plinAccount = account
+                if (account.isPrimary) {
+                    container.yapeAccount = container.yapeAccount?.copy(isPrimary = false)
+                }
+                step = WalkthroughStep.BankAccount
+            },
+            onUnlink = {
+                container.plinAccount = null
+                step = WalkthroughStep.BankAccount
+            },
+        )
         WalkthroughStep.PaymentHistory -> TabOrContent(currentTab, selectTab) {
             if (isMerchant) {
                 MerchantPaymentHistoryScreen(
@@ -505,34 +856,126 @@ fun AppNavHost() {
             PaymentDetailsScreen(
                 onBack = { step = WalkthroughStep.PaymentHistory },
                 onTabSelected = selectTab,
+                isMerchant = isMerchant,
+                // El comerciante conserva su propia barra de navegación.
+                bottomBar = if (isMerchant) {
+                    {
+                        MerchantBottomBar(
+                            selectedTab = MerchantTab.Payments,
+                            onTabSelected = selectMerchantTab,
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                        )
+                    }
+                } else {
+                    null
+                },
             )
         }
         WalkthroughStep.MerchantCatalog -> MerchantCatalogScreen(
-            onPlotClick = { step = WalkthroughStep.MerchantPlotDetail },
+            onPlotClick = {
+                container.merchantPlotReturn = MerchantPlotReturn.Catalog
+                step = WalkthroughStep.MerchantPlotDetail
+            },
             onAlertsClick = { step = WalkthroughStep.MerchantAlerts },
             onTabSelected = selectMerchantTab,
         )
         WalkthroughStep.MerchantPlotDetail -> MerchantPlotDetailScreen(
-            onBack = { step = WalkthroughStep.MerchantCatalog },
+            onBack = {
+                step = when (container.merchantPlotReturn) {
+                    MerchantPlotReturn.Catalog -> WalkthroughStep.MerchantCatalog
+                    MerchantPlotReturn.MyPlots -> WalkthroughStep.MerchantMyPlots
+                    MerchantPlotReturn.Alerts -> WalkthroughStep.MerchantAlerts
+                }
+            },
             onFundPlot = { step = WalkthroughStep.FundPlot },
+            onRequestVisit = {
+                step = if (container.merchantVisitRequest?.plotId == container.selectedPlot?.id) {
+                    WalkthroughStep.MerchantVisitSent
+                } else {
+                    WalkthroughStep.MerchantVisitRequest
+                }
+            },
+            onViewEvidence = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onConfirmHarvest = { step = WalkthroughStep.HarvestReceipt },
+            onReportHarvestIncident = { step = WalkthroughStep.HarvestIncident },
             onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.HarvestReceipt -> HarvestReceiptScreen(
+            onBack = { step = WalkthroughStep.MerchantPlotDetail },
+            onBackToPlot = { step = WalkthroughStep.MerchantPlotDetail },
+        )
+        WalkthroughStep.HarvestIncident -> HarvestIncidentScreen(
+            onBack = { step = WalkthroughStep.MerchantPlotDetail },
+            onBackToPlot = { step = WalkthroughStep.MerchantPlotDetail },
         )
         WalkthroughStep.FundPlot -> FundPlotScreen(
             onBack = { step = WalkthroughStep.MerchantPlotDetail },
+            onBackToCatalog = { step = WalkthroughStep.MerchantCatalog },
+            onCheckTransactions = { step = WalkthroughStep.PaymentHistory },
             onAcceptTerms = { step = WalkthroughStep.FundSuccess },
-            onTabSelected = selectMerchantTab,
+            onAddCard = {
+                cardReturnStep = WalkthroughStep.FundPlot
+                step = WalkthroughStep.AddBankCard
+            },
+            onAddWallet = { provider ->
+                merchantWalletProvider = provider
+                cardReturnStep = WalkthroughStep.FundPlot
+                step = WalkthroughStep.MerchantWallet
+            },
         )
+        WalkthroughStep.MerchantWallet -> {
+            // Billetera propia del comerciante para pagar; no comparte datos con la del agricultor.
+            val saved = container.merchantWallet()?.takeIf { it.provider == merchantWalletProvider }
+            val leave = {
+                container.resumeFundingAtPayment = cardReturnStep == WalkthroughStep.FundPlot
+                step = cardReturnStep
+            }
+            EditDigitalWalletScreen(
+                provider = merchantWalletProvider,
+                account = saved?.let { DigitalWalletAccount(phone = it.phone, holderName = it.holderName) },
+                holderName = saved?.holderName?.takeIf(String::isNotBlank)
+                    ?: container.backendStore.currentUser?.displayName.orEmpty(),
+                initialPhone = container.backendStore.currentUser?.phone.orEmpty(),
+                onBack = leave,
+                onSave = { account ->
+                    container.saveMerchantWallet(
+                        MerchantWallet(merchantWalletProvider, account.phone, account.holderName),
+                    )
+                    leave()
+                },
+                onUnlink = {
+                    container.saveMerchantWallet(null)
+                    leave()
+                },
+                showPrimaryOption = false,
+                infoText = stringResource(R.string.merchant_wallet_payment_info),
+            )
+        }
         WalkthroughStep.FundSuccess -> FundSuccessScreen(
             onBack = { step = WalkthroughStep.FundPlot },
             onViewPlot = { step = WalkthroughStep.MerchantPlotDetail },
-            onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.MerchantVisitRequest -> MerchantVisitRequestScreen(
+            onBack = { step = WalkthroughStep.MerchantPlotDetail },
+            onRequestSent = { step = WalkthroughStep.MerchantVisitSent },
+        )
+        WalkthroughStep.MerchantVisitSent -> MerchantVisitSentScreen(
+            onBack = { step = WalkthroughStep.MerchantVisitRequest },
+            onBackToPlot = { step = WalkthroughStep.MerchantPlotDetail },
         )
         WalkthroughStep.MerchantMyPlots -> MerchantMyPlotsScreen(
-            onPlotEvidenceClick = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onPlotClick = {
+                container.merchantPlotReturn = MerchantPlotReturn.MyPlots
+                step = WalkthroughStep.MerchantPlotDetail
+            },
             onTabSelected = selectMerchantTab,
         )
         WalkthroughStep.MerchantAlerts -> MerchantAlertsScreen(
-            onPlotClick = { step = WalkthroughStep.MerchantPlotDetail },
+            onBack = { step = WalkthroughStep.MerchantCatalog },
+            onPlotClick = {
+                container.merchantPlotReturn = MerchantPlotReturn.Alerts
+                step = WalkthroughStep.MerchantPlotDetail
+            },
             onEvidenceClick = { step = WalkthroughStep.MerchantMilestoneEvidence },
             onTabSelected = selectMerchantTab,
         )
@@ -541,6 +984,7 @@ fun AppNavHost() {
                 step = when (container.merchantEvidenceOrigin) {
                     MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
                     MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                    MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
                 }
             },
             onReview = { step = WalkthroughStep.MerchantApproveReject },
@@ -548,10 +992,56 @@ fun AppNavHost() {
         )
         WalkthroughStep.MerchantApproveReject -> MerchantApproveRejectScreen(
             onBack = { step = WalkthroughStep.MerchantMilestoneEvidence },
-            onFinished = {
+            onApprove = { step = WalkthroughStep.MerchantConfirmApproval },
+            onReject = { step = WalkthroughStep.MerchantRejectionReason },
+            onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.MerchantConfirmApproval -> MerchantConfirmApprovalScreen(
+            onBack = { step = WalkthroughStep.MerchantApproveReject },
+            onConfirmed = { step = WalkthroughStep.MerchantMilestoneApproved },
+            onBackToEvidence = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.MerchantMilestoneApproved -> MerchantMilestoneApprovedScreen(
+            onBack = {
                 step = when (container.merchantEvidenceOrigin) {
                     MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
                     MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                    MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
+                }
+            },
+            onViewPlot = {
+                // Abre la parcela seleccionada y conserva el origen para regresar.
+                container.merchantPlotReturn = when (container.merchantEvidenceOrigin) {
+                    MerchantEvidenceOrigin.MyPlots -> MerchantPlotReturn.MyPlots
+                    MerchantEvidenceOrigin.Alerts -> MerchantPlotReturn.Alerts
+                    MerchantEvidenceOrigin.PlotDetail -> container.merchantPlotReturn
+                }
+                step = WalkthroughStep.MerchantPlotDetail
+            },
+            onViewReceipt = { step = WalkthroughStep.PaymentHistory },
+            onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.MerchantRejectionReason -> MerchantRejectionReasonScreen(
+            onBack = { step = WalkthroughStep.MerchantApproveReject },
+            onConfirmed = { step = WalkthroughStep.MerchantReviewOutcome },
+            onCancelAndReview = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onTabSelected = selectMerchantTab,
+        )
+        WalkthroughStep.MerchantReviewOutcome -> MerchantReviewOutcomeScreen(
+            onBack = {
+                step = when (container.merchantEvidenceOrigin) {
+                    MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
+                    MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                    MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
+                }
+            },
+            onViewMilestone = { step = WalkthroughStep.MerchantMilestoneEvidence },
+            onBackToPlot = {
+                step = when (container.merchantEvidenceOrigin) {
+                    MerchantEvidenceOrigin.MyPlots -> WalkthroughStep.MerchantMyPlots
+                    MerchantEvidenceOrigin.Alerts -> WalkthroughStep.MerchantAlerts
+                    MerchantEvidenceOrigin.PlotDetail -> WalkthroughStep.MerchantPlotDetail
                 }
             },
             onTabSelected = selectMerchantTab,

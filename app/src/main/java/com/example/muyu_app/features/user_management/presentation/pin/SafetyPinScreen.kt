@@ -1,5 +1,12 @@
 package com.example.muyu_app.features.user_management.presentation.pin
 
+import com.example.muyu_app.core.designsystem.components.AuthFlowTitle
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,8 +66,11 @@ private val PinShape = RoundedCornerShape(20.dp)
 fun SafetyPinScreen(
     onAccept: () -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
 ) {
     var digits by rememberSaveable { mutableStateOf(List(4) { "" }) }
+    // Permite avanzar el foco entre las casillas y volver a la primera al reintentar.
+    val pinFocus = remember { List(4) { FocusRequester() } }
 
     Column(
         modifier = modifier
@@ -69,20 +79,7 @@ fun SafetyPinScreen(
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = stringResource(R.string.pin_title),
-            modifier = Modifier
-                .statusBarsPadding()
-                .padding(top = 10.dp)
-                .fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            style = TextStyle(
-                fontFamily = FredokaSemiBold,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 32.sp,
-                color = MuyuForest,
-            ),
-        )
+        AuthFlowTitle(stringResource(R.string.pin_title), onBack)
         Spacer(modifier = Modifier.height(24.dp))
         Image(
             painter = painterResource(R.drawable.pin_hero),
@@ -93,7 +90,8 @@ fun SafetyPinScreen(
             contentScale = ContentScale.Fit,
         )
         Spacer(modifier = Modifier.height(16.dp))
-        AuthSheet(modifier = Modifier.weight(1f)) {
+        // Permite desplazar el formulario cuando el teclado reduce el espacio visible.
+        AuthSheet(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Text(
                 text = stringResource(R.string.pin_heading),
                 modifier = Modifier.fillMaxWidth(),
@@ -108,14 +106,21 @@ fun SafetyPinScreen(
             Spacer(modifier = Modifier.height(28.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 digits.forEachIndexed { index, digit ->
                     PinBox(
                         value = digit,
+                        // Reparte el ancho disponible entre las cuatro casillas del PIN.
+                        modifier = Modifier.weight(1f),
+                        fieldModifier = Modifier.focusRequester(pinFocus[index]),
                         onValueChange = { value ->
                             digits = digits.toMutableList().also { list ->
-                                list[index] = value.takeLast(1).filter { it.isDigit() }
+                                // Acepta únicamente una cifra del cero al nueve en cada casilla.
+                                list[index] = value.filter { it in '0'..'9' }.takeLast(1)
+                            }
+                            if (digits[index].isNotEmpty() && index < 3) {
+                                pinFocus[index + 1].requestFocus()
                             }
                         },
                     )
@@ -124,12 +129,15 @@ fun SafetyPinScreen(
             Spacer(modifier = Modifier.height(36.dp))
             AuthPrimaryButton(
                 text = stringResource(R.string.pin_accept),
-                onClick = onAccept,
+                // Exige completar las cuatro casillas; esto no verifica el código con un servidor.
+                enabled = digits.all { it.length == 1 },
+                onClick = { if (digits.all { it.length == 1 }) onAccept() },
             )
             Spacer(modifier = Modifier.height(14.dp))
             AuthPrimaryButton(
+                // Limpia el PIN para volver a ingresarlo, sin reenviar un código.
                 text = stringResource(R.string.pin_try_again),
-                onClick = {},
+                onClick = { digits = List(4) { "" }; pinFocus[0].requestFocus() },
                 background = MuyuOlive,
                 contentColor = MuyuTryAgainText,
             )
@@ -141,10 +149,12 @@ fun SafetyPinScreen(
 private fun PinBox(
     value: String,
     onValueChange: (String) -> Unit,
+    fieldModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
-            .size(70.dp)
+        modifier = modifier
+            .height(70.dp)
             .clip(PinShape)
             .background(Color.White)
             .border(1.dp, Color.Black, PinShape),
@@ -153,6 +163,7 @@ private fun PinBox(
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
+            modifier = fieldModifier,
             textStyle = TextStyle(
                 fontFamily = UrbanistBold,
                 fontWeight = FontWeight.Bold,
@@ -161,6 +172,8 @@ private fun PinBox(
                 textAlign = TextAlign.Center,
             ),
             singleLine = true,
+            // Oculta las cifras ingresadas sin cambiar el valor del PIN.
+            visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             cursorBrush = SolidColor(Color.Black),
         )

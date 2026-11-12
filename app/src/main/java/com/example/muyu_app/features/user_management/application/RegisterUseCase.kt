@@ -9,5 +9,6 @@ class RegisterUseCase(private val repository: AuthRepository) {
         phone: String,
         birthdate: String,
         password: String,
-    ) = repository.register(name, email, phone, birthdate, password)
+        dni: String,
+    ) = repository.register(name, email, phone, birthdate, password, dni)
 }

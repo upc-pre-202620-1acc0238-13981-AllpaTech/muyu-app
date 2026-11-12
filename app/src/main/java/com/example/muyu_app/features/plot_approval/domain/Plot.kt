@@ -24,6 +24,11 @@ data class Plot(
     val milestoneStates: List<MilestoneState> = emptyList(),
     val visitOutcome: String = "",
     val visitDate: String = "",
+    val agreedPrice: String = "",
+    val harvestReceivedAt: String = "",
+    val harvestReceivedBy: String = "",
+    val harvestIncidents: List<HarvestIncident> = emptyList(),
+    val weatherMeasures: List<WeatherMeasure> = emptyList(),
 )
 
 data class NewPlot(
@@ -70,8 +75,8 @@ class PlotDraft {
         harvestDate = plot.harvestDate
         place = plot.place
         amount = plot.amount
-        cycle = plot.cycle.ifBlank { "6 months" }
-        milestones = plot.milestones.ifBlank { "4" }
+        cycle = plot.cycle
+        milestones = plot.milestones
         imageUri = plot.imageUri
         latitude = plot.latitude
         longitude = plot.longitude
@@ -102,7 +107,7 @@ class PlotDraft {
         crop = crop,
         area = area,
         harvestDate = harvestDate,
-        place = place.ifBlank { "Peru" },
+        place = place,
         amount = amount,
         cycle = cycle,
         milestones = milestones,

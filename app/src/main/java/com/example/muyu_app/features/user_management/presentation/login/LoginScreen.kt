@@ -66,13 +66,13 @@ import com.example.muyu_app.ui.theme.UrbanistSemiBold
 private val SheetShape = RoundedCornerShape(topStart = 63.dp, topEnd = 63.dp)
 private val FieldShape = RoundedCornerShape(10.dp)
 
+// Connects credential input to LoginUseCase while keeping navigation owned by AppNavHost.
+
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     modifier: Modifier = Modifier,
     onForgotPassword: () -> Unit = {},
-    onGoogle: () -> Unit = {},
-    onFacebook: () -> Unit = {},
     onRegister: () -> Unit = {},
 ) {
     val container = LocalAppContainer.current
@@ -127,8 +127,6 @@ fun LoginScreen(
             onTogglePassword = viewModel::togglePasswordVisibility,
             onForgotPassword = onForgotPassword,
             onLogin = viewModel::login,
-            onGoogle = onGoogle,
-            onFacebook = onFacebook,
             onRegister = onRegister,
             modifier = Modifier.weight(1f),
         )
@@ -145,8 +143,6 @@ private fun LoginForm(
     onTogglePassword: () -> Unit,
     onForgotPassword: () -> Unit,
     onLogin: () -> Unit,
-    onGoogle: () -> Unit,
-    onFacebook: () -> Unit,
     onRegister: () -> Unit,
     errorMessage: String? = null,
     modifier: Modifier = Modifier,
@@ -250,52 +246,6 @@ private fun LoginForm(
                     fontSize = 24.sp,
                     color = Color.Black,
                 ),
-            )
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            LoginAsset(
-                fileName = "divider.svg",
-                contentDescription = null,
-                width = 96.78.dp,
-                height = 1.dp,
-            )
-            Text(
-                text = stringResource(R.string.login_or),
-                modifier = Modifier.padding(horizontal = 16.dp),
-                style = labelStyle.copy(color = Color.White.copy(alpha = 0.5f)),
-            )
-            LoginAsset(
-                fileName = "divider.svg",
-                contentDescription = null,
-                width = 96.78.dp,
-                height = 1.dp,
-            )
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            LoginAsset(
-                fileName = "google.svg",
-                contentDescription = stringResource(R.string.login_google),
-                width = 38.dp,
-                height = 38.dp,
-                modifier = Modifier.clickable(onClick = onGoogle),
-            )
-            Spacer(modifier = Modifier.width(28.dp))
-            LoginAsset(
-                fileName = "facebook.svg",
-                contentDescription = stringResource(R.string.login_facebook),
-                width = 38.dp,
-                height = 38.dp,
-                modifier = Modifier.clickable(onClick = onFacebook),
             )
         }
         Spacer(modifier = Modifier.height(24.dp))
